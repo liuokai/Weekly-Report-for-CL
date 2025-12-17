@@ -1,14 +1,16 @@
 import React from 'react';
 
-const DataTable = ({ data, columns, getKey = (item, index) => index }) => {
+const DataTable = ({ data, columns, getKey = (item, index) => index, stickyHeader = true }) => {
   if (!data || data.length === 0) {
     return <div className="text-center py-4 text-gray-500">暂无数据</div>;
   }
 
+  const theadClass = `bg-gray-50 ${stickyHeader ? 'sticky top-0' : ''}`;
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50 sticky top-0">
+        <thead className={theadClass}>
           <tr>
             {columns.map(column => (
               <th 

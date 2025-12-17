@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import DataContainer from "../Common/DataContainer";
 import DataTable from "../Common/DataTable";
 import { parseCSV } from "../../utils/dataLoader";
+import LineTrendChart from "../Common/LineTrendChart";
 
 const RevenueDecompositionContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -10,6 +11,10 @@ const RevenueDecompositionContainer = () => {
   const [weeks, setWeeks] = useState([]);
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(11);
   const [storeRows, setStoreRows] = useState([]);
+  const [selectedMetricKey, setSelectedMetricKey] = useState("revenue");
+  const [showYoY, setShowYoY] = useState(false);
+  const [showTrend, setShowTrend] = useState(true);
+  const [showExtremes, setShowExtremes] = useState(true);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -212,92 +217,66 @@ const RevenueDecompositionContainer = () => {
     setIsModalOpen(true);
   };
 
-  const LineChart = ({ data, weeks }) => {
-    if (!data || data.length === 0) return <div className="text-gray-500">暂无数据</div>;
-    const width = 900;
-    const height = 240;
-    const bottomSpace = 44;
-    const svgHeight = height + bottomSpace;
-    const padding = 30;
-    const maxVal = Math.max(...data) * 1.1;
-    const minVal = Math.min(...data) * 0.9;
-    const xStep = (width - padding * 2) / (data.length - 1);
-    const points = data.map((v, i) => {
-      const x = padding + i * xStep;
-      const y = padding + (height - padding * 2) * (1 - (v - minVal) / (maxVal - minVal));
-      return { x, y };
-    });
-    const path = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-    const [hover, setHover] = useState(null);
-    const fmtYMD = (dt) => `${String(dt.getFullYear()).slice(-2)}${String(dt.getMonth() + 1).padStart(2, "0")}${String(dt.getDate()).padStart(2, "0")}`;
-    return (
-      <svg viewBox={`0 0 ${width} ${svgHeight}`} className="w-full h-full">
-        <polyline points={`${padding},${height - padding} ${width - padding},${height - padding}`} stroke="#e5e7eb" fill="none" />
-        <polyline points={`${padding},${padding} ${padding},${height - padding}`} stroke="#e5e7eb" fill="none" />
-        <path d={path} stroke="#a40035" strokeWidth="2" fill="none" />
-        {points.map((p, i) => (
-          <circle
-            key={i}
-            cx={p.x}
-            cy={p.y}
-            r="3"
-            fill="#a40035"
-            onMouseEnter={() => setHover({ x: p.x, y: p.y, idx: i })}
-            onMouseMove={() => setHover({ x: p.x, y: p.y, idx: i })}
-            onMouseLeave={() => setHover(null)}
-          />
-        ))}
-        {points.map((p, i) => (
-          <text
-            key={`xl-${i}`}
-            x={p.x}
-            y={height - padding + 16}
-            fontSize="10"
-            textAnchor="middle"
-            fill="#6b7280"
-          >
-            {weeks?.[i] ? `W${String(weeks[i].weekNo).padStart(2, "0")}` : ""}
-          </text>
-        ))}
-        {points.map((p, i) => (
-          <text
-            key={`val-${i}`}
-            x={p.x}
-            y={p.y - 8}
-            fontSize="10"
-            textAnchor="middle"
-            fill="#374151"
-          >
-            {Math.round(data[i]).toLocaleString("zh-CN")}
-          </text>
-        ))}
-        <text x={padding} y={padding - 10} fontSize="12" fill="#6b7280">营业额</text>
-        {hover && weeks?.[hover.idx] && (
-          <>
-            {(() => {
-              const w = 160;
-              const h = 70;
-              const ox = 12;
-              const oy = -12;
-              const tx = Math.min(Math.max(hover.x + ox, padding), width - padding - w);
-              const ty = Math.min(Math.max(hover.y + oy, padding), svgHeight - h - 4);
-              const wk = weeks[hover.idx];
-              const range = `${fmtYMD(wk.start)}-${fmtYMD(wk.end)}`;
-              const weekNum = String(wk.weekNo).padStart(2, "0");
-              const rev = Math.round(data[hover.idx]).toLocaleString("zh-CN");
-              return (
-                <g>
-                  <rect x={tx} y={ty} width={w} height={h} rx="6" ry="6" fill="#ffffff" stroke="#e5e7eb" />
-                  <text x={tx + 10} y={ty + 18} fontSize="12" fill="#111827">营业额：{rev}</text>
-                  <text x={tx + 10} y={ty + 36} fontSize="12" fill="#374151">周数：{weekNum}</text>
-                  <text x={tx + 10} y={ty + 54} fontSize="12" fill="#6b7280">日期范围：{range}</text>
-                </g>
-              );
-            })()}
-          </>
-        )}
-      </svg>
-    );
+  const METRICS = [
+    { key: "revenue", label: "周度营业额", unit: "元", format: (val) => `¥ ${Math.round(val).toLocaleString("zh-CN")}`, axisFormat: (val) => (val / 10000).toFixed(0) + "万" },
+    { key: "ytdRevenue", label: "年度累计营业额", unit: "元", format: (val) => `¥ ${Math.round(val).toLocaleString("zh-CN")}`, axisFormat: (val) => (val / 100000000).toFixed(2) + "亿" },
+    { key: "dailyAvgRevenue", label: "天均营业额", unit: "元", format: (val) => `¥ ${Math.round(val).toLocaleString("zh-CN")}`, axisFormat: (val) => (val / 10000).toFixed(1) + "万" },
+    { key: "dailyAvgPrice", label: "天均客单价", unit: "元", format: (val) => `¥ ${val.toFixed(2)}`, axisFormat: (val) => Math.round(val) },
+    { key: "avgServiceDuration", label: "推拿师日均服务时长", unit: "分钟", format: (val) => `${Math.round(val)} 分钟`, axisFormat: (val) => Math.round(val) },
+    { key: "dailyAvgCustomer", label: "天均客次量", unit: "人次", format: (val) => `${Math.round(val)} 人次`, axisFormat: (val) => Math.round(val) },
+  ];
+
+  const buildCitySeries = () => {
+    const N = weeklyData.length;
+    if (N === 0) return { series: {}, seriesLY: {}, labels: [] };
+    const labels = weeks.map(w => `第${String(w.weekNo).padStart(2, "0")}周`);
+    const seed = String(selectedCity || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
+    const noise = (i, scale = 0.02) => ((Math.sin(i * 1.31 + seed) + Math.cos(i * 0.77 + seed)) * 0.5) * scale;
+    const series = {
+      revenue: [],
+      ytdRevenue: [],
+      dailyAvgRevenue: [],
+      dailyAvgPrice: [],
+      dailyAvgCustomer: [],
+      avgServiceDuration: [],
+    };
+    const seriesLY = {
+      revenue: [],
+      ytdRevenue: [],
+      dailyAvgRevenue: [],
+      dailyAvgPrice: [],
+      dailyAvgCustomer: [],
+      avgServiceDuration: [],
+    };
+    let cum = 0;
+    let cumLY = 0;
+    for (let i = 0; i < N; i++) {
+      const rev = weeklyData[i];
+      const revLY = rev * (0.85 + noise(i, 0.02));
+      cum += rev;
+      cumLY += revLY;
+      const dAvgRev = rev / 7;
+      const dAvgRevLY = revLY / 7;
+      const price = 170 * (1 + noise(i, 0.03));
+      const priceLY = price * (0.95 + noise(i, 0.02));
+      const cust = dAvgRev / price;
+      const custLY = dAvgRevLY / priceLY;
+      const dur = 300 * (1 + noise(i, 0.05));
+      const durLY = dur * (0.98 + noise(i, 0.02));
+      series.revenue.push(rev);
+      series.ytdRevenue.push(cum);
+      series.dailyAvgRevenue.push(dAvgRev);
+      series.dailyAvgPrice.push(price);
+      series.dailyAvgCustomer.push(cust);
+      series.avgServiceDuration.push(dur);
+      seriesLY.revenue.push(revLY);
+      seriesLY.ytdRevenue.push(cumLY);
+      seriesLY.dailyAvgRevenue.push(dAvgRevLY);
+      seriesLY.dailyAvgPrice.push(priceLY);
+      seriesLY.dailyAvgCustomer.push(custLY);
+      seriesLY.avgServiceDuration.push(durLY);
+    }
+    return { series, seriesLY, labels };
   };
 
   const columns = [
@@ -425,7 +404,7 @@ const RevenueDecompositionContainer = () => {
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={() => setIsModalOpen(false)}></div>
-            <div className="relative bg-white rounded-lg shadow-lg w-[90vw] max-w-4xl p-6 space-y-4 h-[85vh] overflow-hidden flex flex-col">
+            <div className="relative bg-white rounded-lg shadow-lg w-[90vw] max-w-4xl p-6 space-y-6 max-h-[85vh] overflow-y-auto">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">{selectedCity} · 下钻详情</h3>
                 <button
@@ -435,17 +414,58 @@ const RevenueDecompositionContainer = () => {
                   关闭
                 </button>
               </div>
-              <div className="flex-1 min-h-0 flex flex-col gap-4">
-                <div className="flex-[4] min-h-0 space-y-2">
-                  <p className="text-sm text-gray-600">当周营业额（周维度）</p>
-                  <div className="w-full h-full">
-                    <LineChart 
-                      data={weeklyData} 
-                      weeks={weeks}
-                    />
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {METRICS.map((metric) => (
+                      <button
+                        key={metric.key}
+                        onClick={() => setSelectedMetricKey(metric.key)}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedMetricKey === metric.key ? "bg-[#a40035]/10 text-[#a40035]" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                      >
+                        {metric.label}
+                      </button>
+                    ))}
                   </div>
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      onClick={() => setShowYoY(!showYoY)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showYoY ? "bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]" : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"}`}
+                    >
+                      显示同比
+                    </button>
+                    <button
+                      onClick={() => setShowTrend(!showTrend)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showTrend ? "bg-[#a40035]/10 text-[#a40035] border-[#a40035]" : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"}`}
+                    >
+                      显示均线
+                    </button>
+                    <button
+                      onClick={() => setShowExtremes(!showExtremes)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showExtremes ? "bg-[#a40035]/10 text-[#a40035] border-[#a40035]" : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"}`}
+                    >
+                      显示极值
+                    </button>
+                  </div>
+                  <LineTrendChart
+                    headerTitle={`${(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).label}趋势`}
+                    headerUnit={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).unit}
+                    values={(buildCitySeries().series[selectedMetricKey] || [])}
+                    valuesYoY={(buildCitySeries().seriesLY[selectedMetricKey] || [])}
+                    xLabels={buildCitySeries().labels}
+                    showYoY={showYoY}
+                    showTrend={showTrend}
+                    showExtremes={showExtremes}
+                    yAxisFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).axisFormat}
+                    valueFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).format}
+                    width={800}
+                    height={280}
+                    padding={{ top: 40, right: 40, bottom: 60, left: 45 }}
+                    colorPrimary="#a40035"
+                    colorYoY="#2563eb"
+                  />
                 </div>
-                <div className="flex-[6] min-h-0 space-y-2 flex flex-col">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-600">门店维度统计</p>
                     <select
@@ -539,11 +559,11 @@ const RevenueDecompositionContainer = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto border border-gray-200 rounded">
+                  <div className="border border-gray-200 rounded">
                     {storeRows.length === 0 ? (
                       <div className="p-3 text-sm text-gray-500">该城市当前无在营门店数据</div>
                     ) : (
-                      <DataTable data={storeRows} columns={columnsForStore} />
+                      <DataTable data={storeRows} columns={columnsForStore} stickyHeader={false} />
                     )}
                   </div>
                 </div>
@@ -557,7 +577,7 @@ const RevenueDecompositionContainer = () => {
 
   return (
     <DataContainer
-      title="营业额拆解"
+      title="城市营业完成情况"
       data={{ rows }}
       renderContent={renderContent}
     />

@@ -11,12 +11,7 @@ const TuiNaHomeTab = () => {
       {/* 新增：周度营业额趋势图 */}
       <WeeklyTurnoverChart />
 
-      <div className="space-y-4">
-        <h2 className="text-base font-semibold text-gray-900">
-          推拿之家核心指标维度拆解
-        </h2>
-        <RevenueDecompositionContainer />
-      </div>
+      <RevenueDecompositionContainer />
     </div>
   );
 };
