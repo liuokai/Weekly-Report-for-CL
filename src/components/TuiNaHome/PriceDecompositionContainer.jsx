@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import DataContainer from '../Common/DataContainer';
 import DataTable from '../Common/DataTable';
+import HQMetricsTrendChart from './HQMetricsTrendChart';
 import { parseCSV } from '../../utils/dataLoader';
 
 const PriceDecompositionContainer = () => {
@@ -183,6 +184,7 @@ const PriceDecompositionContainer = () => {
   const renderContent = () => (
     <div className="space-y-6">
       {renderHQOverview()}
+      <HQMetricsTrendChart />
       <div>
         <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">城市维度客单价对比</h4>
         <DataTable data={tableData} columns={columns} />
@@ -195,6 +197,7 @@ const PriceDecompositionContainer = () => {
       title="客单价拆解"
       data={{ rows: tableData }}
       renderContent={renderContent}
+      maxHeight="none"
     />
   );
 };

@@ -11,6 +11,9 @@ const LineTrendChart = ({
   showExtremes = true,
   yAxisFormatter = (v) => v,
   valueFormatter = (v) => v,
+  currentLabel = "当前",
+  lastLabel = "去年同期",
+  yoyLabel = "同比",
   width = 800,
   height = 320,
   padding = { top: 40, right: 40, bottom: 60, left: 45 },
@@ -280,15 +283,15 @@ const LineTrendChart = ({
                           </text>
                         ) : null}
                         <text y={subText ? "48" : "24"} fill="#6b7280" fontSize="12">
-                          当前：<tspan fill={colorPrimary} fontWeight="bold">{curText}</tspan>
+                          {currentLabel}：<tspan fill={colorPrimary} fontWeight="bold">{curText}</tspan>
                         </text>
                         {showYoY && valLY !== undefined ? (
                           <>
                             <text y={subText ? "72" : "48"} fill="#6b7280" fontSize="12">
-                              去年同期：<tspan fill={colorYoY} fontWeight="bold">{lastText}</tspan>
+                              {lastLabel}：<tspan fill={colorYoY} fontWeight="bold">{lastText}</tspan>
                             </text>
                             <text y={subText ? "96" : "72"} fill="#6b7280" fontSize="12">
-                              同比：<tspan fill={yoyColor} fontWeight="bold">{yoyStr}</tspan>
+                              {yoyLabel}：<tspan fill={yoyColor} fontWeight="bold">{yoyStr}</tspan>
                             </text>
                           </>
                         ) : null}
