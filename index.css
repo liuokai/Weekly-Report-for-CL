@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义样式 */
+.brand-gradient {
+  background: linear-gradient(to right, #a40035, #c81f52);
+}
