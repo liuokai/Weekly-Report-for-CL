@@ -21,6 +21,87 @@ const PriceDecompositionContainer = () => {
   const [showYoY, setShowYoY] = useState(false);
   const [showTrend, setShowTrend] = useState(true);
   const [showExtremes, setShowExtremes] = useState(true);
+  const [procMetric, setProcMetric] = useState('returnRate');
+  const [procWeeks, setProcWeeks] = useState([]);
+  const [procValues, setProcValues] = useState([]);
+  const [procValuesLY, setProcValuesLY] = useState([]);
+  const [procShowYoY, setProcShowYoY] = useState(false);
+  const [procShowTrend, setProcShowTrend] = useState(true);
+  const [procShowExtremes, setProcShowExtremes] = useState(true);
+  const [procCityRows, setProcCityRows] = useState([]);
+  const impactInfos = useMemo(() => {
+    return {
+      returnRate: {
+        name: '项目回头率',
+        unit: '%',
+        target: 30.0,
+        actual: 29.8,
+        last: 32.1,
+        budget: {
+          wageBudget: '¥136万',
+          otherBudget: '¥35万',
+          ratio: '0.55%'
+        },
+        actualCosts: [
+          { label: '外聘导师费', amount: 285474 },
+          { label: '技术总监成本', amount: 741700 },
+          { label: '课程制作成本', amount: 77593 }
+        ],
+        actualTotal: 1027174
+      },
+      configRatio: {
+        name: '床位人员配置比',
+        unit: '',
+        target: 0.5,
+        actual: 0.57,
+        last: 0.52,
+        budget: {
+          wageBudget: '',
+          otherBudget: '',
+          ratio: '0.34%'
+        },
+        actualCosts: [
+          { label: '招生招聘费合计', amount: '¥979000' }
+        ],
+        actualTotal: '',
+        actualRatio: '0.32%'
+      },
+      newEmpReturn: {
+        name: '新员工回头率达标率',
+        unit: '%',
+        target: null,
+        actual: 88.0,
+        last: null,
+        budget: {
+          wageBudget: '',
+          otherBudget: '',
+          ratio: '0.84%'
+        },
+        actualCosts: [
+          { label: '岗前培训费', amount: 902163 },
+          { label: '技术副总成本', amount: 1642423 }
+        ],
+        actualTotal: 2544586
+      },
+      therapistYield: {
+        name: '推拿师产值达标率',
+        unit: '%',
+        target: 80.0,
+        actual: 79.0,
+        last: null,
+        budget: {
+          wageBudget: '',
+          otherBudget: '',
+          ratio: ''
+        },
+        actualCosts: [
+          { label: '人事经理薪酬成本', amount: '¥206000' }
+        ],
+        actualTotal: '',
+        salaryShare: '46.5%'
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetch('/src/data/城市维度客单价增长率.csv')
@@ -252,6 +333,25 @@ const PriceDecompositionContainer = () => {
     }
   ];
 
+  const procColumns = [
+    { key: 'city', title: '城市', dataIndex: 'city' },
+    { 
+      key: 'value', 
+      title: '指标值', 
+      dataIndex: 'value'
+    },
+    { key: 'target', title: '目标', dataIndex: 'target' },
+    { 
+      key: 'status', 
+      title: '达标', 
+      dataIndex: 'status',
+      render: (val) => {
+        const cls = val === '达标' ? 'text-green-600' : 'text-red-600';
+        return <span className={cls}>{val}</span>;
+      }
+    },
+  ];
+
   const getISOWeek = (date) => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -284,6 +384,97 @@ const PriceDecompositionContainer = () => {
     }
     return ranges;
   };
+
+  useEffect(() => {
+    const w = buildLast12Weeks();
+    setProcWeeks(w);
+  }, []);
+
+  const buildProcWeeklySeries = (metricKey, weeksCount) => {
+    const N = weeksCount;
+    const values = [];
+    const valuesLY = [];
+    for (let i = 0; i < N; i++) {
+      const t = i / N;
+      if (metricKey === 'returnRate') {
+        const target = 30;
+        const base = target + 2.0 * Math.sin(t * Math.PI * 2);
+        const ly = (target - 1.5) + 1.8 * Math.cos(t * Math.PI * 2);
+        const noise = (((i * 13) % 7) - 3) * 0.3;
+        const curr = Math.max(24, Math.min(36, base + noise));
+        const last = Math.max(24, Math.min(36, ly + noise * 0.5));
+        values.push(Number(curr.toFixed(1)));
+        valuesLY.push(Number(last.toFixed(1)));
+      } else if (metricKey === 'configRatio') {
+        const target = 0.5;
+        const base = target + 0.04 * Math.sin(t * Math.PI * 2);
+        const ly = (target - 0.03) + 0.03 * Math.cos(t * Math.PI * 2);
+        const noise = (((i * 17) % 11) - 5) / 1000;
+        const curr = Math.max(0.4, Math.min(0.6, base + noise));
+        const last = Math.max(0.4, Math.min(0.6, ly + noise * 0.6));
+        values.push(Number(curr.toFixed(2)));
+        valuesLY.push(Number(last.toFixed(2)));
+      } else if (metricKey === 'newEmpReturn') {
+        const base = 80 + 2.5 * Math.sin(t * Math.PI * 2);
+        const ly = 78 + 2.0 * Math.cos(t * Math.PI * 2);
+        const noise = (((i * 19) % 9) - 4) * 0.4;
+        const curr = Math.max(70, Math.min(90, base + noise));
+        const last = Math.max(68, Math.min(88, ly + noise * 0.6));
+        values.push(Number(curr.toFixed(1)));
+        valuesLY.push(Number(last.toFixed(1)));
+      } else if (metricKey === 'therapistYield') {
+        const target = 80;
+        const base = target + 3.0 * Math.sin(t * Math.PI * 2);
+        const ly = (target - 2.0) + 2.5 * Math.cos(t * Math.PI * 2);
+        const noise = (((i * 23) % 9) - 4) * 0.5;
+        const curr = Math.max(70, Math.min(90, base + noise));
+        const last = Math.max(68, Math.min(88, ly + noise * 0.5));
+        values.push(Number(curr.toFixed(1)));
+        valuesLY.push(Number(last.toFixed(1)));
+      }
+    }
+    return { values, valuesLY };
+  };
+
+  const buildProcCityRows = (metricKey) => {
+    const rows = tableData.map((r) => {
+      const seed = String(r.city).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+      if (metricKey === 'returnRate') {
+        const target = 30;
+        const val = target - 2 + ((seed % 9) - 4); // around 28–32
+        const status = val >= target ? '达标' : '未达标';
+        return { key: r.city, city: r.city, value: `${val.toFixed(1)}%`, target: `${target}%`, status };
+      } else if (metricKey === 'configRatio') {
+        const target = 0.5;
+        const val = target - 0.03 + (((seed % 11) - 5) / 100); // ~0.47–0.53
+        const minT = target;
+        const maxT = target; // 单一目标
+        const status = Math.abs(val - target) <= 0.05 ? '达标' : '未达标';
+        return { key: r.city, city: r.city, value: Number(val.toFixed(2)), target: `${target}`, status };
+      } else if (metricKey === 'newEmpReturn') {
+        const target = 80;
+        const val = target - 3 + (seed % 7); // ~77–83
+        const status = val >= target ? '达标' : '未达标';
+        return { key: r.city, city: r.city, value: `${val.toFixed(1)}%`, target: `${target}%`, status };
+      } else if (metricKey === 'therapistYield') {
+        const target = 80;
+        const val = target - 4 + (seed % 9); // ~76–85
+        const status = val >= target ? '达标' : '未达标';
+        return { key: r.city, city: r.city, value: `${val.toFixed(1)}%`, target: `${target}%`, status };
+      }
+      return { key: r.city, city: r.city, value: '-', target: '-', status: '-' };
+    });
+    return rows;
+  };
+
+  useEffect(() => {
+    const N = (procWeeks || []).length || 12;
+    const series = buildProcWeeklySeries(procMetric, N);
+    setProcValues(series.values);
+    setProcValuesLY(series.valuesLY);
+    const rows = buildProcCityRows(procMetric);
+    setProcCityRows(rows);
+  }, [procMetric, procWeeks, tableData]);
 
   const openCityModal = async (cityName) => {
     setSelectedCity(cityName);
@@ -488,6 +679,170 @@ const PriceDecompositionContainer = () => {
       <div>
         <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">城市维度客单价对比</h4>
         <DataTable data={tableData} columns={columns} />
+      </div>
+      <div>
+        <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">客单价·影响指标分析</h4>
+        <div className="flex flex-wrap gap-2 mb-3">
+          <button
+            onClick={() => setProcMetric('returnRate')}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${procMetric === 'returnRate' ? 'bg-[#a40035]/10 text-[#a40035]' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
+            项目回头率
+          </button>
+          <button
+            onClick={() => setProcMetric('configRatio')}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${procMetric === 'configRatio' ? 'bg-[#a40035]/10 text-[#a40035]' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
+            床位人员配置比
+          </button>
+          <button
+            onClick={() => setProcMetric('newEmpReturn')}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${procMetric === 'newEmpReturn' ? 'bg-[#a40035]/10 text-[#a40035]' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
+            新员工回头率达标率
+          </button>
+          <button
+            onClick={() => setProcMetric('therapistYield')}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${procMetric === 'therapistYield' ? 'bg-[#a40035]/10 text-[#a40035]' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
+            推拿师产值达标率
+          </button>
+        </div>
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setProcShowYoY(!procShowYoY)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${procShowYoY ? 'bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
+          >
+            显示同比
+          </button>
+          <button
+            onClick={() => setProcShowTrend(!procShowTrend)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${procShowTrend ? 'bg-[#a40035]/10 text-[#a40035] border-[#a40035]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
+          >
+            显示均线
+          </button>
+          <button
+            onClick={() => setProcShowExtremes(!procShowExtremes)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${procShowExtremes ? 'bg-[#a40035]/10 text-[#a40035] border-[#a40035]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
+          >
+            显示极值
+          </button>
+        </div>
+        {procValues.length >= 2 ? (
+          <LineTrendChart
+            headerTitle={
+              procMetric === 'returnRate'
+                ? '项目回头率（近12周）'
+                : procMetric === 'configRatio'
+                ? '床位人员配置比（近12周）'
+                : procMetric === 'newEmpReturn'
+                ? '新员工回头率达标率（近12周）'
+                : '推拿师产值达标率（近12周）'
+            }
+            headerUnit={procMetric === 'configRatio' ? '人/床' : '%'}
+            values={procValues}
+            valuesYoY={procValuesLY}
+            xLabels={procWeeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)}
+            showYoY={procShowYoY}
+            showTrend={procShowTrend}
+            showExtremes={procShowExtremes}
+            yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : `${Math.round(v)}%`}
+            valueFormatter={(v) => procMetric === 'configRatio' ? `${Number(v).toFixed(2)}` : `${Number(v).toFixed(1)}%`}
+            colorPrimary="#a40035"
+            colorYoY="#2563eb"
+            getHoverTitle={(idx) => procWeeks[idx]?.label || ''}
+            getHoverSubtitle={() => ''}
+          />
+        ) : (
+          <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">暂无数据</div>
+        )}
+        <div className="mt-4">
+          <DataTable data={procCityRows} columns={procColumns} />
+        </div>
+        <div className="mt-4 bg-white rounded-lg border border-gray-100 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm text-gray-600">指标完成情况与预算说明</div>
+            <div className="text-xs text-gray-400">{impactInfos[procMetric]?.name}</div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-xs text-gray-500 mb-1">当前值</div>
+              <div className="text-xl font-bold text-[#a40035]">
+                {impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.actual}%` : `${impactInfos[procMetric]?.actual}`}
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                目标：
+                <span className="font-semibold text-gray-700">
+                  {impactInfos[procMetric]?.target !== null && impactInfos[procMetric]?.target !== undefined
+                    ? (impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.target}%` : `${impactInfos[procMetric]?.target}`)
+                    : '—'}
+                </span>
+                <span className="mx-2">|</span>
+                去年：
+                <span className="font-semibold text-gray-700">
+                  {impactInfos[procMetric]?.last !== null && impactInfos[procMetric]?.last !== undefined
+                    ? (impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.last}%` : `${impactInfos[procMetric]?.last}`)
+                    : '—'}
+                </span>
+              </div>
+              <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
+                {impactInfos[procMetric]?.target ? (
+                  <div
+                    className={`h-2 ${Number(impactInfos[procMetric]?.actual) >= Number(impactInfos[procMetric]?.target) ? 'bg-red-600' : 'bg-[#a40035]'}`}
+                    style={{
+                      width: `${Math.max(0, Math.min(100, (Number(impactInfos[procMetric]?.actual) / Number(impactInfos[procMetric]?.target)) * 100))}%`
+                    }}
+                  />
+                ) : (
+                  <div className="h-2 bg-gray-300 w-1/3"></div>
+                )}
+              </div>
+              <div className="mt-2 text-xs">
+                {impactInfos[procMetric]?.target
+                  ? (Number(impactInfos[procMetric]?.actual) >= Number(impactInfos[procMetric]?.target)
+                      ? <span className="text-red-600">达标</span>
+                      : <span className="text-gray-600">未达标</span>)
+                  : <span className="text-gray-400">无目标值</span>}
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-xs text-gray-500 mb-1">预算汇总</div>
+              <div className="space-y-1 text-sm text-gray-700">
+                <div>工资预算：<span className="font-semibold">{impactInfos[procMetric]?.budget?.wageBudget || '—'}</span></div>
+                <div>其他预算：<span className="font-semibold">{impactInfos[procMetric]?.budget?.otherBudget || '—'}</span></div>
+                <div>费用占比：<span className="font-semibold">{impactInfos[procMetric]?.budget?.ratio || '—'}</span></div>
+                {impactInfos[procMetric]?.salaryShare ? (
+                  <div>薪酬占比：<span className="font-semibold">{impactInfos[procMetric]?.salaryShare}</span></div>
+                ) : null}
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-xs text-gray-500 mb-2">实际支出</div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-xs text-gray-700">
+                  <thead>
+                    <tr>
+                      {impactInfos[procMetric]?.actualCosts?.map((c, idx) => (
+                        <th key={`head-${idx}`} className="px-2 py-1 text-left font-medium">{c.label}</th>
+                      ))}
+                      {impactInfos[procMetric]?.actualTotal ? <th className="px-2 py-1 text-left font-medium">合计</th> : null}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {impactInfos[procMetric]?.actualCosts?.map((c, idx) => (
+                        <td key={`cell-${idx}`} className="px-2 py-1">{typeof c.amount === 'number' ? c.amount.toLocaleString('zh-CN') : c.amount}</td>
+                      ))}
+                      {impactInfos[procMetric]?.actualTotal ? (
+                        <td className="px-2 py-1">{impactInfos[procMetric]?.actualTotal.toLocaleString('zh-CN')}</td>
+                      ) : null}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
