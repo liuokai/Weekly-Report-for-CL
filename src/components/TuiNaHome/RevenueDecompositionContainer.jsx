@@ -405,13 +405,19 @@ const RevenueDecompositionContainer = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={() => setIsModalOpen(false)}></div>
             <div className="relative bg-white rounded-lg shadow-lg w-[90vw] max-w-4xl p-6 space-y-6 max-h-[85vh] overflow-y-auto">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">{selectedCity} · 下钻详情</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <span className="w-1 h-6 bg-[#a40035] rounded-full"></span>
+                  {selectedCity} · 下钻详情
+                </h3>
                 <button
-                  className="px-3 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200"
                   onClick={() => setIsModalOpen(false)}
+                  title="关闭"
                 >
-                  关闭
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
               <div className="space-y-6">
