@@ -7,7 +7,8 @@ const LineTrendChart = ({
   valuesYoY = [],
   xLabels = [],
   showYoY = false,
-  showTrend = true,
+  showTrend = false,
+  showAverage = false,
   showExtremes = true,
   yAxisFormatter = (v) => v,
   valueFormatter = (v) => v,
@@ -52,6 +53,11 @@ const LineTrendChart = ({
 
   const trendValues = calculateTrendLine();
   const trendPathD = trendValues.map((val, i) => `${i === 0 ? "M" : "L"} ${getX(i)} ${getY(val)}`).join(" ");
+
+  // Calculate Average Line
+  const averageValue = values.reduce((a, b) => a + b, 0) / (values.length || 1);
+  const averageY = getY(averageValue);
+  const averagePathD = `M ${padding.left} ${averageY} L ${width - padding.right} ${averageY}`;
 
   let maxIndex = 0;
   let minIndex = 0;
@@ -134,6 +140,15 @@ const LineTrendChart = ({
               <path d={trendPathD} fill="none" stroke="#9ca3af" strokeWidth="2" strokeDasharray="6 4" opacity="0.6" pointerEvents="none" />
             )}
 
+            {showAverage && (
+              <g pointerEvents="none">
+                <path d={averagePathD} fill="none" stroke="#9ca3af" strokeWidth="2" strokeDasharray="6 4" opacity="0.8" />
+                <text x={width - padding.right} y={averageY - 5} textAnchor="end" fontSize="11" fill="#9ca3af">
+                  均值: {valueFormatter(averageValue)}
+                </text>
+              </g>
+            )}
+
             {showYoY && valuesYoY && valuesYoY.length === values.length && (
               <path
                 d={pathDLY}
@@ -142,7 +157,6 @@ const LineTrendChart = ({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeDasharray="4 2"
                 pointerEvents="none"
                 opacity="0.7"
               />

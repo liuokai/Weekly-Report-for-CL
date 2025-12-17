@@ -29,6 +29,7 @@ const PriceDecompositionContainer = () => {
   const [procShowTrend, setProcShowTrend] = useState(true);
   const [procShowExtremes, setProcShowExtremes] = useState(true);
   const [procCityRows, setProcCityRows] = useState([]);
+  const [procColumnsDyn, setProcColumnsDyn] = useState([]);
   const impactInfos = useMemo(() => {
     return {
       returnRate: {
@@ -166,6 +167,8 @@ const PriceDecompositionContainer = () => {
       usageProgressDiff: row['预算使用进度差'] || '0%'
     }));
   }, [data]);
+
+  const [modalColumns, setModalColumns] = useState([]);
 
   const columns = [
     { 
@@ -333,22 +336,15 @@ const PriceDecompositionContainer = () => {
     }
   ];
 
-  const procColumns = [
+  const procColumnsDefault = [
     { key: 'city', title: '城市', dataIndex: 'city' },
-    { 
-      key: 'value', 
-      title: '指标值', 
-      dataIndex: 'value'
-    },
+    { key: 'value', title: '指标值', dataIndex: 'value' },
     { key: 'target', title: '目标', dataIndex: 'target' },
-    { 
-      key: 'status', 
-      title: '达标', 
-      dataIndex: 'status',
+    { key: 'status', title: '达标', dataIndex: 'status',
       render: (val) => {
         const cls = val === '达标' ? 'text-green-600' : 'text-red-600';
         return <span className={cls}>{val}</span>;
-      }
+      } 
     },
   ];
 
@@ -472,8 +468,188 @@ const PriceDecompositionContainer = () => {
     const series = buildProcWeeklySeries(procMetric, N);
     setProcValues(series.values);
     setProcValuesLY(series.valuesLY);
-    const rows = buildProcCityRows(procMetric);
-    setProcCityRows(rows);
+    const loadCSV = async () => {
+      try {
+        if (procMetric === 'returnRate') {
+          const resp = await fetch('/src/data/客单价-项目回头率.csv');
+          const text = await resp.text();
+          const parsed = parseCSV(text);
+          const headers = parsed.headers || [];
+          const rows = (parsed.rows || []).map((r, idx) => ({ key: `rr-${idx}`, ...r }));
+          const cols = headers.map((h) => {
+            if (h === '项目回头率') {
+              return {
+                key: h, title: h, dataIndex: h,
+                render: (val) => {
+                  const num = parseFloat(String(val).replace('%','')) || 0;
+                  const isHigh = num >= 30;
+                  return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+                }
+              };
+            }
+            return { key: h, title: h, dataIndex: h };
+          });
+          setProcColumnsDyn(cols);
+          setProcCityRows(rows);
+          return;
+        }
+        if (procMetric === 'configRatio') {
+          const resp = await fetch('/src/data/城市维度床位人员配置比.csv');
+          const text = await resp.text();
+          const parsed = parseCSV(text);
+          const headers = parsed.headers || [];
+          const rows = (parsed.rows || []).map((r, idx) => ({ key: `cr-${idx}`, ...r }));
+          const cols = headers
+            .filter(h => h !== '床位人员配置比目标值' && h !== '是否达标')
+            .map((h) => {
+              if (h === '城市') {
+                return {
+                  key: h, title: h, dataIndex: h,
+                  render: (val) => (
+                    <span 
+                      className="text-[#a40035] cursor-pointer hover:underline"
+                      onClick={() => openCityModal(val)}
+                    >
+                      {val}
+                    </span>
+                  )
+                };
+              }
+              if (h === '今年床位人员配置比') {
+                return {
+                  key: h, title: h, dataIndex: h,
+                  render: (val, record) => {
+                    const num = parseFloat(String(val)) || 0;
+                    const target = parseFloat(String(record['床位人员配置比目标值'])) || 0.5;
+                    const isHigh = num >= target;
+                    return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+                  }
+                };
+              }
+              if (h === '同比') {
+                return {
+                  key: h, title: h, dataIndex: h,
+                  render: (val) => {
+                    const num = parseFloat(String(val).replace('%','')) || 0;
+                    const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+                    const sign = num > 0 ? '+' : '';
+                    return <span className={cls}>{`${sign}${num.toFixed(1)}%`}</span>;
+                  }
+                };
+              }
+              return { key: h, title: h, dataIndex: h };
+            });
+          setProcColumnsDyn(cols);
+          setProcCityRows(rows);
+          return;
+        }
+        if (procMetric === 'newEmpReturn') {
+          const resp = await fetch('/src/data/技术副总名单.csv');
+          const text = await resp.text();
+          const parsed = parseCSV(text);
+          
+          const rows = (parsed.rows || []).map((r, idx) => {
+            const seed = (String(r['城市'] || '') + String(r['技术副总'] || '')).split('').reduce((a, c) => a + c.charCodeAt(0), 0) + idx;
+            const rate = 75 + (seed % 21); // 75 to 95
+            return {
+              key: `ner-${idx}`,
+              '城市': r['城市'],
+              '技术副总姓名': r['技术副总'],
+              '新员工回头率达标率': `${rate.toFixed(1)}%`
+            };
+          });
+
+          const cols = [
+            { key: '城市', title: '城市', dataIndex: '城市' },
+            { 
+              key: '技术副总姓名', 
+              title: '技术副总姓名', 
+              dataIndex: '技术副总姓名',
+              render: (val, record) => (
+                <span 
+                  className="text-[#a40035] cursor-pointer hover:underline"
+                  onClick={() => openVPModal(val, record['城市'])}
+                >
+                  {val}
+                </span>
+              )
+            },
+            { 
+              key: '新员工回头率达标率', 
+              title: '新员工回头率达标率', 
+              dataIndex: '新员工回头率达标率',
+              render: (val) => {
+                const num = parseFloat(String(val).replace('%', '')) || 0;
+                // Optional: color logic, e.g., >= 85 red (good), < 85 green? 
+                // Or just bold. Let's use red for high (good) as per other metrics if it's "达标率"
+                // Assuming high is good.
+                const isHigh = num >= 80; // arbitrary threshold based on "80%上下"
+                return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+              }
+            }
+          ];
+          
+          setProcColumnsDyn(cols);
+          setProcCityRows(rows);
+          return;
+        }
+        if (procMetric === 'therapistYield') {
+          // Mock data based on city list from tableData
+          const rows = tableData.map((r, idx) => {
+            const seed = String(r.city).split('').reduce((a, c) => a + c.charCodeAt(0), 0) + idx;
+            const total = 50 + (seed % 150); // 50-200
+            const qualified = Math.floor(total * (0.6 + (seed % 30) / 100)); // 60-90%
+            const rate = (qualified / total) * 100;
+            return {
+              key: `ty-${idx}`,
+              '城市': r.city,
+              '在职推拿师人数': total,
+              '产值达标推拿师人数': qualified,
+              '推拿师产值达标率': `${rate.toFixed(1)}%`
+            };
+          });
+
+          const cols = [
+            { 
+              key: '城市', 
+              title: '城市', 
+              dataIndex: '城市',
+              render: (val) => (
+                <span 
+                  className="text-[#a40035] cursor-pointer hover:underline"
+                  onClick={() => openCityModal(val)}
+                >
+                  {val}
+                </span>
+              )
+            },
+            { key: '在职推拿师人数', title: '在职推拿师人数', dataIndex: '在职推拿师人数' },
+            { key: '产值达标推拿师人数', title: '产值达标推拿师人数', dataIndex: '产值达标推拿师人数' },
+            { 
+              key: '推拿师产值达标率', 
+              title: '推拿师产值达标率', 
+              dataIndex: '推拿师产值达标率',
+              render: (val) => {
+                const num = parseFloat(String(val).replace('%', '')) || 0;
+                const isHigh = num >= 80;
+                return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+              }
+            }
+          ];
+          setProcColumnsDyn(cols);
+          setProcCityRows(rows);
+          return;
+        }
+        const rows = buildProcCityRows(procMetric);
+        setProcCityRows(rows);
+        setProcColumnsDyn(procColumnsDefault);
+      } catch {
+        const rows = buildProcCityRows(procMetric);
+        setProcCityRows(rows);
+        setProcColumnsDyn(procColumnsDefault);
+      }
+    };
+    loadCSV();
   }, [procMetric, procWeeks, tableData]);
 
   const openCityModal = async (cityName) => {
@@ -481,8 +657,176 @@ const PriceDecompositionContainer = () => {
     const cityRow = tableData.find(r => r.city === cityName);
     const weekRanges = buildLast12Weeks();
     setWeeks(weekRanges);
-    const seed = String(cityName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
     const N = weekRanges.length;
+
+    if (procMetric === 'configRatio') {
+      const seed = String(cityName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
+      const currSeries = [];
+      const lastSeries = [];
+      for (let i = 0; i < N; i++) {
+        const t = i / N;
+        const target = 0.5;
+        const base = target + 0.04 * Math.sin(t * Math.PI * 2);
+        const ly = (target - 0.03) + 0.03 * Math.cos(t * Math.PI * 2);
+        const noise = (((i * 17) % 11) - 5) / 1000 + ((seed % 100) / 5000);
+        const curr = Math.max(0.4, Math.min(0.6, base + noise));
+        const last = Math.max(0.4, Math.min(0.6, ly + noise * 0.6));
+        currSeries.push(Number(curr.toFixed(2)));
+        lastSeries.push(Number(last.toFixed(2)));
+      }
+      setWeeklyPrice(currSeries);
+      setWeeklyPriceLY(lastSeries);
+
+      let storeNames = [];
+      const normalizeCity = (n) => String(n || '').replace(/市$/, '').trim();
+      try {
+        const resp = await fetch('/src/data/store_list.csv');
+        const text = await resp.text();
+        const parsed = parseCSV(text);
+        storeNames = parsed.rows
+          .filter(r => normalizeCity(r['城市名称']) === normalizeCity(cityName))
+          .map(r => r['门店名称']);
+      } catch {
+        storeNames = [];
+      }
+      
+      if (storeNames.length === 0) {
+        storeNames = ['门店A', '门店B', '门店C', '门店D'];
+      }
+      
+      const configRows = storeNames.map((name, idx) => {
+        const sLast = 5 + (seed + idx * 7) % 10; // 5-14
+        const bLast = Math.floor(sLast * (0.5 + ((idx % 3) * 0.1)));
+        const rLast = bLast / sLast;
+        
+        const sCurr = 5 + (seed + idx * 13) % 12; // 5-16
+        const bCurr = Math.floor(sCurr * (0.45 + ((idx % 5) * 0.05)));
+        const rCurr = bCurr / sCurr;
+        
+        const yoy = rLast ? ((rCurr - rLast) / rLast) * 100 : 0;
+        
+        return {
+          key: `${name}-${idx}`,
+          '门店名称': name,
+          '去年推拿师人数': sLast,
+          '去年床位数量': bLast,
+          '去年床位人员配置比': rLast.toFixed(2),
+          '今年推拿师人数': sCurr,
+          '今年床位数量': bCurr,
+          '今年床位人员配置比': rCurr.toFixed(2),
+          '同比': `${yoy > 0 ? '+' : ''}${yoy.toFixed(1)}%`
+        };
+      });
+      setStoreRows(configRows);
+      
+      const storeCols = [
+        { key: '门店名称', title: '门店名称', dataIndex: '门店名称' },
+        { key: '去年推拿师人数', title: '去年推拿师人数', dataIndex: '去年推拿师人数' },
+        { key: '去年床位数量', title: '去年床位数量', dataIndex: '去年床位数量' },
+        { key: '去年床位人员配置比', title: '去年床位人员配置比', dataIndex: '去年床位人员配置比' },
+        { key: '今年推拿师人数', title: '今年推拿师人数', dataIndex: '今年推拿师人数' },
+        { key: '今年床位数量', title: '今年床位数量', dataIndex: '今年床位数量' },
+        { 
+          key: '今年床位人员配置比', 
+          title: '今年床位人员配置比', 
+          dataIndex: '今年床位人员配置比',
+          render: (val) => {
+            const num = parseFloat(String(val)) || 0;
+            const target = 0.5;
+            const isHigh = num >= target;
+            return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+          }
+        },
+        { 
+          key: '同比', 
+          title: '同比', 
+          dataIndex: '同比',
+          render: (val) => {
+            const num = parseFloat(String(val).replace('%','')) || 0;
+            const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+            return <span className={cls}>{val}</span>;
+          }
+        }
+      ];
+      setModalColumns(storeCols);
+      setIsModalOpen(true);
+      return;
+    }
+
+    if (procMetric === 'therapistYield') {
+      const seed = String(cityName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
+      const months = Array.from({length: 12}, (_, i) => i + 1);
+      
+      // 1. Trend Data (Jan-Dec)
+      const currSeries = months.map((m, i) => {
+        const base = 80;
+        const noise = ((seed + i * 17) % 21) - 10; 
+        return Math.max(60, Math.min(100, base + noise));
+      });
+      const lastSeries = months.map((m, i) => {
+        const base = 78;
+        const noise = ((seed + i * 11) % 19) - 9;
+        return Math.max(60, Math.min(100, base + noise));
+      });
+
+      const monthRanges = months.map(m => ({
+        weekNo: m,
+        label: `2025年${m}月`,
+        start: `2025-${String(m).padStart(2,'0')}-01`,
+        end: `2025-${String(m).padStart(2,'0')}-28`
+      }));
+      setWeeks(monthRanges);
+      setWeeklyPrice(currSeries);
+      setWeeklyPriceLY(lastSeries);
+
+      // 2. Fetch Stores
+      let storeNames = [];
+      const normalizeCity = (n) => String(n || '').replace(/市$/, '').trim();
+      try {
+        const resp = await fetch('/src/data/store_list.csv');
+        const text = await resp.text();
+        const parsed = parseCSV(text);
+        storeNames = parsed.rows
+          .filter(r => normalizeCity(r['城市名称']) === normalizeCity(cityName))
+          .map(r => r['门店名称']);
+      } catch {
+        storeNames = ['门店A', '门店B', '门店C', '门店D'];
+      }
+      
+      if (storeNames.length === 0) storeNames = ['门店A', '门店B', '门店C', '门店D'];
+
+      // 3. Store Pivot Table Data (Month x Store)
+      const storeCols = [
+        { key: 'month', title: '月份', dataIndex: 'month', fixed: 'left', width: 100 },
+        ...storeNames.map(store => ({
+          key: store,
+          title: store,
+          dataIndex: store,
+          render: (val) => {
+             const num = parseFloat(String(val).replace('%', '')) || 0;
+             const isHigh = num >= 80;
+             return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+          }
+        }))
+      ];
+
+      const tableRows = months.map(m => {
+        const row = { key: `m-${m}`, month: `2025年${m}月` };
+        storeNames.forEach((store, sIdx) => {
+          const rateSeed = seed + m * 100 + sIdx * 10;
+          const rate = 70 + (rateSeed % 31); // 70-100%
+          row[store] = `${rate.toFixed(1)}%`;
+        });
+        return row;
+      });
+
+      setModalColumns(storeCols);
+      setStoreRows(tableRows);
+      setIsModalOpen(true);
+      return;
+    }
+
+    const seed = String(cityName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
     const mkNoise = (i, scale = 0.02) => ((Math.sin(i * 1.21 + seed) + Math.cos(i * 0.63 + seed)) * 0.5) * scale;
     const baseCurr = Number(cityRow?.currentPrice || 0);
     const baseLast = Number(cityRow?.lastYearPrice || 0);
@@ -554,7 +898,101 @@ const PriceDecompositionContainer = () => {
         usageProgressDiff: `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`
       };
     });
+    setModalColumns(columnsForStore);
     setStoreRows(stores);
+    setIsModalOpen(true);
+  };
+
+  const openVPModal = async (vpName, cityName) => {
+    setSelectedCity(vpName); // Using vpName as the modal title basically
+    // We need a way to distinguish this modal mode.
+    // Let's rely on procMetric === 'newEmpReturn' check in the render, 
+    // or set a special flag. For simplicity, we can infer from procMetric.
+    
+    // 1. Generate Trend Data (12 months)
+    const seed = String(vpName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
+    const months = Array.from({length: 12}, (_, i) => i + 1);
+    
+    const currSeries = months.map((m, i) => {
+      // Simulate trend 75-95%
+      const base = 85;
+      const noise = ((seed + i * 13) % 21) - 10; 
+      return Math.max(75, Math.min(95, base + noise));
+    });
+    const lastSeries = months.map((m, i) => {
+      // Simulate last year trend
+      const base = 82;
+      const noise = ((seed + i * 7) % 19) - 9;
+      return Math.max(70, Math.min(90, base + noise));
+    });
+
+    // We need to set 'weeks' to be months for the chart x-axis
+    // The chart component expects objects with weekNo, label, etc.
+    // We'll mock it.
+    const monthRanges = months.map(m => ({
+      weekNo: m,
+      label: `2025年${m}月`,
+      start: `2025-${String(m).padStart(2,'0')}-01`,
+      end: `2025-${String(m).padStart(2,'0')}-28`
+    }));
+    setWeeks(monthRanges);
+    setWeeklyPrice(currSeries);
+    setWeeklyPriceLY(lastSeries);
+
+    // 2. Fetch Stores and Filter for this VP
+    let storeNames = [];
+    const normalizeCity = (n) => String(n || '').replace(/市$/, '').trim();
+    try {
+      const resp = await fetch('/src/data/store_list.csv');
+      const text = await resp.text();
+      const parsed = parseCSV(text);
+      storeNames = parsed.rows
+        .filter(r => normalizeCity(r['城市名称']) === normalizeCity(cityName))
+        .map(r => r['门店名称']);
+    } catch {
+      storeNames = ['门店A', '门店B', '门店C', '门店D'];
+    }
+
+    // Since we don't know exactly which stores belong to which VP if there are multiple,
+    // we will deterministically slice the array based on the VP name hash.
+    // Or just take up to 5 stores for the demo to keep the table manageable.
+    const vpSeed = seed % 3; 
+    // Just take a subset to simulate "responsibility"
+    const subsetSize = Math.max(3, Math.floor(storeNames.length / 2));
+    const startIdx = (seed) % (storeNames.length - subsetSize + 1);
+    const myStores = storeNames.slice(startIdx, startIdx + subsetSize);
+    
+    if (myStores.length === 0) myStores.push('模拟门店1', '模拟门店2');
+
+    // 3. Generate Table Data (Rows = Months, Cols = Stores)
+    // Columns: Month, Store1, Store2...
+    const storeCols = [
+      { key: 'month', title: '月份', dataIndex: 'month', fixed: 'left', width: 100 },
+      ...myStores.map(store => ({
+        key: store,
+        title: store,
+        dataIndex: store,
+        render: (val) => {
+           const num = parseFloat(String(val).replace('%', '')) || 0;
+           const isHigh = num >= 80;
+           return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+        }
+      }))
+    ];
+
+    const tableRows = months.map(m => {
+      const row = { key: `m-${m}`, month: `2025年${m}月` };
+      myStores.forEach((store, sIdx) => {
+        // Generate rate
+        const rateSeed = seed + m * 100 + sIdx * 10;
+        const rate = 75 + (rateSeed % 21);
+        row[store] = `${rate.toFixed(1)}%`;
+      });
+      return row;
+    });
+
+    setModalColumns(storeCols);
+    setStoreRows(tableRows);
     setIsModalOpen(true);
   };
 
@@ -708,6 +1146,217 @@ const PriceDecompositionContainer = () => {
             推拿师产值达标率
           </button>
         </div>
+        <div className="mt-4 bg-white rounded-lg border border-gray-100 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm text-gray-600">
+              {impactInfos[procMetric]?.name} 进度与预算使用情况
+            </div>
+            <div className="text-xs text-gray-400">{impactInfos[procMetric]?.name}</div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-xs text-gray-500 mb-1">当前值</div>
+              <div className="text-xl font-bold text-[#a40035]">
+                {impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.actual}%` : `${impactInfos[procMetric]?.actual}`}
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                <div className="mb-1">
+                  目标：
+                  <span className="font-semibold text-gray-700">
+                    {impactInfos[procMetric]?.target !== null && impactInfos[procMetric]?.target !== undefined
+                      ? (impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.target}%` : `${impactInfos[procMetric]?.target}`)
+                      : '—'}
+                  </span>
+                </div>
+                <div>
+                  去年：
+                  <span className="font-semibold text-gray-700">
+                    {(() => {
+                      const a = Number(impactInfos[procMetric]?.actual);
+                      const l = Number(impactInfos[procMetric]?.last);
+                      const hasLast = impactInfos[procMetric]?.last !== null && impactInfos[procMetric]?.last !== undefined;
+                      if (hasLast) {
+                        const base = impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.last}%` : `${impactInfos[procMetric]?.last}`;
+                        const yoy = l ? ((a - l) / l) * 100 : 0;
+                        const sign = yoy > 0 ? '+' : '';
+                        const cls = yoy > 0 ? 'text-red-600' : yoy < 0 ? 'text-green-600' : 'text-gray-600';
+                        return (
+                          <>
+                            {base}
+                            <span className="ml-1">
+                              （同比 <span className={cls}>{`${sign}${yoy.toFixed(1)}%`}</span>）
+                            </span>
+                          </>
+                        );
+                      }
+                      return '—';
+                    })()}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
+                {impactInfos[procMetric]?.target ? (
+                  <div
+                    className="h-2 bg-[#a40035]"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, (Number(impactInfos[procMetric]?.actual) / Number(impactInfos[procMetric]?.target)) * 100))}%`
+                    }}
+                  />
+                ) : (
+                  <div className="h-2 bg-gray-300 w-1/3"></div>
+                )}
+              </div>
+              <div className="mt-2 text-xs">
+                {impactInfos[procMetric]?.target
+                  ? (Number(impactInfos[procMetric]?.actual) >= Number(impactInfos[procMetric]?.target)
+                      ? <span className="text-sm font-semibold text-red-600">达标</span>
+                      : <span className="text-xs text-gray-600">未达标</span>)
+                  : <span className="text-gray-400">无目标值</span>}
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4 md:col-span-2">
+              <div className="text-xs text-gray-500 mb-2">预算与支出</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-500">总预算</div>
+                  <div className="text-lg font-bold text-gray-800">
+                    {(() => {
+                      const wb = impactInfos[procMetric]?.budget?.wageBudget || '';
+                      const ob = impactInfos[procMetric]?.budget?.otherBudget || '';
+                      const toYuan = (s) => {
+                        if (!s) return 0;
+                        const num = parseFloat(String(s).replace(/[^\d.]/g, '')) || 0;
+                        const isWan = /万/.test(String(s));
+                        return isWan ? num * 10000 : num;
+                      };
+                      const sum = toYuan(wb) + toYuan(ob);
+                      if (sum > 0) {
+                        if (sum >= 10000) return `¥${(sum / 10000).toFixed(1)}万`;
+                        return `¥${Math.round(sum).toLocaleString('zh-CN')}`;
+                      }
+                      return '—';
+                    })()}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-500">实际支出</div>
+                  <div className="text-lg font-bold text-gray-800">
+                    {(() => {
+                      const costs = impactInfos[procMetric]?.actualCosts || [];
+                      const toNum = (x) => typeof x === 'number' ? x : (parseFloat(String(x).replace(/[^\d.]/g, '')) || 0);
+                      const total = (impactInfos[procMetric]?.actualTotal && typeof impactInfos[procMetric]?.actualTotal === 'number')
+                        ? impactInfos[procMetric]?.actualTotal
+                        : costs.reduce((a, c) => a + toNum(c.amount), 0);
+                      if (total > 0) {
+                        if (total >= 10000) return `¥${(total / 10000).toFixed(1)}万`;
+                        return `¥${Math.round(total).toLocaleString('zh-CN')}`;
+                      }
+                      return '—';
+                    })()}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-500">预算使用率</div>
+                  <div className="text-lg font-bold text-[#a40035]">
+                    {(() => {
+                      const wb = impactInfos[procMetric]?.budget?.wageBudget || '';
+                      const ob = impactInfos[procMetric]?.budget?.otherBudget || '';
+                      const toYuan = (s) => {
+                        if (!s) return 0;
+                        const num = parseFloat(String(s).replace(/[^\d.]/g, '')) || 0;
+                        const isWan = /万/.test(String(s));
+                        return isWan ? num * 10000 : num;
+                      };
+                      const budgetY = toYuan(wb) + toYuan(ob);
+                      const costs = impactInfos[procMetric]?.actualCosts || [];
+                      const toNum = (x) => typeof x === 'number' ? x : (parseFloat(String(x).replace(/[^\d.]/g, '')) || 0);
+                      const actualY = (impactInfos[procMetric]?.actualTotal && typeof impactInfos[procMetric]?.actualTotal === 'number')
+                        ? impactInfos[procMetric]?.actualTotal
+                        : costs.reduce((a, c) => a + toNum(c.amount), 0);
+                      if (budgetY > 0 && actualY >= 0) {
+                        const p = Math.max(0, Math.min(100, (actualY / budgetY) * 100));
+                        return `${p.toFixed(1)}%`;
+                      }
+                      return '—';
+                    })()}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
+                {(() => {
+                  const wb = impactInfos[procMetric]?.budget?.wageBudget || '';
+                  const ob = impactInfos[procMetric]?.budget?.otherBudget || '';
+                  const toYuan = (s) => {
+                    if (!s) return 0;
+                    const num = parseFloat(String(s).replace(/[^\d.]/g, '')) || 0;
+                    const isWan = /万/.test(String(s));
+                    return isWan ? num * 10000 : num;
+                  };
+                  const budgetY = toYuan(wb) + toYuan(ob);
+                  const costs = impactInfos[procMetric]?.actualCosts || [];
+                  const toNum = (x) => typeof x === 'number' ? x : (parseFloat(String(x).replace(/[^\d.]/g, '')) || 0);
+                  const actualY = (impactInfos[procMetric]?.actualTotal && typeof impactInfos[procMetric]?.actualTotal === 'number')
+                    ? impactInfos[procMetric]?.actualTotal
+                    : costs.reduce((a, c) => a + toNum(c.amount), 0);
+                  if (budgetY > 0 && actualY >= 0) {
+                    const p = Math.max(0, Math.min(100, (actualY / budgetY) * 100));
+                    return <div className="h-2 bg-[#a40035]" style={{ width: `${p}%` }}></div>;
+                  }
+                  return <div className="h-2 bg-gray-300 w-1/3"></div>;
+                })()}
+              </div>
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1 text-sm text-gray-700">
+                  <div>工资预算：<span className="font-semibold">{impactInfos[procMetric]?.budget?.wageBudget || '—'}</span></div>
+                  <div>其他预算：<span className="font-semibold">{impactInfos[procMetric]?.budget?.otherBudget || '—'}</span></div>
+                  <div>费用占比：<span className="font-semibold">{impactInfos[procMetric]?.budget?.ratio || '—'}</span></div>
+                  {impactInfos[procMetric]?.salaryShare ? (
+                    <div>薪酬占比：<span className="font-semibold">{impactInfos[procMetric]?.salaryShare}</span></div>
+                  ) : null}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-xs text-gray-700">
+                    <thead>
+                      <tr>
+                        <th className="px-2 py-1 text-left font-medium">成本项</th>
+                        <th className="px-2 py-1 text-left font-medium">金额</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {impactInfos[procMetric]?.actualCosts?.map((c, idx) => {
+                        const val = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/[^\d.]/g, '')) || 0);
+                        const display = val >= 10000 ? `¥${(val / 10000).toFixed(1)}万` : (typeof c.amount === 'number' ? `¥${c.amount.toLocaleString('zh-CN')}` : c.amount);
+                        return (
+                          <tr key={`row-${idx}`}>
+                            <td className="px-2 py-1">{c.label}</td>
+                            <td className="px-2 py-1">{display}</td>
+                          </tr>
+                        );
+                      })}
+                      {(() => {
+                        const costs = impactInfos[procMetric]?.actualCosts || [];
+                        const toNum = (x) => typeof x === 'number' ? x : (parseFloat(String(x).replace(/[^\d.]/g, '')) || 0);
+                        const total = (impactInfos[procMetric]?.actualTotal && typeof impactInfos[procMetric]?.actualTotal === 'number')
+                          ? impactInfos[procMetric]?.actualTotal
+                          : costs.reduce((a, c) => a + toNum(c.amount), 0);
+                        if (total > 0) {
+                          const display = total >= 10000 ? `¥${(total / 10000).toFixed(1)}万` : `¥${Math.round(total).toLocaleString('zh-CN')}`;
+                          return (
+                            <tr>
+                              <td className="px-2 py-1 font-medium">合计</td>
+                              <td className="px-2 py-1">{display}</td>
+                            </tr>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setProcShowYoY(!procShowYoY)}
@@ -757,91 +1406,7 @@ const PriceDecompositionContainer = () => {
           <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">暂无数据</div>
         )}
         <div className="mt-4">
-          <DataTable data={procCityRows} columns={procColumns} />
-        </div>
-        <div className="mt-4 bg-white rounded-lg border border-gray-100 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm text-gray-600">指标完成情况与预算说明</div>
-            <div className="text-xs text-gray-400">{impactInfos[procMetric]?.name}</div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-xs text-gray-500 mb-1">当前值</div>
-              <div className="text-xl font-bold text-[#a40035]">
-                {impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.actual}%` : `${impactInfos[procMetric]?.actual}`}
-              </div>
-              <div className="mt-2 text-xs text-gray-500">
-                目标：
-                <span className="font-semibold text-gray-700">
-                  {impactInfos[procMetric]?.target !== null && impactInfos[procMetric]?.target !== undefined
-                    ? (impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.target}%` : `${impactInfos[procMetric]?.target}`)
-                    : '—'}
-                </span>
-                <span className="mx-2">|</span>
-                去年：
-                <span className="font-semibold text-gray-700">
-                  {impactInfos[procMetric]?.last !== null && impactInfos[procMetric]?.last !== undefined
-                    ? (impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.last}%` : `${impactInfos[procMetric]?.last}`)
-                    : '—'}
-                </span>
-              </div>
-              <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
-                {impactInfos[procMetric]?.target ? (
-                  <div
-                    className={`h-2 ${Number(impactInfos[procMetric]?.actual) >= Number(impactInfos[procMetric]?.target) ? 'bg-red-600' : 'bg-[#a40035]'}`}
-                    style={{
-                      width: `${Math.max(0, Math.min(100, (Number(impactInfos[procMetric]?.actual) / Number(impactInfos[procMetric]?.target)) * 100))}%`
-                    }}
-                  />
-                ) : (
-                  <div className="h-2 bg-gray-300 w-1/3"></div>
-                )}
-              </div>
-              <div className="mt-2 text-xs">
-                {impactInfos[procMetric]?.target
-                  ? (Number(impactInfos[procMetric]?.actual) >= Number(impactInfos[procMetric]?.target)
-                      ? <span className="text-red-600">达标</span>
-                      : <span className="text-gray-600">未达标</span>)
-                  : <span className="text-gray-400">无目标值</span>}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-xs text-gray-500 mb-1">预算汇总</div>
-              <div className="space-y-1 text-sm text-gray-700">
-                <div>工资预算：<span className="font-semibold">{impactInfos[procMetric]?.budget?.wageBudget || '—'}</span></div>
-                <div>其他预算：<span className="font-semibold">{impactInfos[procMetric]?.budget?.otherBudget || '—'}</span></div>
-                <div>费用占比：<span className="font-semibold">{impactInfos[procMetric]?.budget?.ratio || '—'}</span></div>
-                {impactInfos[procMetric]?.salaryShare ? (
-                  <div>薪酬占比：<span className="font-semibold">{impactInfos[procMetric]?.salaryShare}</span></div>
-                ) : null}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-xs text-gray-500 mb-2">实际支出</div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-xs text-gray-700">
-                  <thead>
-                    <tr>
-                      {impactInfos[procMetric]?.actualCosts?.map((c, idx) => (
-                        <th key={`head-${idx}`} className="px-2 py-1 text-left font-medium">{c.label}</th>
-                      ))}
-                      {impactInfos[procMetric]?.actualTotal ? <th className="px-2 py-1 text-left font-medium">合计</th> : null}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      {impactInfos[procMetric]?.actualCosts?.map((c, idx) => (
-                        <td key={`cell-${idx}`} className="px-2 py-1">{typeof c.amount === 'number' ? c.amount.toLocaleString('zh-CN') : c.amount}</td>
-                      ))}
-                      {impactInfos[procMetric]?.actualTotal ? (
-                        <td className="px-2 py-1">{impactInfos[procMetric]?.actualTotal.toLocaleString('zh-CN')}</td>
-                      ) : null}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+          <DataTable data={procCityRows} columns={procColumnsDyn.length ? procColumnsDyn : procColumnsDefault} />
         </div>
       </div>
       {isModalOpen && (
@@ -885,24 +1450,29 @@ const PriceDecompositionContainer = () => {
                 </button>
               </div>
               <LineTrendChart
-                headerTitle="城市平均客单价变化趋势"
-                headerUnit="元/人次"
+                headerTitle={procMetric === 'configRatio' ? '城市床位人员配置比变化趋势' : procMetric === 'therapistYield' ? '城市推拿师产值达标率趋势' : '城市平均客单价变化趋势'}
+                headerUnit={procMetric === 'configRatio' ? '人/床' : procMetric === 'therapistYield' ? '%' : '元/人次'}
                 values={weeklyPrice}
                 valuesYoY={weeklyPriceLY}
-                xLabels={weeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)}
+                xLabels={procMetric === 'newEmpReturn' || procMetric === 'therapistYield'
+                  ? weeks.map(w => w.label)
+                  : weeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)
+                }
                 showYoY={showYoY}
                 showTrend={showTrend}
                 showExtremes={showExtremes}
-                yAxisFormatter={(v) => Math.round(v)}
-                valueFormatter={(v) => `¥ ${Number(v).toFixed(2)}`}
+                yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : Math.round(v)}
+                valueFormatter={(v) => procMetric === 'configRatio' ? `${Number(v).toFixed(2)}` : (procMetric === 'newEmpReturn' || procMetric === 'therapistYield') ? `${Number(v).toFixed(1)}%` : `¥ ${Number(v).toFixed(2)}`}
                 colorPrimary="#a40035"
                 colorYoY="#2563eb"
                 getHoverTitle={(idx) => weeks[idx]?.label || ''}
                 getHoverSubtitle={() => ''}
               />
               <div>
-                <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">门店维度统计</h4>
-                <DataTable data={storeRows} columns={columnsForStore} />
+                <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">
+                  {procMetric === 'newEmpReturn' ? '技术副总负责门店新员工回头率统计' : procMetric === 'therapistYield' ? '门店产值达标率统计' : '门店维度统计'}
+                </h4>
+                <DataTable data={storeRows} columns={modalColumns.length > 0 ? modalColumns : columnsForStore} />
               </div>
             </div>
           </div>
