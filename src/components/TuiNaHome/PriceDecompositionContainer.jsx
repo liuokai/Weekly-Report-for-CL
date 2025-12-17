@@ -102,80 +102,98 @@ const PriceDecompositionContainer = () => {
     const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
     return (
-      <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 mb-6 flex items-center justify-between relative overflow-hidden">
-        {/* Decorative background element */}
+      <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 mb-6 space-y-6 relative overflow-hidden">
         <div className="absolute right-0 top-0 w-32 h-32 bg-[#a40035]/5 rounded-bl-full pointer-events-none"></div>
-
-        <div className="flex gap-12 items-center z-10">
-          {/* Main Metric: Current Price */}
-          <div>
-            <div className="text-sm text-gray-500 mb-1">截止本周年度平均客单价</div>
-            <div className="text-4xl font-bold text-[#a40035] flex items-baseline gap-2">
-              ¥{hqData.currentPrice.toFixed(2)}
-              <span className="text-sm font-normal text-gray-400">元/人次</span>
+        <div className="flex flex-wrap items-center justify-between z-10 gap-10">
+          <div className="flex items-center gap-12">
+            <div>
+              <div className="text-sm text-gray-500 mb-1">截止本周年度平均客单价</div>
+              <div className="text-4xl font-bold text-[#a40035] flex items-baseline gap-2">
+                ¥{hqData.currentPrice.toFixed(2)}
+                <span className="text-sm font-normal text-gray-400">元/人次</span>
+              </div>
+            </div>
+            <div className="hidden md:block border-l border-gray-200 pl-8">
+              <div className="text-sm text-gray-500 mb-1">去年平均客单价</div>
+              <div className="text-2xl font-semibold text-gray-700">
+                ¥{hqData.lastYearPrice.toFixed(2)}
+              </div>
             </div>
           </div>
-
-          {/* Secondary Metric: Last Year Price */}
-          <div className="hidden md:block border-l border-gray-200 pl-8">
-            <div className="text-sm text-gray-500 mb-1">去年平均客单价</div>
-            <div className="text-2xl font-semibold text-gray-700">
-              ¥{hqData.lastYearPrice.toFixed(2)}
-            </div>
+          <div className="flex items-center gap-6">
+             <div className="text-right">
+                <div className="text-sm text-gray-500 mb-1">增长率</div>
+                <div className={`text-2xl font-bold ${hqData.growthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {hqData.growthRate > 0 ? '+' : ''}{hqData.growthRate.toFixed(2)}%
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  目标: <span className="font-medium text-gray-600">{targetRate.toFixed(1)}%</span>
+                  <span className="mx-1">|</span>
+                  {isAchieved ? (
+                    <span className="text-red-600">已达标 (+{diff.toFixed(2)}%)</span>
+                  ) : (
+                    <span className="text-gray-500">未达标 ({diff.toFixed(2)}%)</span>
+                  )}
+                </div>
+             </div>
+             <div className="relative flex items-center justify-center">
+                <svg width={size} height={size} className="transform -rotate-90">
+                  <circle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    stroke="#f3f4f6"
+                    strokeWidth={strokeWidth}
+                    fill="none"
+                  />
+                  <circle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    stroke="#a40035"
+                    strokeWidth={strokeWidth}
+                    fill="none"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                    strokeLinecap="round"
+                    className="transition-all duration-1000 ease-out"
+                  />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="text-xs text-gray-400">达成率</span>
+                  <span className="text-sm font-bold text-[#a40035]">
+                    {progressPercent.toFixed(0)}%
+                  </span>
+                </div>
+             </div>
           </div>
         </div>
-
-        {/* Target & Growth Visualization */}
-        <div className="flex items-center gap-6 z-10">
-           <div className="text-right">
-              <div className="text-sm text-gray-500 mb-1">增长率</div>
-              <div className={`text-2xl font-bold ${hqData.growthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {hqData.growthRate > 0 ? '+' : ''}{hqData.growthRate.toFixed(2)}%
+        <div className="h-px bg-gray-100/70"></div>
+        <div className="z-10">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm text-gray-600">预算使用（2025年1-9月）</div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs px-2.5 py-1 rounded-full bg-[#a40035]/10 text-[#a40035]">费用占比 1.8%</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-8">
+            <div className="flex-none">
+              <div className="text-xs text-gray-500 mb-1">合计</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#a40035]">¥545.8万</div>
+            </div>
+            <div className="flex-1 grid grid-cols-1 gap-2">
+              <div className="text-sm text-gray-600">
+                人工支出（工资+社保）：<span className="text-lg font-semibold text-gray-800">¥379.8万</span>
               </div>
-              <div className="text-xs text-gray-400 mt-1">
-                目标: <span className="font-medium text-gray-600">{targetRate.toFixed(1)}%</span>
-                <span className="mx-1">|</span>
-                {isAchieved ? (
-                  <span className="text-red-600">已达标 (+{diff.toFixed(2)}%)</span>
-                ) : (
-                  <span className="text-gray-500">未达标 ({diff.toFixed(2)}%)</span>
-                )}
+              <div className="text-sm text-gray-600">
+                招聘渠道费及培训费：<span className="text-lg font-semibold text-gray-800">¥166万</span>
+                <span className="ml-2 text-xs text-gray-400">含介绍费、推拿师导师、外聘导师</span>
               </div>
-           </div>
-
-           {/* Circular Progress */}
-           <div className="relative flex items-center justify-center">
-              <svg width={size} height={size} className="transform -rotate-90">
-                {/* Background Circle */}
-                <circle
-                  cx={size / 2}
-                  cy={size / 2}
-                  r={radius}
-                  stroke="#f3f4f6"
-                  strokeWidth={strokeWidth}
-                  fill="none"
-                />
-                {/* Progress Circle */}
-                <circle
-                  cx={size / 2}
-                  cy={size / 2}
-                  r={radius}
-                  stroke="#a40035"
-                  strokeWidth={strokeWidth}
-                  fill="none"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  className="transition-all duration-1000 ease-out"
-                />
-              </svg>
-              <div className="absolute flex flex-col items-center">
-                <span className="text-xs text-gray-400">达成率</span>
-                <span className="text-sm font-bold text-[#a40035]">
-                  {progressPercent.toFixed(0)}%
-                </span>
-              </div>
-           </div>
+            </div>
+          </div>
+          <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-2 bg-[#a40035]" style={{ width: '1.8%' }}></div>
+          </div>
         </div>
       </div>
     );
