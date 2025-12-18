@@ -286,7 +286,7 @@ const RevenueDecompositionContainer = () => {
       dataIndex: "城市名称",
       render: (value) => (
         <button
-          className="text-blue-600 hover:text-blue-800 underline"
+          className="text-[#a40035] hover:underline font-medium"
           onClick={() => openCityModal(String(value).split("·")[0])}
         >
           {value}
@@ -585,6 +585,7 @@ const RevenueDecompositionContainer = () => {
     <DataContainer
       title="城市营业完成情况"
       data={{ rows }}
+      maxHeight="none"
       renderContent={renderContent}
     />
   );

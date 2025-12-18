@@ -177,7 +177,7 @@ const PriceDecompositionContainer = () => {
       dataIndex: 'city',
       render: (value, row) => (
         <button
-          className="text-blue-600 hover:text-blue-800 underline"
+          className="text-[#a40035] hover:underline font-medium"
           onClick={() => openCityModal(row.city)}
         >
           {value}

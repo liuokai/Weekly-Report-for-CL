@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import TuiNaHomeTab from "./TuiNaHome";
 import ProfitTab from "./ProfitTab";
+import SurplusFundsTab from "./SurplusFundsTab";
 import StoreTab from "./StoreTab";
-import CoreMetricsBar from "./CoreMetricsBar";
 
 const WeeklyReport = () => {
   // Tab导航状态管理
@@ -12,6 +12,7 @@ const WeeklyReport = () => {
   const tabs = [
     "营业额",
     "利润",
+    "结余资金",
     "门店"
   ];
 
@@ -50,9 +51,6 @@ const WeeklyReport = () => {
         </div>
       </header>
 
-      {/* 核心指标区域：标题与 Tab 导航之间 */}
-      <CoreMetricsBar />
-
       {/* 内容切换区域 */}
       <main className="container mx-auto px-4 py-6">
         {/* Tab导航 */}
@@ -77,8 +75,10 @@ const WeeklyReport = () => {
           {activeTab === 0 && <TuiNaHomeTab />}
           
           {activeTab === 1 && <ProfitTab />}
+
+          {activeTab === 2 && <SurplusFundsTab />}
           
-          {activeTab === 2 && <StoreTab />}
+          {activeTab === 3 && <StoreTab />}
         </div>
       </main>
     </div>

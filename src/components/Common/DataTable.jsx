@@ -1,7 +1,8 @@
 import React from 'react';
 
-const DataTable = ({ data, columns, getKey = (item, index) => index, stickyHeader = true }) => {
+const DataTable = ({ data, columns, getKey = (item, index) => index, stickyHeader = true, hideNoDataMessage = false }) => {
   if (!data || data.length === 0) {
+    if (hideNoDataMessage) return null;
     return <div className="text-center py-4 text-gray-500">暂无数据</div>;
   }
 

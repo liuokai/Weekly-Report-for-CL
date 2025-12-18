@@ -479,7 +479,7 @@ const VolumeDecompositionContainer = () => {
         width: 100,
         render: (text) => (
           <span 
-            className="text-blue-600 cursor-pointer hover:underline font-medium"
+            className="text-[#a40035] cursor-pointer hover:underline font-medium"
             onClick={() => setSelectedCity(text)}
           >
             {text}

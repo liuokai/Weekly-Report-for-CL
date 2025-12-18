@@ -7,9 +7,6 @@ const WeeklyTurnoverChart = () => {
     { key: 'revenue', label: '周度营业额', unit: '元', format: (val) => `¥ ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 10000).toFixed(0) + '万' },
     { key: 'ytdRevenue', label: '年度累计营业额', unit: '元', format: (val) => `¥ ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 100000000).toFixed(2) + '亿' },
     { key: 'dailyAvgRevenue', label: '天均营业额', unit: '元', format: (val) => `¥ ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 10000).toFixed(1) + '万' },
-    { key: 'dailyAvgPrice', label: '天均客单价', unit: '元', format: (val) => `¥ ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => Math.round(val) },
-    { key: 'avgServiceDuration', label: '推拿师日均服务时长', unit: '分钟', format: (val) => `${Math.round(val)} 分钟`, axisFormat: (val) => Math.round(val) },
-    { key: 'dailyAvgCustomer', label: '天均客次量', unit: '人次', format: (val) => `${val.toLocaleString('en-US', { maximumFractionDigits: 0 })} 人次`, axisFormat: (val) => Math.round(val) },
   ];
 
   const [selectedMetricKey, setSelectedMetricKey] = useState('revenue');

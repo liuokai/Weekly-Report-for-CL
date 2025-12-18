@@ -8,6 +8,12 @@ const METRICS = {
     data: [175, 176, 174, 178, 180, 179, 181, 183, 182, 185, 186, 188],
     dataYoY: [168, 169, 170, 171, 172, 171, 173, 174, 175, 176, 177, 178]
   },
+  weeklyAvgPrice: {
+    label: '周度平均客单价',
+    unit: '元',
+    data: [172, 174, 173, 176, 178, 177, 179, 180, 181, 182, 183, 185],
+    dataYoY: [165, 167, 166, 169, 170, 169, 171, 172, 173, 174, 175, 176]
+  },
   projectReturnRate: {
     label: '项目回头率',
     unit: '%',
@@ -93,29 +99,26 @@ const HQMetricsTrendChart = () => {
   }, []);
 
   const currentMetricConfig = METRICS[activeMetric];
-  const isPercentMetric = activeMetric !== 'bedStaffRatio' && activeMetric !== 'annualAvgPrice';
-  const isPriceMetric = activeMetric === 'annualAvgPrice';
+  const isPercentMetric = false;
+  const isPriceMetric = true;
 
   return (
     <div className="mb-6">
       <div className="flex flex-col gap-4 px-2 mb-4">
-        {/* Metrics Row */}
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(METRICS).map(([key, config]) => (
-            <button
-              key={key}
-              onClick={() => setActiveMetric(key)}
-              className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-                activeMetric === key
-                  ? 'bg-[#a40035] text-white shadow-sm'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-              }`}
-            >
-              {config.label}
-            </button>
-          ))}
+        <div className="inline-flex" role="group" aria-label="price metric toggle">
+          <button
+            onClick={() => setActiveMetric('annualAvgPrice')}
+            className={`px-4 py-1.5 text-xs font-medium border ${activeMetric === 'annualAvgPrice' ? 'bg-[#a40035] text-white border-[#a40035]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'} rounded-l-full`}
+          >
+            年度平均客单价
+          </button>
+          <button
+            onClick={() => setActiveMetric('weeklyAvgPrice')}
+            className={`px-4 py-1.5 text-xs font-medium border ${activeMetric === 'weeklyAvgPrice' ? 'bg-[#a40035] text-white border-[#a40035]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'} -ml-px rounded-r-full`}
+          >
+            周度平均客单价
+          </button>
         </div>
-
         {/* Controls Row */}
         <div className="flex gap-2">
           <button
@@ -152,7 +155,7 @@ const HQMetricsTrendChart = () => {
       </div>
 
       <LineTrendChart
-        headerTitle={`${currentMetricConfig.label}趋势`}
+        headerTitle={currentMetricConfig.label}
         headerUnit={currentMetricConfig.unit}
         values={currentMetricConfig.data}
         valuesYoY={currentMetricConfig.dataYoY}
