@@ -53,19 +53,16 @@ const RevenueDecompositionContainer = () => {
     return baseData.map((d) => {
       const phasedTarget = d.target ? d.target * timeProgressRatio : 0;
       const completionRate = d.target ? (d.revenue / d.target) * 100 : 0;
-      const completionProgress = phasedTarget ? (d.revenue / phasedTarget) * 100 : 0;
       const consumptionRate = d.budget ? (d.budgetSpent / d.budget) * 100 : 0;
       const phasedBudget = d.budget ? d.budget * timeProgressRatio : 0;
-      const consumptionProgress = phasedBudget ? (d.budgetSpent / phasedBudget) * 100 : 0;
       return {
-        城市名称: d.city,
+        城市名称: `${d.city}市`,
         营业额: Math.round(d.revenue),
         营业额目标: Math.round(d.target),
-        营业额完成进度: `${completionProgress.toFixed(1)}%`,
+        时间进度: `${(timeProgressRatio * 100).toFixed(1)}%`,
         营业额完成率: `${completionRate.toFixed(1)}%`,
         预算金额: Math.round(d.budget),
         预算花费金额: Math.round(d.budgetSpent),
-        预算消耗进度: `${consumptionProgress.toFixed(1)}%`,
         预算消耗率: `${consumptionRate.toFixed(1)}%`,
       };
     });
@@ -111,7 +108,8 @@ const RevenueDecompositionContainer = () => {
 
   const openCityModal = async (cityName) => {
     setSelectedCity(cityName);
-    const city = baseData.find(c => c.city === cityName);
+    const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
+    const city = baseData.find(c => normalizeCity(c.city) === normalizeCity(cityName));
     if (city) {
       const weekRanges = buildLast12Weeks();
       setWeeks(weekRanges);
@@ -137,7 +135,6 @@ const RevenueDecompositionContainer = () => {
       const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
 
       let storeNames = [];
-      const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
       try {
         const resp = await fetch("/src/data/store_list.csv");
         const text = await resp.text();
@@ -194,18 +191,15 @@ const RevenueDecompositionContainer = () => {
         const phasedTarget = sTarget * timeProgressRatio;
         const phasedBudget = sBudget * timeProgressRatio;
         const completionRate = sTarget ? (sRevenue / sTarget) * 100 : 0;
-        const completionProgress = phasedTarget ? (sRevenue / phasedTarget) * 100 : 0;
         const consumptionRate = sBudget ? (sSpent / sBudget) * 100 : 0;
-        const consumptionProgress = phasedBudget ? (sSpent / phasedBudget) * 100 : 0;
         return {
           城市名称: name,
           营业额: Math.round(sRevenue),
           营业额目标: Math.round(sTarget),
-          营业额完成进度: `${completionProgress.toFixed(1)}%`,
+          时间进度: `${(timeProgressRatio * 100).toFixed(1)}%`,
           营业额完成率: `${completionRate.toFixed(1)}%`,
           预算金额: Math.round(sBudget),
           预算花费金额: Math.round(sSpent),
-          预算消耗进度: `${consumptionProgress.toFixed(1)}%`,
           预算消耗率: `${consumptionRate.toFixed(1)}%`,
         };
       });
@@ -221,9 +215,6 @@ const RevenueDecompositionContainer = () => {
     { key: "revenue", label: "周度营业额", unit: "元", format: (val) => `¥ ${Math.round(val).toLocaleString("zh-CN")}`, axisFormat: (val) => (val / 10000).toFixed(0) + "万" },
     { key: "ytdRevenue", label: "年度累计营业额", unit: "元", format: (val) => `¥ ${Math.round(val).toLocaleString("zh-CN")}`, axisFormat: (val) => (val / 100000000).toFixed(2) + "亿" },
     { key: "dailyAvgRevenue", label: "天均营业额", unit: "元", format: (val) => `¥ ${Math.round(val).toLocaleString("zh-CN")}`, axisFormat: (val) => (val / 10000).toFixed(1) + "万" },
-    { key: "dailyAvgPrice", label: "天均客单价", unit: "元", format: (val) => `¥ ${val.toFixed(2)}`, axisFormat: (val) => Math.round(val) },
-    { key: "avgServiceDuration", label: "推拿师日均服务时长", unit: "分钟", format: (val) => `${Math.round(val)} 分钟`, axisFormat: (val) => Math.round(val) },
-    { key: "dailyAvgCustomer", label: "天均客次量", unit: "人次", format: (val) => `${Math.round(val)} 人次`, axisFormat: (val) => Math.round(val) },
   ];
 
   const buildCitySeries = () => {
@@ -295,43 +286,21 @@ const RevenueDecompositionContainer = () => {
     },
     { key: "rev", title: "营业额", dataIndex: "营业额" },
     { key: "revTarget", title: "营业额目标", dataIndex: "营业额目标" },
-    { 
-      key: "revProgress", 
-      title: "营业额完成进度", 
-      dataIndex: "营业额完成进度",
-      render: (value, row) => {
-        const num = parseFloat(value);
-        const isMin = minProgress !== null && num === minProgress;
-        const isOver = num > 100;
-        const cls = isMin ? "text-green-600 font-semibold" : (isOver ? "text-red-600 font-semibold" : "text-gray-700");
-        return <span className={cls}>{value}</span>;
-      }
-    },
+    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度" },
     { 
       key: "revRate", 
       title: "营业额完成率", 
       dataIndex: "营业额完成率",
-      render: (value) => {
-        const num = parseFloat(value);
-        const isOver = num > 100;
-        const cls = isOver ? "text-red-600 font-semibold" : "text-gray-700";
+      render: (value, row) => {
+        const rateNum = parseFloat(value);
+        const timeNum = parseFloat(row?.["时间进度"] || "0");
+        const highlight = rateNum > timeNum;
+        const cls = highlight ? "text-red-600 font-semibold" : "text-gray-700";
         return <span className={cls}>{value}</span>;
       }
     },
     { key: "budget", title: "预算金额", dataIndex: "预算金额" },
     { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额" },
-    { 
-      key: "budgetProgress", 
-      title: "预算消耗进度", 
-      dataIndex: "预算消耗进度",
-      render: (value) => {
-        const num = parseFloat(value);
-        const isMin = minBudgetProgress !== null && num === minBudgetProgress;
-        const isOver = num > 100;
-        const cls = isMin ? "text-green-600 font-semibold" : (isOver ? "text-red-600 font-semibold" : "text-gray-700");
-        return <span className={cls}>{value}</span>;
-      }
-    },
     { 
       key: "budgetRate", 
       title: "预算消耗率", 
@@ -349,41 +318,21 @@ const RevenueDecompositionContainer = () => {
     { key: "city", title: "城市名称", dataIndex: "城市名称" },
     { key: "rev", title: "营业额", dataIndex: "营业额" },
     { key: "revTarget", title: "营业额目标", dataIndex: "营业额目标" },
-    { 
-      key: "revProgress", 
-      title: "营业额完成进度", 
-      dataIndex: "营业额完成进度",
-      render: (value) => {
-        const num = parseFloat(value);
-        const isOver = num > 100;
-        const cls = isOver ? "text-red-600 font-semibold" : "text-gray-700";
-        return <span className={cls}>{value}</span>;
-      }
-    },
+    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度" },
     { 
       key: "revRate", 
       title: "营业额完成率", 
       dataIndex: "营业额完成率",
-      render: (value) => {
-        const num = parseFloat(value);
-        const isOver = num > 100;
-        const cls = isOver ? "text-red-600 font-semibold" : "text-gray-700";
+      render: (value, row) => {
+        const rateNum = parseFloat(value);
+        const timeNum = parseFloat(row?.["时间进度"] || "0");
+        const highlight = rateNum > timeNum;
+        const cls = highlight ? "text-red-600 font-semibold" : "text-gray-700";
         return <span className={cls}>{value}</span>;
       }
     },
     { key: "budget", title: "预算金额", dataIndex: "预算金额" },
     { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额" },
-    { 
-      key: "budgetProgress", 
-      title: "预算消耗进度", 
-      dataIndex: "预算消耗进度",
-      render: (value) => {
-        const num = parseFloat(value);
-        const isOver = num > 100;
-        const cls = isOver ? "text-red-600 font-semibold" : "text-gray-700";
-        return <span className={cls}>{value}</span>;
-      }
-    },
     { 
       key: "budgetRate", 
       title: "预算消耗率", 
@@ -472,98 +421,8 @@ const RevenueDecompositionContainer = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <p className="text-sm text-gray-600">门店维度统计</p>
-                    <select
-                      className="px-2 py-1 text-xs border border-gray-300 rounded bg-white"
-                      value={selectedWeekIndex}
-                      onChange={(e) => {
-                        const idx = parseInt(e.target.value, 10);
-                        setSelectedWeekIndex(idx);
-                        const city = baseData.find(c => c.city === selectedCity);
-                        if (!city) return;
-                        const today = new Date();
-                        const year = today.getFullYear();
-                        const startOfYear = new Date(year, 0, 1);
-                        const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
-                        const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
-                        const totalDaysYear = isLeap ? 366 : 365;
-                        const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
-                        const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
-                        fetch("/src/data/store_list.csv")
-                          .then(r => r.text())
-                          .then(t => {
-                            const parsed = parseCSV(t);
-                            const storeNames = parsed.rows
-                              .filter(r => normalizeCity(r["城市名称"]) === normalizeCity(selectedCity))
-                              .map(r => r["门店名称"]);
-                            const computeWeights = (names) => {
-                              const raw = names.map((n) => {
-                                const s = String(n);
-                                let sum = 0;
-                                for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i);
-                                const w = 0.8 + ((sum % 41) / 100);
-                                return w;
-                              });
-                              const total = raw.reduce((a, b) => a + b, 0) || 1;
-                              return raw.map((w) => w / total);
-                            };
-                            const perfFactor = (name, weekIdx) => {
-                              const s = String(name);
-                              let sum = 0;
-                              for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i);
-                              const r = ((sum + weekIdx * 17) % 101) / 100;
-                              const delta = (r - 0.5) * 0.1;
-                              return 1 + delta;
-                            };
-                            const consFactor = (name, weekIdx) => {
-                              const s = String(name);
-                              let sum = 0;
-                              for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i) * 1.3;
-                              const r = ((sum + weekIdx * 23) % 101) / 100;
-                              const delta = (r - 0.5) * 0.12;
-                              return 1 + delta;
-                            };
-                            const weights = computeWeights(storeNames);
-                            const rawRevenues = storeNames.map((name, i) => {
-                              const share = weights[i] || 1 / (storeNames.length || 1);
-                              return weeklyData[idx] * share * perfFactor(name, idx);
-                            });
-                            const totalRaw = rawRevenues.reduce((a, b) => a + b, 0) || 1;
-                            const scale = weeklyData[idx] / totalRaw;
-                            const updated = storeNames.map((name, i) => {
-                              const share = weights[i] || 1 / (storeNames.length || 1);
-                              const sRevenue = rawRevenues[i] * scale;
-                              const sTarget = (city.target / 52) * share;
-                              const sBudget = (city.budget / 52) * share;
-                              const sSpent = (city.budgetSpent / 52) * share * consFactor(name, idx);
-                              const phasedTarget = sTarget * timeProgressRatio;
-                              const phasedBudget = sBudget * timeProgressRatio;
-                              const completionRate = sTarget ? (sRevenue / sTarget) * 100 : 0;
-                              const completionProgress = phasedTarget ? (sRevenue / phasedTarget) * 100 : 0;
-                              const consumptionRate = sBudget ? (sSpent / sBudget) * 100 : 0;
-                              const consumptionProgress = phasedBudget ? (sSpent / phasedBudget) * 100 : 0;
-                              return {
-                                城市名称: name,
-                                营业额: Math.round(sRevenue),
-                                营业额目标: Math.round(sTarget),
-                                营业额完成进度: `${completionProgress.toFixed(1)}%`,
-                                营业额完成率: `${completionRate.toFixed(1)}%`,
-                                预算金额: Math.round(sBudget),
-                                预算花费金额: Math.round(sSpent),
-                                预算消耗进度: `${consumptionProgress.toFixed(1)}%`,
-                                预算消耗率: `${consumptionRate.toFixed(1)}%`,
-                              };
-                            });
-                            setStoreRows(updated);
-                          })
-                          .catch(() => {});
-                      }}
-                    >
-                      {weeks.map((w, i) => (
-                        <option key={i} value={i}>{w.label}</option>
-                      ))}
-                    </select>
                   </div>
                   <div className="border border-gray-200 rounded">
                     {storeRows.length === 0 ? (
@@ -583,7 +442,7 @@ const RevenueDecompositionContainer = () => {
 
   return (
     <DataContainer
-      title="城市营业完成情况"
+      title="城市营业额完成情况"
       data={{ rows }}
       maxHeight="none"
       renderContent={renderContent}

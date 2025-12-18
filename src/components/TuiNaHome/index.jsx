@@ -22,8 +22,8 @@ const TuiNaHomeTab = () => {
   const endOfYear = new Date(today.getFullYear(), 11, 31);
   const timeProgress = Math.min(100, Math.max(0, ((today - startOfYear) / (endOfYear - startOfYear)) * 100));
   
-  const budgetTotal = 40000;    // 万元
-  const budgetUsed = 32000;     // 万元
+  const budgetTotal = 4500;    // 万元
+  const budgetUsed = 3796;     // 万元
   const budgetProgress = Math.round((budgetUsed / budgetTotal) * 100);
 
   return (
