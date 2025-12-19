@@ -109,13 +109,30 @@ jobs:
 ## 版本变更记录
 - 当前版本：`v4.1-arch-review`
 - 变更摘要：
-  - 清理历史/临时/重复文件，统一入口为 `src/index.js`，模板为 `public/index.html`
-  - 移除未使用的 TS 原型文件与重复组件副本，详见 `docs/file-cleanup-report.md`
-  - 业务模块重构：
+  - **清理 (Cleanup)**
+    - 移除未使用的遗留组件文件夹：
+      - `src/components/InvestmentFinancing` (占位符，未使用)
+      - `src/components/SupplyChain` (占位符，未使用)
+      - `src/components/UserCenter` (占位符，未使用)
+    - 移除未使用的独立组件文件：
+      - `src/components/CoreMetricsBar.jsx` (已由 WeeklyReport 内部实现替代或未使用)
+      - `src/components/TurnoverReportTab.jsx` (遗留文件，已由 src/pages/Turnover 替代)
+      - `src/components/UserCenterTab.jsx` (遗留占位符，未使用)
+      - `src/components/Common/CoreMetricCard.jsx` (未使用)
+      - `src/components/Common/CoreMetricsSection.jsx` (未使用)
+      - `src/components/Common/FilterDropdown.jsx` (未使用)
+  - **重构 (Refactor)**
     - 将 `src/components/TuiNaHome` 重命名为 `src/components/TurnoverReport` 以对齐"营业额"业务域
-    - 将 `src/components/ProfitTab.jsx` 重命名为 `src/components/CostAndProfitTab.jsx` 以对齐"成本与利润"业务域
-    - 将 `src/components/SurplusFundsTab.jsx` 重命名为 `src/components/CashFlowTab.jsx` 以对齐"现金流"业务域
-  - README 重构为架构与技术评审格式，术语与实现一一对应
+    - 在 `src/components/TurnoverReport/index.jsx` 中将内部组件和导出从 `TuiNaHomeTab` 重命名为 `TurnoverReport`
+    - 更新 `src/components/WeeklyReport.jsx` 中的导入和使用以使用 `TurnoverReport`
+    - 将 `src/components/TuiNaHomeTab.jsx` 重命名为 `src/components/TurnoverReportTab.jsx` 以保持一致性
+    - 将 `src/components/ProfitTab.jsx` 重命名为 `src/components/CostAndProfitTab.jsx` 并更新标签为"成本与利润"
+    - 将 `src/components/SurplusFundsTab.jsx` 重命名为 `src/components/CashFlowTab.jsx` 并更新标签为"现金流"
+    - 更新 `src/components/WeeklyReport.jsx` 以反映新的标签页名称和组件导入
+  - **其他**
+    - 清理历史/临时/重复文件，统一入口为 `src/index.js`，模板为 `public/index.html`
+    - 移除未使用的 TS 原型文件与重复组件副本，详见 `docs/file-cleanup-report.md`
+    - README 重构为架构与技术评审格式，术语与实现一一对应
 
 ## 安装与运行
 - 安装依赖：`npm install`
