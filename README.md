@@ -111,6 +111,7 @@ jobs:
 - 变更摘要：
   - 清理历史/临时/重复文件，统一入口为 `src/index.js`，模板为 `public/index.html`
   - 移除未使用的 TS 原型文件与重复组件副本，详见 `docs/file-cleanup-report.md`
+  - 业务模块重构：将 `src/components/TuiNaHome` 重命名为 `src/components/TurnoverReport` 以对齐"营业额"业务域
   - README 重构为架构与技术评审格式，术语与实现一一对应
 
 ## 安装与运行

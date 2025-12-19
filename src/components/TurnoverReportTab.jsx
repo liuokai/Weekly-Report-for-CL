@@ -3,7 +3,7 @@ import React from "react";
 import CoreMetricsSection from "./Common/CoreMetricsSection";
 import { revenuePriceCoreMetrics } from "./data/revenuePriceCoreMetrics";
 
-const TuiNaHomeTab = () => {
+const TurnoverReportTab = () => {
   return (
     <div className="space-y-6">
       {/* 核心指标区域（推拿之家业务核心指标，复用统一样式组件） */}
@@ -16,4 +16,4 @@ const TuiNaHomeTab = () => {
   );
 };
 
-export default TuiNaHomeTab;
+export default TurnoverReportTab;

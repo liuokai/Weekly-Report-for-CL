@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import TuiNaHomeTab from "./TuiNaHome";
+import TurnoverReport from "./TurnoverReport";
 import ProfitTab from "./ProfitTab";
 import SurplusFundsTab from "./SurplusFundsTab";
 import StoreTab from "./StoreTab";
@@ -72,7 +72,7 @@ const WeeklyReport = () => {
 
         {/* 内容区域 */}
         <div className="bg-white rounded-lg shadow p-4 md:p-6 min-h-[400px]">
-          {activeTab === 0 && <TuiNaHomeTab />}
+          {activeTab === 0 && <TurnoverReport />}
           
           {activeTab === 1 && <ProfitTab />}
 

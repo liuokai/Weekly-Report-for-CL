@@ -5,7 +5,7 @@ import RevenueDecompositionContainer from "./RevenueDecompositionContainer";
 import PriceDecompositionContainer from "./PriceDecompositionContainer";
 import VolumeDecompositionContainer from "./VolumeDecompositionContainer";
 
-const TuiNaHomeTab = () => {
+const TurnoverReport = () => {
   // 模拟数据 - 营业额指标
   const revenueMetrics = {
     actual: 39106.32,  // 实际营业额 (万元) - 对应 391,063,245.03 元
@@ -148,4 +148,4 @@ const TuiNaHomeTab = () => {
   );
 };
 
-export default TuiNaHomeTab;
+export default TurnoverReport;
