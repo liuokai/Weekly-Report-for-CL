@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import DataContainer from '../Common/DataContainer';
-import DataTable from '../Common/DataTable';
+import DataContainer from '../../components/Common/DataContainer';
+import DataTable from '../../components/Common/DataTable';
 import HQMetricsTrendChart from './HQMetricsTrendChart';
-import LineTrendChart from '../Common/LineTrendChart';
+import LineTrendChart from '../../components/Common/LineTrendChart';
 import { parseCSV } from '../../utils/dataLoader';
 
 const PriceDecompositionContainer = () => {

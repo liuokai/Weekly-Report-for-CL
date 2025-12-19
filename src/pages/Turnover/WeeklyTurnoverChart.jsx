@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import LineTrendChart from "../Common/LineTrendChart";
+import LineTrendChart from "../../components/Common/LineTrendChart";
 
 const WeeklyTurnoverChart = () => {
   // 定义指标配置

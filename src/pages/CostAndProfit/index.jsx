@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import LineTrendChart from './Common/LineTrendChart';
-import DataTable from './Common/DataTable';
-import { cityStoreMap } from '../data/storeData';
+import LineTrendChart from '../../components/Common/LineTrendChart';
+import DataTable from '../../components/Common/DataTable';
+import { cityStoreMap } from '../../data/storeData';
 
-const ProfitTab = () => {
+const CostAndProfitTab = () => {
   // Constants from requirements
   const currentProfit = 32067186.09;
   const currentProfitRate = 8.2;
@@ -471,7 +471,7 @@ const ProfitTab = () => {
 
       {/* NEW SECTION: Trend Analysis Chart */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">利润趋势分析</h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">成本与利润趋势分析</h3>
         
         {/* Controls Container */}
         <div className="space-y-4 mb-6">
@@ -558,4 +558,4 @@ const ProfitTab = () => {
   );
 };
 
-export default ProfitTab;
+export default CostAndProfitTab;

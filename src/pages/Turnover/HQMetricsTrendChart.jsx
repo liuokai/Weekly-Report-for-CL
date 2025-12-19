@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import LineTrendChart from '../Common/LineTrendChart';
+import LineTrendChart from '../../components/Common/LineTrendChart';
 
 const METRICS = {
   annualAvgPrice: {

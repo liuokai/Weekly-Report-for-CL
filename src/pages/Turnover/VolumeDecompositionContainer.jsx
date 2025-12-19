@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { cityStoreMap } from '../../data/storeData';
-import DataContainer from '../Common/DataContainer';
-import DataTable from '../Common/DataTable';
-import LineTrendChart from '../Common/LineTrendChart';
+import DataContainer from '../../components/Common/DataContainer';
+import DataTable from '../../components/Common/DataTable';
+import LineTrendChart from '../../components/Common/LineTrendChart';
 
 const VolumeDecompositionContainer = () => {
   // 保持空数据状态，去掉填充的数据

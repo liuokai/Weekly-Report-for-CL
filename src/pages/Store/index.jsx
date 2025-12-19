@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import DataTable from './Common/DataTable';
-import LineTrendChart from './Common/LineTrendChart';
+import DataTable from '../../components/Common/DataTable';
+import LineTrendChart from '../../components/Common/LineTrendChart';
 
 const StoreTab = () => {
   // 模拟数据 - 门店指标

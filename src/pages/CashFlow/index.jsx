@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import DataTable from './Common/DataTable';
-import LineTrendChart from './Common/LineTrendChart';
-import { cityStoreMap } from '../data/storeData';
+import DataTable from '../../components/Common/DataTable';
+import LineTrendChart from '../../components/Common/LineTrendChart';
+import { cityStoreMap } from '../../data/storeData';
 
-const SurplusFundsTab = () => {
+const CashFlowTab = () => {
   // Data Constants
   const data = {
     current: {
@@ -91,7 +91,7 @@ const SurplusFundsTab = () => {
     const values = generateCumulativeSeries(currentTotal);
     const valuesYoY = generateCumulativeSeries(lastTotal);
     return {
-      title: '资金结余（月度累计）',
+      title: '现金流结余（月度累计）',
       unit: '万元',
       values,
       valuesYoY,
@@ -292,7 +292,7 @@ const SurplusFundsTab = () => {
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <h3 className="text-lg font-bold text-gray-800 p-6 border-b border-gray-100 bg-gray-50/50">
-          总部资金结余概览
+          总部现金流概览
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
@@ -380,4 +380,4 @@ const SurplusFundsTab = () => {
   );
 };
 
-export default SurplusFundsTab;
+export default CashFlowTab;

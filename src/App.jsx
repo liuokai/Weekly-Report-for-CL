@@ -1,5 +1,5 @@
 import React from 'react';
-import WeeklyReport from './components/WeeklyReport';
+import WeeklyReport from './pages/WeeklyReport';
 
 const App = () => {
   return <WeeklyReport />;

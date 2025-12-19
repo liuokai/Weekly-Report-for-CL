@@ -9,11 +9,11 @@
 flowchart LR
     A[public/index.html] --> B[src/index.js]
     B --> C[App.jsx]
-    C --> D[WeeklyReport.jsx]
-    D --> D1[TuiNaHomeTab.jsx]
-    D --> D2[ProfitTab.jsx]
-    D --> D3[SurplusFundsTab.jsx]
-    D --> D4[StoreTab.jsx]
+    C --> D[src/pages/WeeklyReport/index.jsx]
+    D --> D1[src/pages/Turnover/index.jsx]
+    D --> D2[src/pages/CostAndProfit/index.jsx]
+    D --> D3[src/pages/CashFlow/index.jsx]
+    D --> D4[src/pages/Store/index.jsx]
     subgraph Data[CSV 数据]
       E1[src/data/1-*.csv]
       E2[src/data/2-*.csv]
@@ -40,12 +40,12 @@ flowchart LR
 ```
 
 ## 核心模块说明
-- 看板主组件：`src/components/WeeklyReport.jsx` 用于组织顶层 Tab 与内容切换
-- 业务子模块：
-  - 推拿之家：`src/components/TuiNaHome/index.jsx` `src/components/TuiNaHome/*`
-  - 利润：`src/components/ProfitTab.jsx`
-  - 结余资金：`src/components/SurplusFundsTab.jsx`
-  - 门店：`src/components/StoreTab.jsx`
+- 看板主组件：`src/pages/WeeklyReport/index.jsx` 用于组织顶层 Tab 与内容切换
+- 业务子模块（Pages）：
+  - 营业额：`src/pages/Turnover/index.jsx`
+  - 成本与利润：`src/pages/CostAndProfit/index.jsx`
+  - 现金流：`src/pages/CashFlow/index.jsx`
+  - 门店：`src/pages/Store/index.jsx`
 - 通用组件：`src/components/Common/*` 提供数据容器、表格、趋势图与核心指标卡片
 - 数据工具：`src/utils/dataLoader.js` 提供 CSV 解析与筛选工具
 - AI服务：
@@ -111,7 +111,10 @@ jobs:
 - 变更摘要：
   - 清理历史/临时/重复文件，统一入口为 `src/index.js`，模板为 `public/index.html`
   - 移除未使用的 TS 原型文件与重复组件副本，详见 `docs/file-cleanup-report.md`
-  - 业务模块重构：将 `src/components/TuiNaHome` 重命名为 `src/components/TurnoverReport` 以对齐"营业额"业务域
+  - 业务模块重构：
+    - 将 `src/components/TuiNaHome` 重命名为 `src/components/TurnoverReport` 以对齐"营业额"业务域
+    - 将 `src/components/ProfitTab.jsx` 重命名为 `src/components/CostAndProfitTab.jsx` 以对齐"成本与利润"业务域
+    - 将 `src/components/SurplusFundsTab.jsx` 重命名为 `src/components/CashFlowTab.jsx` 以对齐"现金流"业务域
   - README 重构为架构与技术评审格式，术语与实现一一对应
 
 ## 安装与运行

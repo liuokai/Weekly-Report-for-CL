@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect } from "react";
-import DataContainer from "../Common/DataContainer";
-import DataTable from "../Common/DataTable";
+import DataContainer from "../../components/Common/DataContainer";
+import DataTable from "../../components/Common/DataTable";
 import { parseCSV } from "../../utils/dataLoader";
-import LineTrendChart from "../Common/LineTrendChart";
+import LineTrendChart from "../../components/Common/LineTrendChart";
 
 const RevenueDecompositionContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

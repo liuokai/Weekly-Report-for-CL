@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import TurnoverReport from "./TurnoverReport";
-import ProfitTab from "./ProfitTab";
-import SurplusFundsTab from "./SurplusFundsTab";
-import StoreTab from "./StoreTab";
+import TurnoverReport from "../Turnover";
+import CostAndProfitTab from "../CostAndProfit";
+import CashFlowTab from "../CashFlow";
+import StoreTab from "../Store";
 
 const WeeklyReport = () => {
   // Tab导航状态管理
@@ -11,8 +11,8 @@ const WeeklyReport = () => {
   // Tab列表
   const tabs = [
     "营业额",
-    "利润",
-    "结余资金",
+    "成本与利润",
+    "现金流",
     "门店"
   ];
 
@@ -74,9 +74,9 @@ const WeeklyReport = () => {
         <div className="bg-white rounded-lg shadow p-4 md:p-6 min-h-[400px]">
           {activeTab === 0 && <TurnoverReport />}
           
-          {activeTab === 1 && <ProfitTab />}
+          {activeTab === 1 && <CostAndProfitTab />}
 
-          {activeTab === 2 && <SurplusFundsTab />}
+          {activeTab === 2 && <CashFlowTab />}
           
           {activeTab === 3 && <StoreTab />}
         </div>
