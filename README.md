@@ -1,261 +1,119 @@
 # 常乐经营管理周报系统
 
-这是一个现代化的经营管理周报系统，采用 React 和 Webpack 构建。
-
 ## 项目概述
+- 业务目标：构建经营管理周报看板，支持总部与城市维度的营运分析、财务分析与AI洞察，提供决策所需核心指标与维度拆解。
+- 技术定位：React 18 + Webpack 5 的纯前端单页应用；数据以 CSV 文件为主，内置 AI 分析服务用于生成自然语言洞察。
 
-常乐经营管理周报系统是一个数据驱动的商业智能仪表板应用，旨在帮助管理层实时监控关键业务指标。系统通过可视化的方式展示门店经营数据、财务指标和运营效率等核心信息，支持数据筛选和AI智能分析功能。
-
-## 产品设计架构
-
-### 整体结构
-
-系统采用分层的标签页导航结构：
-
-1. **核心指标区域**（位于标题与 Tab 导航之间）：
-   - 展示五个核心经营指标：营业额、利润率、利润增长率、新店数量、资金
-   - 每个指标卡片包含：指标值、目标值、进度值、同比、环比
-   - 支持自适应宽度，确保数值完整显示
-
-2. **顶层标签页**：
-   - 推拿之家（原"营业额总结-客单价"）
-   - 用户中心（原"营业额总结-客次量"）
-   - 供应链（新增）
-   - 投融资（原"利润总结"）
-
-3. **子级标签页**（在"战略指标"下，已隐藏但保留组件）：
-   - 新店数量
-   - 营业额
-   - 利润率
-   - 现金流结余
-
-### 功能模块
-
-#### 1. 战略指标模块
-包含四个核心业务维度的数据展示：
-- **新店数量**：展示门店扩张情况
-- **营业额**：监控收入表现
-- **利润率**：评估盈利能力
-- **现金流结余**：分析资金流动状况
-
-#### 2. 新店检视模块
-专注于新开门店的运营数据分析：
-- 新店床位使用率统计
-- 城市维度新店营业额达标率
-- 新店营业额达标明细
-- 新店月度利润统计
-- 租金检视
-- 广告预算费用检视
-
-#### 3. 营业额总结模块
-分为客单价和客次量两个维度：
-- **客单价维度**：分析客户消费水平和技师产出
-- **客次量维度**：监控客户流量和服务效率
-
-#### 4. 利润总结模块
-关注整体盈利能力和成本控制：
-- 年度利润统计（含外部BI系统链接）
-- 门店月度利润统计链接
-
-### 数据容器设计
-
-每个数据展示区域采用统一的容器组件设计：
-- 标题栏：清晰标识数据内容
-- AI分析框：提供智能数据分析见解
-- 筛选器：支持按时间和地区等维度筛选数据
-- 数据表格：以结构化方式展示具体数值
-
-## 技术设计架构
-
-### 技术栈
-
-- **前端框架**：React 18
-- **构建工具**：Webpack 5
-- **语言转换**：Babel
-- **样式处理**：Tailwind CSS (通过 CDN 引入)
-- **数据格式**：CSV
-- **AI集成**：OpenAI API
-
-### 项目结构
-
-```
-├── public/                 # 静态资源文件夹
-│   └── index.html         # HTML 模板文件
-├── src/                   # 源代码文件夹
-│   ├── api/               # API 接口管理
-│   │   └── aiApi.js       # AI 分析接口
-│   ├── components/        # React 组件
-│   │   ├── common/        # 通用组件
-│   │   │   ├── DataContainer.jsx    # 数据容器基础组件
-│   │   │   ├── FilterDropdown.jsx   # 筛选下拉组件
-│   │   │   ├── DataTable.jsx        # 数据表格组件
-│   │   │   ├── AiAnalysisBox.jsx    # AI分析展示组件
-│   │   │   ├── AiAnalysisDemo.jsx   # AI分析演示组件
-│   │   │   └── CoreMetricCard.jsx    # 核心指标卡片组件
-│   │   ├── CoreMetricsBar.jsx       # 核心指标展示区域组件
-│   │   ├── StrategicIndicators.jsx  # 战略指标页面组件（已隐藏）
-│   │   ├── NewStoreTab.jsx          # 新店数量子标签页
-│   │   ├── RevenueTab.jsx           # 营业额子标签页
-│   │   ├── ProfitMarginTab.jsx      # 利润率子标签页
-│   │   ├── CashFlowTab.jsx          # 现金流结余子标签页
-│   │   ├── NewStoreSummaryTab.jsx   # 新店检视主标签页（已隐藏）
-│   │   ├── RevenuePriceTab.jsx      # 推拿之家标签页（原营业额总结-客单价）
-│   │   ├── RevenueCustomerTab.jsx   # 用户中心标签页（原营业额总结-客次量）
-│   │   ├── SupplyChainTab.jsx       # 供应链标签页（新增）
-│   │   ├── ProfitSummaryTab.jsx     # 投融资标签页（原利润总结）
-│   │   ├── WeeklyReport.jsx         # 周报主组件
-│   │   └── ...                      # 各种数据容器组件
-│   ├── data/              # 数据文件 (CSV格式)
-│   │   ├── 1-*.csv        # 第一层级数据文件
-│   │   ├── 2-*.csv        # 第二层级数据文件
-│   │   └── 3-*.csv        # 第三层级数据文件
-│   ├── utils/             # 工具函数
-│   │   └── dataLoader.js  # 数据加载和处理工具
-│   ├── App.jsx            # 应用根组件
-│   └── index.js           # 应用入口文件
-├── webpack.config.js      # Webpack 配置文件
-├── package.json           # 项目配置和依赖
-└── README.md              # 项目说明文档
+## 架构图解
+```mermaid
+flowchart LR
+    A[public/index.html] --> B[src/index.js]
+    B --> C[App.jsx]
+    C --> D[WeeklyReport.jsx]
+    D --> D1[TuiNaHomeTab.jsx]
+    D --> D2[ProfitTab.jsx]
+    D --> D3[SurplusFundsTab.jsx]
+    D --> D4[StoreTab.jsx]
+    subgraph Data[CSV 数据]
+      E1[src/data/1-*.csv]
+      E2[src/data/2-*.csv]
+      E3[src/data/3-*.csv]
+      E4[src/data/4-*.csv]
+      E5[src/data/5-利润总结-年度利润统计.csv]
+    end
+    subgraph Services[服务层]
+      S1[src/services/aiAnalysisService.js]
+      S2[src/api/aiApi.js]
+      S3[src/services/promptManager.js]
+    end
+    subgraph Common[通用组件]
+      U1[DataContainer.jsx]
+      U2[DataTable.jsx]
+      U3[LineTrendChart.jsx]
+      U4[CoreMetricCard.jsx]
+    end
+    D1 & D2 & D3 & D4 --> U1 & U2 & U3 & U4
+    U1 --> S1
+    S1 --> S2
+    S1 --> S3
+    S1 --> Data
 ```
 
-### 核心组件设计
+## 核心模块说明
+- 看板主组件：`src/components/WeeklyReport.jsx` 用于组织顶层 Tab 与内容切换
+- 业务子模块：
+  - 推拿之家：`src/components/TuiNaHome/index.jsx` `src/components/TuiNaHome/*`
+  - 利润：`src/components/ProfitTab.jsx`
+  - 结余资金：`src/components/SurplusFundsTab.jsx`
+  - 门店：`src/components/StoreTab.jsx`
+- 通用组件：`src/components/Common/*` 提供数据容器、表格、趋势图与核心指标卡片
+- 数据工具：`src/utils/dataLoader.js` 提供 CSV 解析与筛选工具
+- AI服务：
+  - `src/services/aiAnalysisService.js` 负责数据预处理、提示词构建与缓存
+  - `src/api/aiApi.js` 统一封装 Chat Completions 调用，支持提供商切换
+  - `src/services/promptManager.js` 管理不同文件的分析提示词模板
 
-#### 1. 数据容器组件 (DataContainer.jsx)
-作为所有数据展示区域的基础组件，提供统一的UI框架：
-- 标题显示
-- AI分析结果展示
-- 筛选器插槽
-- 内容区域插槽
-- 自适应滚动条
+## 环境配置指南
+- Node：建议 `>=16`（推荐 `18`）
+- 安装：`npm install`
+- 开发：`npm start`（Webpack Dev Server，端口 `8000`）
+- 构建：`npm run build`（输出 `dist/bundle.js` 与模板 `index.html`）
+- 环境变量：`REACT_APP_AI_API_KEY`（浏览器环境注入，供 `aiApi.js:37-41` 使用）
+- 数据访问：Dev Server静态目录含 `public/` 与 `src/data/`（`webpack.config.js:31-40`）
 
-#### 2. 筛选下拉组件 (FilterDropdown.jsx)
-提供一致的筛选体验：
-- 多选支持
-- 搜索功能
-- 全选/清空选项
-- 响应式设计
+## 部署流程（含 CI/CD）
+- 构建产物：`dist/` 目录（`webpack --mode production`）
+- 部署目标：任意静态资源托管（Nginx/OSS/Netlify/GitHub Pages）
+- 参考 CI 配置（GitHub Actions）：
+```yaml
+name: build-and-deploy
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+```
 
-#### 3. 数据表格组件 (DataTable.jsx)
-负责结构化数据展示：
-- 表头固定
-- 列宽自适应
-- 数据对齐
-- 响应式布局
+## API 文档索引
+- `src/api/aiApi.js`
+  - `setApiKey(apiKey)` 设置密钥
+  - `setConfig(config)` 设置模型与超时等配置
+  - `switchProvider(provider, config)` 切换提供商
+  - `analyze(prompt, options)` 发送分析请求（`/chat/completions`）
+- `src/services/aiAnalysisService.js`
+  - `loadDataFile(filePath)` 读取 CSV
+  - `preprocessData(data, maxRows)` 预处理并限制行数
+  - `buildAnalysisPrompt({data,promptTemplate,context})` 构建提示词
+  - `analyzeSingleFile(filePath, promptTemplate, options)` 单文件分析
+  - `analyzeMultipleFiles(fileConfigs, promptTemplate, options)` 多文件联合分析
+  - `clearCache()` 清除分析缓存
+- `src/services/promptManager.js`
+  - `getPrompt(fileName)` 获取模板（文件名匹配或默认）
+  - `setPrompt(fileName, promptTemplate)` 设置/更新模板
+  - `removePrompt(fileName)` 删除模板
+  - `getAllPrompts()` 列出所有模板
 
-#### 4. AI分析组件 (AiAnalysisBox.jsx)
-集成智能分析功能：
-- AI分析结果显示
-- 展开/收起交互
-- 加载状态提示
+## 版本变更记录
+- 当前版本：`v4.1-arch-review`
+- 变更摘要：
+  - 清理历史/临时/重复文件，统一入口为 `src/index.js`，模板为 `public/index.html`
+  - 移除未使用的 TS 原型文件与重复组件副本，详见 `docs/file-cleanup-report.md`
+  - README 重构为架构与技术评审格式，术语与实现一一对应
 
-#### 5. 核心指标卡片组件 (CoreMetricCard.jsx)
-独立的核心指标展示卡片：
-- 自适应宽度设计（最小宽度等于高度）
-- 支持长数值完整显示
-- 目标值、进度值、同比、环比纵向排布
-- 智能颜色标识（超过目标/基准为红色，小于为绿色）
-- 进度值格式化为1位小数百分数
-
-### 数据处理流程
-
-1. **数据加载**：通过HTTP请求获取CSV文件
-2. **数据解析**：使用自定义CSV解析器处理数据
-3. **数据筛选**：根据用户选择的筛选条件过滤数据
-4. **数据展示**：将处理后的数据传递给表格组件渲染
-
-### AI集成架构
-
-系统集成了AI分析功能，能够为每个数据容器提供智能化的分析见解：
-- 通过OpenAI API实现自然语言分析
-- 支持多API提供商配置（OpenAI、Azure等）
-- 浏览器端安全的API密钥管理
-- 智能重试机制和错误处理
-
-### 构建与部署
-
-#### 开发环境配置
-- Webpack Dev Server 提供热重载开发体验
-- 支持源码映射调试
-- 实时数据文件访问
-
-#### 生产构建
-- 代码压缩优化
-- 静态资源打包
-- 性能优化配置
-
-## 安装和运行
-
-1. 安装依赖：
-   ```
-   npm install
-   ```
-
-2. 启动开发服务器：
-   ```
-   npm start
-   ```
-
-3. 构建生产版本：
-   ```
-   npm run build
-   ```
-
-## 功能特点
-
-- 模块化组件设计，便于维护和扩展
-- 数据与代码分离，CSV 数据文件独立存储
-- 支持数据过滤和筛选
-- 响应式设计，适配不同屏幕尺寸
-- 可折叠的数据容器，提升用户体验
-- AI智能分析功能，提供数据洞察
-- 外部系统集成（如BI平台链接）
-
-## 数据更新
-
-要更新任何数据容器中的数据，只需修改对应 CSV 文件：
-- 所有数据文件位于 `src/data/` 目录下
-- 文件命名遵循层级编号规则（1-*、2-*、3-*）
-- 无需修改任何代码即可完成数据更新
-
-## 扩展性设计
-
-系统具有良好的扩展性：
-1. **新增数据容器**：遵循现有组件模式创建新的容器组件
-2. **新增数据源**：添加新的CSV文件并创建对应的解析逻辑
-3. **新增标签页**：在导航结构中添加新的标签页并关联对应组件
-4. **AI功能扩展**：可轻松集成其他AI服务商或本地AI模型
-
-## 更新日志
-
-### 最新更新（v4.0）
-
-#### 核心指标区域
-- **新增核心指标展示区域**：在标题区域与 Tab 切换区域之间新增核心指标展示区域
-- **五个核心指标**：营业额、利润率、利润增长率、新店数量、资金
-- **指标卡片设计**：
-  - 每个指标独立卡片展示
-  - 指标值、目标值、进度值、同比、环比纵向排布（1×4布局）
-  - 进度值格式化为1位小数百分数（如 10.7%、115.2%）
-  - 智能颜色标识：进度值≥100%显示红色，<100%显示绿色；同比/环比≥0%显示红色，<0%显示绿色
-  - 自适应宽度：最小宽度等于卡片高度，长数值自动扩展宽度
-- **组件文件**：
-  - `src/components/CoreMetricsBar.jsx` - 核心指标展示区域组件
-  - `src/components/Common/CoreMetricCard.jsx` - 核心指标卡片组件（独立样式文件）
-
-#### Tab 区域调整
-- **Tab 重命名**：
-  - "营业额总结-客单价" → "推拿之家"
-  - "营业额总结-客次量" → "用户中心"
-  - "利润总结" → "投融资"
-- **Tab 结构调整**：
-  - 移除"战略指标"和"新店检视"Tab（保留组件文件，不在看板中展示）
-  - 新增"供应链"Tab（内容待开发）
-  - 最终Tab顺序：推拿之家、用户中心、供应链、投融资
-- **组件文件**：
-  - `src/components/SupplyChainTab.jsx` - 供应链Tab组件（新增）
-  - `StrategicIndicators.jsx` 和 `NewStoreSummaryTab.jsx` 保留在项目中但已隐藏
-
-#### 技术优化
-- 核心指标卡片使用 `ResizeObserver` 动态监听高度变化，实现最小宽度自适应
-- 使用 `requestAnimationFrame` 优化布局更新性能
-- 响应式设计优化，确保在不同屏幕尺寸下正常显示
+## 安装与运行
+- 安装依赖：`npm install`
+- 启动开发：`npm start`
+- 构建生产：`npm run build`
