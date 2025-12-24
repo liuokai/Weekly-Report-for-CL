@@ -1,25 +1,23 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import DataTable from '../../components/Common/DataTable';
+import UnifiedProgressBar from '../../components/Common/UnifiedProgressBar';
 import { cityStoreMap } from '../../data/storeData';
+import BusinessTargets from '../../config/businessTargets';
+import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 
 const CostAndProfitTab = () => {
   // Constants from requirements
   const currentProfit = 32067186.09;
   const currentProfitRate = 8.2;
-  const targetProfitRate = 6.0;
+  const targetProfitRate = BusinessTargets.profit.annualTargetRate;
   
   // Mocked/Derived data
   const profitGrowthRate = 2.2; // YoY Growth
   const targetAnnualProfit = 28000000; // Mock target to show completion > 100%
   
-  // Time Progress Calculation (assuming 2025 based on env context)
-  const today = new Date('2025-12-18');
-  const startOfYear = new Date('2025-01-01');
-  const endOfYear = new Date('2025-12-31');
-  const totalDays = (endOfYear - startOfYear) / (1000 * 60 * 60 * 24) + 1;
-  const daysElapsed = (today - startOfYear) / (1000 * 60 * 60 * 24) + 1;
-  const timeProgress = Math.min((daysElapsed / totalDays) * 100, 100);
+  // Time Progress Calculation
+  const timeProgress = getTimeProgress();
   
   // Profit Target Completion
   const profitCompletion = (currentProfit / targetAnnualProfit) * 100;
@@ -409,61 +407,20 @@ const CostAndProfitTab = () => {
 
         {/* BOTTOM SECTION: Merged Progress Bar */}
         <div className="p-8 border-t border-gray-100 bg-white">
-           <div className="flex flex-col space-y-4">
-              {/* Header Info */}
-              <div className="flex justify-between items-end mb-2">
-                <div className="flex items-center space-x-6">
-                   <div>
-                      <span className="text-xs text-gray-400 block mb-1">目标完成率</span>
-                      <span className="text-2xl font-bold text-[#a40035]">{profitCompletion.toFixed(1)}%</span>
-                   </div>
-                   <div className="h-8 w-px bg-gray-200"></div>
-                   <div>
-                      <span className="text-xs text-gray-400 block mb-1">时间进度</span>
-                      <span className="text-xl font-semibold text-gray-600">{timeProgress.toFixed(1)}%</span>
-                   </div>
-                </div>
-                <div className="text-right">
-                   <div className="text-sm font-medium text-gray-700">进度对比分析</div>
-                   <div className="text-xs text-gray-400">利润达成 领先于 时间进度</div>
-                </div>
+           <div className="mb-4">
+              <h4 className="text-sm font-bold text-gray-600 border-l-4 border-[#a40035] pl-2">利润目标完成进度</h4>
+           </div>
+           <UnifiedProgressBar
+             label="目标完成率"
+             value={profitCompletion}
+             timeProgress={timeProgress}
+           />
+           <div className="mt-4 flex items-center justify-between">
+              <div className="text-xs text-gray-400">
+                 注：当实际进度超越时间进度时显示为主题色，反之显示为绿色。
               </div>
-
-              {/* Merged Visualization: Bullet Chart Style */}
-              <div className="relative h-12 bg-gray-100 rounded-lg overflow-hidden w-full">
-                
-                {/* 1. Base Track Labels (Optional Grid) */}
-                <div className="absolute inset-0 flex justify-between px-2 items-center text-[10px] text-gray-300 pointer-events-none z-10">
-                   <span>0%</span>
-                   <span>25%</span>
-                   <span>50%</span>
-                   <span>75%</span>
-                   <span>100%</span>
-                </div>
-
-                {/* 2. Profit Completion Bar (The Main Bar) */}
-                <div 
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#a40035] to-[#d63065] flex items-center justify-end pr-2 transition-all duration-1000"
-                  style={{ width: `${Math.min(profitCompletion, 100)}%` }}
-                >
-                  <span className="text-white text-xs font-bold drop-shadow-md">完成 {profitCompletion.toFixed(0)}%</span>
-                </div>
-
-                {/* 3. Time Progress Marker (The "Target" Line) */}
-                <div 
-                  className="absolute top-0 bottom-0 w-0.5 bg-gray-800 z-20 flex flex-col items-center"
-                  style={{ left: `${timeProgress}%` }}
-                >
-                  <div className="w-2 h-2 bg-gray-800 rounded-full -mt-1"></div>
-                  <div className="absolute top-2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-80 whitespace-nowrap transform -translate-x-1/2">
-                    当前时间 {timeProgress.toFixed(0)}%
-                  </div>
-                  <div className="w-2 h-2 bg-gray-800 rounded-full absolute bottom-0 -mb-1"></div>
-                </div>
-              </div>
-              
-              <div className="text-xs text-gray-400 text-center pt-1">
-                 注：红色进度条代表利润完成情况，黑色竖线代表当前时间进度。红条越过黑线表示当前进度超前。
+              <div className={`text-sm font-bold ${profitCompletion >= timeProgress ? 'text-[#a40035]' : 'text-green-600'}`}>
+                {profitCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
               </div>
            </div>
         </div>

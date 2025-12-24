@@ -50,7 +50,8 @@ app.post('/api/fetch-data', async (req, res) => {
     };
 
     // 3. Optional AI Analysis
-    if (analyze && queryConfig.promptTemplate) {
+    // Check if analysis is requested, template exists, and Dify is enabled for this query
+    if (analyze && queryConfig.promptTemplate && queryConfig.enableDify) {
       try {
         console.log(`Starting AI analysis for ${queryKey}...`);
         const analysisResult = await generateAnalysis(rows, queryConfig.promptTemplate);

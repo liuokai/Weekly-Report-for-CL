@@ -4,6 +4,7 @@ import DataTable from '../../components/Common/DataTable';
 import HQMetricsTrendChart from './HQMetricsTrendChart';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import useFetchData from '../../hooks/useFetchData';
+import BusinessTargets from '../../config/businessTargets';
 
 const PriceDecompositionContainer = () => {
   // data state is no longer needed as we use priceGrowthData directly
@@ -53,16 +54,19 @@ const PriceDecompositionContainer = () => {
   });
 
   const impactInfos = useMemo(() => {
+    const config = BusinessTargets.turnover.impactAnalysis;
+    const formatBudget = (val) => val > 0 ? `¥${val}万` : '';
+
     return {
       returnRate: {
         name: '项目回头率',
         unit: '%',
-        target: 30.0,
+        target: config.projectRetention.target,
         actual: 29.8,
         last: 32.1,
         budget: {
-          wageBudget: '¥136万',
-          otherBudget: '¥35万',
+          wageBudget: formatBudget(config.projectRetention.budget.wage),
+          otherBudget: formatBudget(config.projectRetention.budget.other),
           ratio: '0.55%'
         },
         actualCosts: [
@@ -75,12 +79,12 @@ const PriceDecompositionContainer = () => {
       configRatio: {
         name: '床位人员配置比',
         unit: '',
-        target: 0.5,
+        target: config.bedStaffRatio.target,
         actual: 0.57,
         last: 0.52,
         budget: {
-          wageBudget: '',
-          otherBudget: '',
+          wageBudget: formatBudget(config.bedStaffRatio.budget.wage),
+          otherBudget: formatBudget(config.bedStaffRatio.budget.other),
           ratio: '0.34%'
         },
         actualCosts: [
@@ -92,12 +96,12 @@ const PriceDecompositionContainer = () => {
       newEmpReturn: {
         name: '新员工回头率达标率',
         unit: '%',
-        target: null,
+        target: config.newEmployeeRetention.target,
         actual: 88.0,
         last: null,
         budget: {
-          wageBudget: '',
-          otherBudget: '',
+          wageBudget: formatBudget(config.newEmployeeRetention.budget.wage),
+          otherBudget: formatBudget(config.newEmployeeRetention.budget.other),
           ratio: '0.84%'
         },
         actualCosts: [
@@ -109,12 +113,12 @@ const PriceDecompositionContainer = () => {
       therapistYield: {
         name: '推拿师产值达标率',
         unit: '%',
-        target: 80.0,
+        target: config.therapistOutput.target,
         actual: 79.0,
         last: null,
         budget: {
-          wageBudget: '',
-          otherBudget: '',
+          wageBudget: formatBudget(config.therapistOutput.budget.wage),
+          otherBudget: formatBudget(config.therapistOutput.budget.other),
           ratio: ''
         },
         actualCosts: [
@@ -127,33 +131,30 @@ const PriceDecompositionContainer = () => {
   }, []);
 
   useEffect(() => {
+    // Override HQ data with manually configured values
+    const { lastYearAveragePrice } = BusinessTargets.turnover.priceDecomposition;
+    
+    // Simulated current average price (mock value)
+    const currentAveragePrice = 298.2;
+
+    // Calculate growth rate based on Current and Last Year prices
+    // Growth Rate = ((Current - Last) / Last) * 100
+    const growthRate = lastYearAveragePrice 
+      ? ((currentAveragePrice - lastYearAveragePrice) / lastYearAveragePrice) * 100 
+      : 0;
+
+    setHqData({
+      currentPrice: currentAveragePrice,
+      lastYearPrice: lastYearAveragePrice,
+      growthRate
+    });
+
+    // Original data aggregation logic disabled to favor manual configuration
+    /* 
     if (priceGrowthData && priceGrowthData.length > 0) {
-      // Calculate HQ totals
-      let totalCurrentRevenue = 0;
-      let totalCurrentOrders = 0;
-      let totalLastRevenue = 0;
-      let totalLastOrders = 0;
-
-      priceGrowthData.forEach(row => {
-        const currPrice = parseFloat(row.current_price || 0);
-        const lastPrice = parseFloat(row.last_year_price || 0);
-        const approxOrders = 1;
-        totalCurrentRevenue += currPrice * approxOrders;
-        totalCurrentOrders += approxOrders;
-        totalLastRevenue += lastPrice * approxOrders;
-        totalLastOrders += approxOrders;
-      });
-
-      const currentPrice = totalCurrentOrders ? totalCurrentRevenue / totalCurrentOrders : 0;
-      const lastYearPrice = totalLastOrders ? totalLastRevenue / totalLastOrders : 0;
-      const growthRate = lastYearPrice ? ((currentPrice - lastYearPrice) / lastYearPrice) * 100 : 0;
-
-      setHqData({
-        currentPrice,
-        lastYearPrice,
-        growthRate
-      });
+      ...
     }
+    */
   }, [priceGrowthData]);
 
   useEffect(() => {
@@ -253,7 +254,8 @@ const PriceDecompositionContainer = () => {
       dataIndex: 'yoyRate',
       render: (val) => {
         const num = parseFloat(String(val).replace('%','')) || 0;
-        const isHigh = num >= 3;
+        const targetRate = BusinessTargets.turnover.priceDecomposition.targetGrowthRate || 3;
+        const isHigh = num >= targetRate;
         return (
           <span className={isHigh ? 'text-red-600' : 'text-green-600'}>
             {val}
@@ -330,7 +332,8 @@ const PriceDecompositionContainer = () => {
       dataIndex: 'yoyRate',
       render: (val) => {
         const num = parseFloat(String(val).replace('%','')) || 0;
-        const isHigh = num >= 3;
+        const targetRate = BusinessTargets.turnover.priceDecomposition.targetGrowthRate || 3;
+        const isHigh = num >= targetRate;
         return (
           <span className={isHigh ? 'text-red-600' : 'text-green-600'}>
             {val}
@@ -553,7 +556,8 @@ const PriceDecompositionContainer = () => {
            { key: 'value', title: '项目回头率', dataIndex: 'value', 
              render: (val) => {
                 const num = parseFloat(String(val).replace('%','')) || 0;
-                const isHigh = num >= 30;
+                const target = BusinessTargets.turnover.impactAnalysis.projectRetention.target || 30;
+                const isHigh = num >= target;
                 return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
              }
            },
@@ -600,7 +604,8 @@ const PriceDecompositionContainer = () => {
               dataIndex: 'value',
               render: (val) => {
                 const num = parseFloat(String(val).replace('%', '')) || 0;
-                const isHigh = num >= 80;
+                const target = BusinessTargets.turnover.impactAnalysis.newEmployeeRetention.target || 80;
+                const isHigh = num >= target;
                 return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
               }
            }
@@ -616,7 +621,8 @@ const PriceDecompositionContainer = () => {
               dataIndex: 'value',
               render: (val) => {
                 const num = parseFloat(String(val).replace('%', '')) || 0;
-                const isHigh = num >= 80;
+                const target = BusinessTargets.turnover.impactAnalysis.therapistOutput.target || 80;
+                const isHigh = num >= target;
                 return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
               }
             }
@@ -872,7 +878,8 @@ const PriceDecompositionContainer = () => {
   }, [isModalOpen, selectedCity, modalContextCity, procMetric, modalTrendData, modalStoreData, priceGrowthData]);
 
   const renderHQOverview = () => {
-    const targetRate = 3.0;
+    const { targetGrowthRate } = BusinessTargets.turnover.priceDecomposition;
+    const targetRate = targetGrowthRate !== undefined ? targetGrowthRate : 3.0;
     const isAchieved = hqData.growthRate >= targetRate;
     const diff = hqData.growthRate - targetRate;
     

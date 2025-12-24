@@ -4,6 +4,7 @@ import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import useFetchData from '../../hooks/useFetchData';
+import BusinessTargets from '../../config/businessTargets';
 
 const VolumeDecompositionContainer = () => {
   // 保持空数据状态，去掉填充的数据
@@ -128,14 +129,18 @@ const VolumeDecompositionContainer = () => {
         ? 9.9 // Placeholder if real calc needed
         : 9.9;
 
+    // Target from Config
+    const targetVolume = BusinessTargets.turnover.volumeDecomposition.annualCumulativeTarget || 0;
+    const completionRate = targetVolume ? (currentVolume / targetVolume) * 100 : 0;
+
     // Circle configuration for "No Target"
     const size = 100;
     const strokeWidth = 8;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
-    // No target, so we can display 0 or full gray
-    const progressPercent = 0; 
-    const strokeDashoffset = circumference; // Full offset = empty circle
+    
+    const progressPercent = Math.min(completionRate, 100); 
+    const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
     return (
       <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 mb-6 space-y-6 relative overflow-hidden">
@@ -167,7 +172,7 @@ const VolumeDecompositionContainer = () => {
                   {growthRate > 0 ? '+' : ''}{growthRate.toFixed(2)}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  目标: <span className="font-medium text-gray-600">暂无</span>
+                  目标: <span className="font-medium text-gray-600">{targetVolume ? (targetVolume / 10000).toFixed(0) + '万' : '暂无'}</span>
                 </div>
              </div>
              <div className="relative flex items-center justify-center">
@@ -195,8 +200,8 @@ const VolumeDecompositionContainer = () => {
                 </svg>
                 <div className="absolute flex flex-col items-center">
                   <span className="text-xs text-gray-400">达成率</span>
-                  <span className="text-sm font-bold text-gray-300">
-                    —
+                  <span className={`text-sm font-bold ${completionRate >= 100 ? 'text-[#a40035]' : 'text-gray-600'}`}>
+                    {completionRate ? completionRate.toFixed(1) + '%' : '—'}
                   </span>
                 </div>
              </div>

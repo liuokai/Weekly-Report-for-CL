@@ -27,7 +27,8 @@ const queryRegistry = {
     sql: loadSql('turnover_overview.sql'),
     promptTemplate: `
     请分析年度营业额数据，提供简要的财务绩效执行摘要，指出关键趋势。关键趋势要求语言简练，数据清晰、详实、可靠，不可杜撰。整体字数 100 字左右，不可太多或太少。`,
-    description: 'Get annual turnover overview'
+    description: 'Get annual turnover overview',
+    enableDify: false // Set to false to disable Dify API call，true or false
   },
   getHQMetrics: {
     sql: loadSql('hq_metrics.sql'),

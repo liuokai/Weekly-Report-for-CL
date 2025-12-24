@@ -1,6 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
+import UnifiedProgressBar from '../../components/Common/UnifiedProgressBar';
+import BusinessTargets from '../../config/businessTargets';
+import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 
 const StoreTab = () => {
   // 模拟数据 - 门店指标
@@ -9,7 +12,7 @@ const StoreTab = () => {
     newOpened: 36,    // 新开门店数量
     closed: 14,       // 闭店门店数量
     netIncrease: 22,  // 净增门店数量
-    target: 20,       // 新店目标
+    target: BusinessTargets.store.newStore.target,       // 新店目标
   };
 
   // 计算完成率
@@ -17,17 +20,14 @@ const StoreTab = () => {
 
   // 模拟数据 - 预算指标
   const budgetMetrics = {
-    budgetTotal: 298, // 新增预算总值
+    budgetTotal: BusinessTargets.store.newStore.budget, // 新增预算总值
     cumulativeInvestment: 240, // 累计投资金额 (模拟值)
     newStoreInvestment: 185,
     renovationInvestment: 55
   };
 
   // 计算时间进度
-  const today = new Date(); // 使用当前环境时间
-  const startOfYear = new Date(today.getFullYear(), 0, 1);
-  const endOfYear = new Date(today.getFullYear(), 11, 31);
-  const timeProgress = Math.min(100, Math.max(0, ((today - startOfYear) / (endOfYear - startOfYear)) * 100));
+  const timeProgress = getTimeProgress();
 
   // 预算使用进度
   const budgetProgress = Math.round((budgetMetrics.cumulativeInvestment / budgetMetrics.budgetTotal) * 100);
@@ -55,24 +55,12 @@ const StoreTab = () => {
                       </div>
                       
                       {/* 进度条：净增目标完成率 vs 时间进度 */}
-                      <div className="w-full max-w-[360px] mx-auto md:mx-0">
-                        <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                          <span>净增目标完成率 {completionRate}%</span>
-                          <span>时间进度 {Math.round(timeProgress)}%</span>
-                        </div>
-                        <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
-                          {/* 实际完成进度 */}
-                          <div 
-                            className={`absolute left-0 top-0 bottom-0 rounded-full transition-all duration-500 ${completionRate >= timeProgress ? 'bg-[#a40035]' : 'bg-orange-400'}`}
-                            style={{ width: `${Math.min(100, completionRate)}%` }}
-                          />
-                          {/* 时间进度标记线 */}
-                          <div 
-                            className="absolute top-0 bottom-0 w-0.5 bg-black/30 z-10"
-                            style={{ left: `${timeProgress}%` }}
-                          />
-                        </div>
-                      </div>
+                      <UnifiedProgressBar
+                        className="max-w-[360px] mx-auto md:mx-0"
+                        label="净增目标完成率"
+                        value={completionRate}
+                        timeProgress={timeProgress}
+                      />
                    </div>
 
                    {/* 右侧：其他指标上下排布 (2x2 Grid) */}
@@ -137,24 +125,12 @@ const StoreTab = () => {
                          </div>
 
                          {/* 进度条：预算使用进度 (位于下方) */}
-                         <div className="w-full max-w-[360px] mx-auto md:mx-0">
-                           <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                             <span>预算使用率 {budgetProgress}%</span>
-                             <span>时间进度 {Math.round(timeProgress)}%</span>
-                           </div>
-                           <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
-                             {/* 实际完成进度 */}
-                             <div 
-                               className={`absolute left-0 top-0 bottom-0 rounded-full transition-all duration-500 ${budgetProgress > 100 ? 'bg-[#a40035]' : 'bg-green-600'}`}
-                               style={{ width: `${Math.min(100, budgetProgress)}%` }}
-                             />
-                             {/* 时间进度标记线 */}
-                             <div 
-                               className="absolute top-0 bottom-0 w-0.5 bg-black/30 z-10"
-                               style={{ left: `${timeProgress}%` }}
-                             />
-                           </div>
-                         </div>
+                         <UnifiedProgressBar
+                           className="max-w-[360px] mx-auto md:mx-0"
+                           label="预算使用率"
+                           value={budgetProgress}
+                           timeProgress={timeProgress}
+                         />
                      </div>
 
                     {/* 右侧：其他预算指标上下排布 */}

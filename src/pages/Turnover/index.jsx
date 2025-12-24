@@ -5,6 +5,9 @@ import RevenueDecompositionContainer from "./RevenueDecompositionContainer";
 import PriceDecompositionContainer from "./PriceDecompositionContainer";
 import VolumeDecompositionContainer from "./VolumeDecompositionContainer";
 import AiAnalysisBox from "../../components/Common/AiAnalysisBox";
+import UnifiedProgressBar from "../../components/Common/UnifiedProgressBar";
+import BusinessTargets from "../../config/businessTargets";
+import { getTimeProgress } from "../../components/Common/TimeProgressUtils";
 
 // Global cache object to store data during the session (cleared on page refresh)
 const sessionCache = {
@@ -26,12 +29,27 @@ const TurnoverReport = () => {
 
   const [revenueMetrics, setRevenueMetrics] = useState(() => {
     // Priority: Session Cache -> LocalStorage -> Default
-    if (sessionCache.revenueMetrics) return sessionCache.revenueMetrics;
+    if (sessionCache.revenueMetrics) {
+      // Ensure target is synced with config even if cached
+      return {
+        ...sessionCache.revenueMetrics,
+        target: BusinessTargets.turnover.annualTarget
+      };
+    }
     
     const saved = localStorage.getItem('revenueMetrics');
-    return saved ? JSON.parse(saved) : {
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Ensure target is synced with config even if loaded from storage
+      return {
+        ...parsed,
+        target: BusinessTargets.turnover.annualTarget
+      };
+    }
+
+    return {
       actual: 0,
-      target: 40000,
+      target: BusinessTargets.turnover.annualTarget,
       yoy: 0
     };
   });
@@ -64,6 +82,11 @@ const TurnoverReport = () => {
             }),
           });
 
+          // Check if response is OK before parsing JSON
+          if (!dataResponse.ok) {
+            throw new Error(`HTTP error! status: ${dataResponse.status}`);
+          }
+
           const dataResult = await dataResponse.json();
 
           if (isMounted && dataResult.status === 'success') {
@@ -90,7 +113,7 @@ const TurnoverReport = () => {
 
               const newMetrics = {
                 actual: parseFloat(actualInWan.toFixed(2)),
-                target: 40000,
+                target: BusinessTargets.turnover.annualTarget,
                 yoy: parseFloat(yoy.toFixed(1))
               };
 
@@ -129,6 +152,11 @@ const TurnoverReport = () => {
 
           const aiResponse = await Promise.race([fetchPromise, timeoutPromise]);
           
+          // Check if response is OK before parsing JSON
+          if (!aiResponse.ok) {
+            throw new Error(`HTTP error! status: ${aiResponse.status}`);
+          }
+
           const aiResult = await aiResponse.json();
           
           if (isMounted) {
@@ -176,13 +204,10 @@ const TurnoverReport = () => {
   const completionRate = (revenueMetrics.actual / revenueMetrics.target) * 100;
 
   // 计算时间进度
-  const today = new Date();
-  const startOfYear = new Date(today.getFullYear(), 0, 1);
-  const endOfYear = new Date(today.getFullYear(), 11, 31);
-  const timeProgress = Math.min(100, Math.max(0, ((today - startOfYear) / (endOfYear - startOfYear)) * 100));
+  const timeProgress = getTimeProgress();
   
-  const budgetTotal = 4500;    // 万元
-  const budgetUsed = 3796;     // 万元
+  const budgetTotal = BusinessTargets.turnover.budget.total;    // 万元
+  const budgetUsed = BusinessTargets.turnover.budget.used;      // 万元
   const budgetProgress = (budgetUsed / budgetTotal) * 100;
 
   return (
@@ -231,22 +256,11 @@ const TurnoverReport = () => {
                  </div>
                  
                  {/* 营业额目标完成率进度条 */}
-                 <div className="w-full">
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                      <span>目标完成率 {completionRate.toFixed(1)}%</span>
-                      <span>时间进度 {timeProgress.toFixed(1)}%</span>
-                    </div>
-                    <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className={`absolute left-0 top-0 bottom-0 rounded-full transition-all duration-500 ${completionRate >= timeProgress ? 'bg-[#a40035]' : 'bg-orange-400'}`}
-                        style={{ width: `${Math.min(100, completionRate)}%` }}
-                      />
-                      <div 
-                        className={`absolute top-0 bottom-0 w-0.5 z-10 ${completionRate >= timeProgress ? 'bg-white' : 'bg-black/30'}`}
-                        style={{ left: `${timeProgress}%` }}
-                      />
-                    </div>
-                 </div>
+                 <UnifiedProgressBar 
+                   label="目标完成率"
+                   value={completionRate}
+                   timeProgress={timeProgress}
+                 />
                </div>
            </div>
            <div className="flex-1 md:pr-4 min-w-0">
@@ -274,22 +288,11 @@ const TurnoverReport = () => {
                </div>
 
                {/* 预算消耗进度条 */}
-               <div className="w-full">
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                    <span>预算消耗进度 {budgetProgress.toFixed(1)}%</span>
-                    <span>时间进度 {timeProgress.toFixed(1)}%</span>
-                  </div>
-                  <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`absolute left-0 top-0 bottom-0 rounded-full transition-all duration-500 ${budgetProgress > timeProgress ? 'bg-[#a40035]' : 'bg-green-600'}`}
-                      style={{ width: `${Math.min(100, budgetProgress)}%` }}
-                    />
-                    <div 
-                      className={`absolute top-0 bottom-0 w-0.5 z-10 ${budgetProgress > timeProgress ? 'bg-white' : 'bg-black/30'}`}
-                      style={{ left: `${timeProgress}%` }}
-                    />
-                  </div>
-               </div>
+               <UnifiedProgressBar
+                 label="预算消耗进度"
+                 value={budgetProgress}
+                 timeProgress={timeProgress}
+               />
              </div>
            </div>
         </div>

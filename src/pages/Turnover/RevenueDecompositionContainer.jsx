@@ -3,6 +3,7 @@ import DataContainer from "../../components/Common/DataContainer";
 import DataTable from "../../components/Common/DataTable";
 import LineTrendChart from "../../components/Common/LineTrendChart";
 import useFetchData from "../../hooks/useFetchData";
+import { getTimeProgress } from "../../components/Common/TimeProgressUtils";
 
 // Static config for targets and budgets (could be moved to DB later)
 const CITY_CONFIG = {
@@ -40,13 +41,7 @@ const RevenueDecompositionContainer = () => {
 
   useEffect(() => {
     if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
-      const today = new Date();
-      const year = today.getFullYear();
-      const startOfYear = new Date(year, 0, 1);
-      const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
-      const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
-      const totalDaysYear = isLeap ? 366 : 365;
-      const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
+      const timeProgressVal = getTimeProgress();
 
       const processedRows = fetchedData.map(item => {
         const city = item.city;
@@ -65,7 +60,7 @@ const RevenueDecompositionContainer = () => {
           城市名称: `${city}市`,
           营业额: Math.round(revenue),
           营业额目标: Math.round(target),
-          时间进度: `${(timeProgressRatio * 100).toFixed(1)}%`,
+          时间进度: `${timeProgressVal}%`,
           营业额完成率: `${completionRate.toFixed(1)}%`,
           预算金额: Math.round(budget),
           预算花费金额: Math.round(budgetSpent),
@@ -75,19 +70,13 @@ const RevenueDecompositionContainer = () => {
       setRows(processedRows);
     } else {
       // Mock Fallback
-      const today = new Date();
-      const year = today.getFullYear();
-      const startOfYear = new Date(year, 0, 1);
-      const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
-      const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
-      const totalDaysYear = isLeap ? 366 : 365;
-      const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
+      const timeProgressVal = getTimeProgress();
 
       const mockRows = Object.keys(CITY_CONFIG).map(city => {
         const config = CITY_CONFIG[city];
         const target = config.target;
         // Mock revenue logic
-        const revenue = target * timeProgressRatio * (0.85 + Math.random() * 0.2); 
+        const revenue = target * (timeProgressVal / 100) * (0.85 + Math.random() * 0.2); 
         
         const budget = config.budget;
         const budgetSpent = config.budgetSpent; 
@@ -99,7 +88,7 @@ const RevenueDecompositionContainer = () => {
           城市名称: `${city}市`,
           营业额: Math.round(revenue),
           营业额目标: Math.round(target),
-          时间进度: `${(timeProgressRatio * 100).toFixed(1)}%`,
+          时间进度: `${timeProgressVal}%`,
           营业额完成率: `${completionRate.toFixed(1)}%`,
           预算金额: Math.round(budget),
           预算花费金额: Math.round(budgetSpent),
@@ -252,13 +241,7 @@ const RevenueDecompositionContainer = () => {
       const totalRaw = rawRevenues.reduce((a, b) => a + b, 0) || 1;
       const scale = weeklyData[selectedWeekIndex] / totalRaw;
       
-      const today = new Date();
-      const year = today.getFullYear();
-      const startOfYear = new Date(year, 0, 1);
-      const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
-      const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
-      const totalDaysYear = isLeap ? 366 : 365;
-      const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
+      const timeProgressVal = getTimeProgress();
 
       const stores = storeNames.map((name, idx) => {
         const share = weights[idx] || 1 / (storeNames.length || 1);
@@ -272,7 +255,7 @@ const RevenueDecompositionContainer = () => {
           城市名称: name,
           营业额: Math.round(sRevenue),
           营业额目标: Math.round(sTarget),
-          时间进度: `${(timeProgressRatio * 100).toFixed(1)}%`,
+          时间进度: `${timeProgressVal}%`,
           营业额完成率: `${completionRate.toFixed(1)}%`,
           预算金额: Math.round(sBudget),
           预算花费金额: Math.round(sSpent),
