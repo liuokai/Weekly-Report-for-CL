@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import LineTrendChart from '../../components/Common/LineTrendChart';
+import useFetchData from "../../hooks/useFetchData";
 
 const METRICS = {
   annualAvgPrice: {
@@ -47,6 +48,32 @@ const HQMetricsTrendChart = () => {
     showAverage: true,
     showExtremes: true
   });
+
+  const [metricsData, setMetricsData] = useState(METRICS);
+  const { data: fetchedData, loading, fetchData } = useFetchData('getHQMetrics');
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
+      const newMetrics = JSON.parse(JSON.stringify(METRICS));
+      // Reset data arrays for all metrics that we expect to fill
+      Object.keys(newMetrics).forEach(key => { 
+        newMetrics[key].data = []; 
+        newMetrics[key].dataYoY = []; 
+      });
+      
+      fetchedData.forEach(row => {
+        if (newMetrics[row.metric]) {
+          newMetrics[row.metric].data.push(Number(row.current_value) || 0);
+          newMetrics[row.metric].dataYoY.push(Number(row.last_year_value) || 0);
+        }
+      });
+      setMetricsData(newMetrics);
+    }
+  }, [fetchedData]);
 
   const toggleControl = (key) => {
     setControls(prev => ({ ...prev, [key]: !prev[key] }));
@@ -98,7 +125,7 @@ const HQMetricsTrendChart = () => {
     return result;
   }, []);
 
-  const currentMetricConfig = METRICS[activeMetric];
+  const currentMetricConfig = metricsData[activeMetric];
   const isPercentMetric = false;
   const isPriceMetric = true;
 

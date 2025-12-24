@@ -1,8 +1,21 @@
 import React, { useMemo, useState, useEffect } from "react";
 import DataContainer from "../../components/Common/DataContainer";
 import DataTable from "../../components/Common/DataTable";
-import { parseCSV } from "../../utils/dataLoader";
 import LineTrendChart from "../../components/Common/LineTrendChart";
+import useFetchData from "../../hooks/useFetchData";
+
+// Static config for targets and budgets (could be moved to DB later)
+const CITY_CONFIG = {
+  "北京": { target: 3000000, budget: 180000, budgetSpent: 135000 },
+  "上海": { target: 19000000, budget: 260000, budgetSpent: 182000 },
+  "广州": { target: 16500000, budget: 220000, budgetSpent: 165000 },
+  "深圳": { target: 61000000, budget: 480000, budgetSpent: 392000 },
+  "杭州": { target: 20500000, budget: 210000, budgetSpent: 168000 },
+  "南京": { target: 6000000, budget: 120000, budgetSpent: 91000 },
+  "宁波": { target: 3500000, budget: 90000, budgetSpent: 62000 },
+  "成都": { target: 175000000, budget: 900000, budgetSpent: 735000 },
+  "重庆": { target: 51000000, budget: 420000, budgetSpent: 336000 }
+};
 
 const RevenueDecompositionContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,6 +28,87 @@ const RevenueDecompositionContainer = () => {
   const [showYoY, setShowYoY] = useState(false);
   const [showTrend, setShowTrend] = useState(true);
   const [showExtremes, setShowExtremes] = useState(true);
+  
+  const { data: fetchedData, loading, fetchData } = useFetchData('getCityTurnover');
+  const { data: storeData, fetchData: fetchStoreData } = useFetchData('getStoreList');
+  const { data: modalTrendData, fetchData: fetchModalTrendData } = useFetchData('getCityModalTrend', [], []); // New hook for modal trend
+  const [rows, setRows] = useState([]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
+      const today = new Date();
+      const year = today.getFullYear();
+      const startOfYear = new Date(year, 0, 1);
+      const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+      const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+      const totalDaysYear = isLeap ? 366 : 365;
+      const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
+
+      const processedRows = fetchedData.map(item => {
+        const city = item.city;
+        const revenue = Number(item.revenue) || 0;
+        const config = CITY_CONFIG[city] || { target: 0, budget: 0, budgetSpent: 0 };
+        
+        const target = config.target;
+        const budget = config.budget;
+        const budgetSpent = config.budgetSpent;
+
+        // Calculations
+        const completionRate = target ? (revenue / target) * 100 : 0;
+        const consumptionRate = budget ? (budgetSpent / budget) * 100 : 0;
+
+        return {
+          城市名称: `${city}市`,
+          营业额: Math.round(revenue),
+          营业额目标: Math.round(target),
+          时间进度: `${(timeProgressRatio * 100).toFixed(1)}%`,
+          营业额完成率: `${completionRate.toFixed(1)}%`,
+          预算金额: Math.round(budget),
+          预算花费金额: Math.round(budgetSpent),
+          预算消耗率: `${consumptionRate.toFixed(1)}%`,
+        };
+      });
+      setRows(processedRows);
+    } else {
+      // Mock Fallback
+      const today = new Date();
+      const year = today.getFullYear();
+      const startOfYear = new Date(year, 0, 1);
+      const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+      const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+      const totalDaysYear = isLeap ? 366 : 365;
+      const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
+
+      const mockRows = Object.keys(CITY_CONFIG).map(city => {
+        const config = CITY_CONFIG[city];
+        const target = config.target;
+        // Mock revenue logic
+        const revenue = target * timeProgressRatio * (0.85 + Math.random() * 0.2); 
+        
+        const budget = config.budget;
+        const budgetSpent = config.budgetSpent; 
+
+        const completionRate = target ? (revenue / target) * 100 : 0;
+        const consumptionRate = budget ? (budgetSpent / budget) * 100 : 0;
+
+        return {
+          城市名称: `${city}市`,
+          营业额: Math.round(revenue),
+          营业额目标: Math.round(target),
+          时间进度: `${(timeProgressRatio * 100).toFixed(1)}%`,
+          营业额完成率: `${completionRate.toFixed(1)}%`,
+          预算金额: Math.round(budget),
+          预算花费金额: Math.round(budgetSpent),
+          预算消耗率: `${consumptionRate.toFixed(1)}%`,
+        };
+      });
+      setRows(mockRows);
+    }
+  }, [fetchedData]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -27,46 +121,6 @@ const RevenueDecompositionContainer = () => {
     };
   }, [isModalOpen]);
 
-  const baseData = useMemo(
-    () => [
-      { city: "北京", revenue: 2557547.5, target: 3000000, budget: 180000, budgetSpent: 135000 },
-      { city: "上海", revenue: 18263334.94, target: 19000000, budget: 260000, budgetSpent: 182000 },
-      { city: "广州", revenue: 15647750.63, target: 16500000, budget: 220000, budgetSpent: 165000 },
-      { city: "深圳", revenue: 59508119.94, target: 61000000, budget: 480000, budgetSpent: 392000 },
-      { city: "杭州", revenue: 19714582.48, target: 20500000, budget: 210000, budgetSpent: 168000 },
-      { city: "南京", revenue: 5615580.3, target: 6000000, budget: 120000, budgetSpent: 91000 },
-      { city: "宁波", revenue: 3112302.03, target: 3500000, budget: 90000, budgetSpent: 62000 },
-      { city: "成都", revenue: 169832812.69, target: 175000000, budget: 900000, budgetSpent: 735000 },
-      { city: "重庆", revenue: 49291854.41, target: 51000000, budget: 420000, budgetSpent: 336000 }
-    ],
-    []
-  );
-
-  const rows = useMemo(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const startOfYear = new Date(year, 0, 1);
-    const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
-    const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
-    const totalDaysYear = isLeap ? 366 : 365;
-    const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
-    return baseData.map((d) => {
-      const phasedTarget = d.target ? d.target * timeProgressRatio : 0;
-      const completionRate = d.target ? (d.revenue / d.target) * 100 : 0;
-      const consumptionRate = d.budget ? (d.budgetSpent / d.budget) * 100 : 0;
-      const phasedBudget = d.budget ? d.budget * timeProgressRatio : 0;
-      return {
-        城市名称: `${d.city}市`,
-        营业额: Math.round(d.revenue),
-        营业额目标: Math.round(d.target),
-        时间进度: `${(timeProgressRatio * 100).toFixed(1)}%`,
-        营业额完成率: `${completionRate.toFixed(1)}%`,
-        预算金额: Math.round(d.budget),
-        预算花费金额: Math.round(d.budgetSpent),
-        预算消耗率: `${consumptionRate.toFixed(1)}%`,
-      };
-    });
-  }, [baseData]);
 
   const progressNumbers = rows.map(r => parseFloat(r["营业额完成进度"]));
   const minProgress = progressNumbers.length > 0 ? Math.min(...progressNumbers) : null;
@@ -108,11 +162,19 @@ const RevenueDecompositionContainer = () => {
 
   const openCityModal = async (cityName) => {
     setSelectedCity(cityName);
+    setIsModalOpen(true);
+    fetchStoreData();
+    fetchModalTrendData([cityName]);
+
     const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
-    const city = baseData.find(c => normalizeCity(c.city) === normalizeCity(cityName));
+    const city = fetchedData ? fetchedData.find(c => normalizeCity(c.city) === normalizeCity(cityName)) : null;
+
     if (city) {
       const weekRanges = buildLast12Weeks();
       setWeeks(weekRanges);
+      
+      // If we don't have SQL data yet (loading or empty), we set up fallback structure
+      // But actual rendering checks modalTrendData in buildCitySeries
       const base = city.revenue / 52;
       const nameSeed = String(cityName).split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
       const N = weekRanges.length;
@@ -125,24 +187,27 @@ const RevenueDecompositionContainer = () => {
       });
       setWeeklyData(weeklyValues);
       setSelectedWeekIndex(11);
+    } else {
+      setWeeklyData([]);
+      setStoreRows([]);
+    }
+  };
 
-      const today = new Date();
-      const year = today.getFullYear();
-      const startOfYear = new Date(year, 0, 1);
-      const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
-      const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
-      const totalDaysYear = isLeap ? 366 : 365;
-      const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
+  useEffect(() => {
+    if (selectedCity && weeklyData.length > 0 && fetchedData) {
+      const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
+      const city = fetchedData.find(c => normalizeCity(c.city) === normalizeCity(selectedCity));
+      
+      if (!city) return;
 
       let storeNames = [];
-      try {
-        const resp = await fetch("/src/data/store_list.csv");
-        const text = await resp.text();
-        const parsed = parseCSV(text);
-        storeNames = parsed.rows
-          .filter(r => normalizeCity(r["城市名称"]) === normalizeCity(cityName))
-          .map(r => r["门店名称"]);
-      } catch {
+      if (storeData && Array.isArray(storeData) && storeData.length > 0) {
+        storeNames = storeData
+          .filter(r => normalizeCity(r.city) === normalizeCity(selectedCity))
+          .map(r => r.store_name);
+      }
+      
+      if (storeNames.length === 0) {
         storeNames = ["门店A", "门店B", "门店C", "门店D"];
       }
 
@@ -157,6 +222,7 @@ const RevenueDecompositionContainer = () => {
         const total = raw.reduce((a, b) => a + b, 0) || 1;
         return raw.map((w) => w / total);
       };
+      
       const perfFactor = (name, weekIdx) => {
         const s = String(name);
         let sum = 0;
@@ -165,6 +231,7 @@ const RevenueDecompositionContainer = () => {
         const delta = (r - 0.5) * 0.1; // -0.05..0.05
         return 1 + delta;
       };
+      
       const consFactor = (name, weekIdx) => {
         const s = String(name);
         let sum = 0;
@@ -173,23 +240,32 @@ const RevenueDecompositionContainer = () => {
         const delta = (r - 0.5) * 0.12; // -0.06..0.06
         return 1 + delta;
       };
+
       const weights = computeWeights(storeNames);
       // 先按门店权重分配收入，再按门店绩效因子微调并归一化保持总和
       const rawRevenues = storeNames.map((name, idx) => {
         const share = weights[idx] || 1 / (storeNames.length || 1);
         const perf = perfFactor(name, selectedWeekIndex);
-        return weeklyValues[selectedWeekIndex] * share * perf;
+        return weeklyData[selectedWeekIndex] * share * perf;
       });
+      
       const totalRaw = rawRevenues.reduce((a, b) => a + b, 0) || 1;
-      const scale = weeklyValues[selectedWeekIndex] / totalRaw;
+      const scale = weeklyData[selectedWeekIndex] / totalRaw;
+      
+      const today = new Date();
+      const year = today.getFullYear();
+      const startOfYear = new Date(year, 0, 1);
+      const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+      const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+      const totalDaysYear = isLeap ? 366 : 365;
+      const timeProgressRatio = totalDaysYear > 0 ? (dayOfYear / totalDaysYear) : 0;
+
       const stores = storeNames.map((name, idx) => {
         const share = weights[idx] || 1 / (storeNames.length || 1);
         const sRevenue = rawRevenues[idx] * scale;
         const sTarget = (city.target / 52) * share;
         const sBudget = (city.budget / 52) * share;
         const sSpent = (city.budgetSpent / 52) * share * consFactor(name, selectedWeekIndex);
-        const phasedTarget = sTarget * timeProgressRatio;
-        const phasedBudget = sBudget * timeProgressRatio;
         const completionRate = sTarget ? (sRevenue / sTarget) * 100 : 0;
         const consumptionRate = sBudget ? (sSpent / sBudget) * 100 : 0;
         return {
@@ -204,12 +280,8 @@ const RevenueDecompositionContainer = () => {
         };
       });
       setStoreRows(stores);
-    } else {
-      setWeeklyData([]);
-      setStoreRows([]);
     }
-    setIsModalOpen(true);
-  };
+  }, [storeData, selectedCity, weeklyData, fetchedData, selectedWeekIndex]);
 
   const METRICS = [
     { key: "revenue", label: "周度营业额", unit: "元", format: (val) => `¥ ${Math.round(val).toLocaleString("zh-CN")}`, axisFormat: (val) => (val / 10000).toFixed(0) + "万" },
@@ -218,6 +290,55 @@ const RevenueDecompositionContainer = () => {
   ];
 
   const buildCitySeries = () => {
+    // Priority 1: SQL Fetched Data
+    if (modalTrendData && modalTrendData.length > 0) {
+      const labels = [];
+      const series = {
+        revenue: [],
+        ytdRevenue: [],
+        dailyAvgRevenue: [],
+        dailyAvgPrice: [],
+        dailyAvgCustomer: [],
+        avgServiceDuration: [],
+      };
+      const seriesLY = {
+        revenue: [],
+        ytdRevenue: [],
+        dailyAvgRevenue: [],
+        dailyAvgPrice: [],
+        dailyAvgCustomer: [],
+        avgServiceDuration: [],
+      };
+
+      // Ensure chronological order
+      const sorted = [...modalTrendData].sort((a, b) => (a.week_num || 0) - (b.week_num || 0));
+
+      sorted.forEach(row => {
+        labels.push(row.week_label || `第${row.week_num}周`);
+        
+        const rev = Number(row.revenue) || 0;
+        const revLY = Number(row.revenue_ly) || 0;
+        const price = Number(row.avg_price) || 0;
+        const priceLY = Number(row.avg_price_ly) || 0;
+
+        series.revenue.push(rev);
+        series.ytdRevenue.push(Number(row.ytd_revenue) || 0);
+        series.dailyAvgRevenue.push(rev / 7);
+        series.dailyAvgPrice.push(price);
+        series.dailyAvgCustomer.push(price ? Math.round((rev / 7) / price) : 0);
+        series.avgServiceDuration.push(0);
+
+        seriesLY.revenue.push(revLY);
+        seriesLY.ytdRevenue.push(Number(row.ytd_revenue_ly) || 0);
+        seriesLY.dailyAvgRevenue.push(revLY / 7);
+        seriesLY.dailyAvgPrice.push(priceLY);
+        seriesLY.dailyAvgCustomer.push(priceLY ? Math.round((revLY / 7) / priceLY) : 0);
+        seriesLY.avgServiceDuration.push(0);
+      });
+      return { series, seriesLY, labels };
+    }
+
+    // Priority 2: Fallback Mock Data
     const N = weeklyData.length;
     if (N === 0) return { series: {}, seriesLY: {}, labels: [] };
     const labels = weeks.map(w => `第${String(w.weekNo).padStart(2, "0")}周`);

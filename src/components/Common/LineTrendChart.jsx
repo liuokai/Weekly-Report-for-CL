@@ -26,15 +26,34 @@ const LineTrendChart = ({
   const graphWidth = width - padding.left - padding.right;
   const graphHeight = height - padding.top - padding.bottom;
 
-  const allValues = showYoY && valuesYoY && valuesYoY.length ? [...values, ...valuesYoY] : [...values];
+  // Ensure values and valuesYoY are valid arrays
+  const safeValues = Array.isArray(values) ? values : [];
+  const safeValuesYoY = Array.isArray(valuesYoY) ? valuesYoY : [];
+
+  const allValues = showYoY && safeValuesYoY.length ? [...safeValues, ...safeValuesYoY] : [...safeValues];
+  
+  // Handle empty data case
+  if (allValues.length === 0) {
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-sm" style={{ height, width }}>
+        {headerTitle && <div className="mb-4 font-bold text-gray-700">{headerTitle}</div>}
+        <div className="flex justify-center items-center h-full text-gray-400">暂无数据</div>
+      </div>
+    );
+  }
+
   const maxVal = Math.max(...allValues) * 1.05;
   const minVal = Math.min(...allValues) * 0.95;
 
-  const getX = (index) => padding.left + (index / (values.length - 1)) * graphWidth;
-  const getY = (value) => padding.top + graphHeight - ((value - minVal) / (maxVal - minVal)) * graphHeight;
+  const getX = (index) => padding.left + (index / (Math.max(safeValues.length - 1, 1))) * graphWidth;
+  const getY = (value) => {
+    if (maxVal === minVal) return padding.top + graphHeight / 2;
+    return padding.top + graphHeight - ((value - minVal) / (maxVal - minVal)) * graphHeight;
+  };
 
   const calculateTrendLine = () => {
-    const n = values.length;
+    const n = safeValues.length;
+    if (n < 2) return [];
     let sumX = 0;
     let sumY = 0;
     let sumXY = 0;
@@ -55,15 +74,15 @@ const LineTrendChart = ({
   const trendPathD = trendValues.map((val, i) => `${i === 0 ? "M" : "L"} ${getX(i)} ${getY(val)}`).join(" ");
 
   // Calculate Average Line
-  const averageValue = values.reduce((a, b) => a + b, 0) / (values.length || 1);
+  const averageValue = safeValues.reduce((a, b) => a + b, 0) / (safeValues.length || 1);
   const averageY = getY(averageValue);
   const averagePathD = `M ${padding.left} ${averageY} L ${width - padding.right} ${averageY}`;
 
   let maxIndex = 0;
   let minIndex = 0;
-  for (let i = 0; i < values.length; i++) {
-    if (values[i] > values[maxIndex]) maxIndex = i;
-    if (values[i] < values[minIndex]) minIndex = i;
+  for (let i = 0; i < safeValues.length; i++) {
+    if (safeValues[i] > safeValues[maxIndex]) maxIndex = i;
+    if (safeValues[i] < safeValues[minIndex]) minIndex = i;
   }
 
   const getSmoothPath = (points) => {
@@ -86,10 +105,10 @@ const LineTrendChart = ({
     return d.join(" ");
   };
 
-  const points = values.map((v, i) => ({ x: getX(i), y: getY(v) }));
+  const points = safeValues.map((v, i) => ({ x: getX(i), y: getY(v) }));
   const pathD = getSmoothPath(points);
 
-  const pointsLY = (valuesYoY || []).map((v, i) => ({ x: getX(i), y: getY(v) }));
+  const pointsLY = (safeValuesYoY || []).map((v, i) => ({ x: getX(i), y: getY(v) }));
   const pathDLY = getSmoothPath(pointsLY);
 
   const [hoverIndex, setHoverIndex] = useState(null);

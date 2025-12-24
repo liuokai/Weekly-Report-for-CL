@@ -40,14 +40,9 @@ module.exports = {
     ],
     compress: true,
     port: 8000,
-    proxy: [
-      {
-        context: ['/api'],
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false
-      }
-    ],
+    proxy: {
+      '/api': 'http://localhost:3001',
+    },
   },
   resolve: {
     extensions: ['.js', '.jsx'],

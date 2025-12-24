@@ -3,10 +3,11 @@ import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
 import HQMetricsTrendChart from './HQMetricsTrendChart';
 import LineTrendChart from '../../components/Common/LineTrendChart';
-import { parseCSV } from '../../utils/dataLoader';
+import useFetchData from '../../hooks/useFetchData';
 
 const PriceDecompositionContainer = () => {
-  const [data, setData] = useState([]);
+  // data state is no longer needed as we use priceGrowthData directly
+  // const [data, setData] = useState([]); 
   const [hqData, setHqData] = useState({
     currentPrice: 0,
     lastYearPrice: 0,
@@ -30,6 +31,27 @@ const PriceDecompositionContainer = () => {
   const [procShowExtremes, setProcShowExtremes] = useState(true);
   const [procCityRows, setProcCityRows] = useState([]);
   const [procColumnsDyn, setProcColumnsDyn] = useState([]);
+
+  // Fetch trend data and city data using SQL
+  const { data: fetchedTrendData, loading: trendLoading } = useFetchData('getProcessMetricTrend', { metric: procMetric });
+  const { data: fetchedCityData, loading: cityLoading } = useFetchData('getProcessCityData', { metric: procMetric });
+  // Fetch city price growth data
+  const { data: priceGrowthData } = useFetchData('getCityPriceGrowth');
+
+  const [modalContextCity, setModalContextCity] = useState(null);
+  
+  // Fetch modal data
+  const { data: modalTrendData } = useFetchData('getCityModalTrend', { 
+    entity: selectedCity, 
+    city: modalContextCity, 
+    metric: procMetric 
+  });
+  const { data: modalStoreData } = useFetchData('getCityModalStoreData', { 
+    entity: selectedCity, 
+    city: modalContextCity, 
+    metric: procMetric 
+  });
+
   const impactInfos = useMemo(() => {
     return {
       returnRate: {
@@ -105,40 +127,34 @@ const PriceDecompositionContainer = () => {
   }, []);
 
   useEffect(() => {
-    fetch('/src/data/城市维度客单价增长率.csv')
-      .then(res => res.text())
-      .then(text => {
-        const { rows } = parseCSV(text);
-        setData(rows);
+    if (priceGrowthData && priceGrowthData.length > 0) {
+      // Calculate HQ totals
+      let totalCurrentRevenue = 0;
+      let totalCurrentOrders = 0;
+      let totalLastRevenue = 0;
+      let totalLastOrders = 0;
 
-        // Calculate HQ totals
-        let totalCurrentRevenue = 0;
-        let totalCurrentOrders = 0;
-        let totalLastRevenue = 0;
-        let totalLastOrders = 0;
+      priceGrowthData.forEach(row => {
+        const currPrice = parseFloat(row.current_price || 0);
+        const lastPrice = parseFloat(row.last_year_price || 0);
+        const approxOrders = 1;
+        totalCurrentRevenue += currPrice * approxOrders;
+        totalCurrentOrders += approxOrders;
+        totalLastRevenue += lastPrice * approxOrders;
+        totalLastOrders += approxOrders;
+      });
 
-        rows.forEach(row => {
-          const currPrice = parseFloat(row['今年客单价'] || 0);
-          const lastPrice = parseFloat(row['去年客单价'] || 0);
-          const approxOrders = 1;
-          totalCurrentRevenue += currPrice * approxOrders;
-          totalCurrentOrders += approxOrders;
-          totalLastRevenue += lastPrice * approxOrders;
-          totalLastOrders += approxOrders;
-        });
+      const currentPrice = totalCurrentOrders ? totalCurrentRevenue / totalCurrentOrders : 0;
+      const lastYearPrice = totalLastOrders ? totalLastRevenue / totalLastOrders : 0;
+      const growthRate = lastYearPrice ? ((currentPrice - lastYearPrice) / lastYearPrice) * 100 : 0;
 
-        const currentPrice = totalCurrentOrders ? totalCurrentRevenue / totalCurrentOrders : 0;
-        const lastYearPrice = totalLastOrders ? totalLastRevenue / totalLastOrders : 0;
-        const growthRate = lastYearPrice ? ((currentPrice - lastYearPrice) / lastYearPrice) * 100 : 0;
-
-        setHqData({
-          currentPrice,
-          lastYearPrice,
-          growthRate
-        });
-      })
-      .catch(err => console.error('Failed to load price data', err));
-  }, []);
+      setHqData({
+        currentPrice,
+        lastYearPrice,
+        growthRate
+      });
+    }
+  }, [priceGrowthData]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -152,21 +168,56 @@ const PriceDecompositionContainer = () => {
   }, [isModalOpen]);
 
   const tableData = useMemo(() => {
-    return data.map((row, index) => ({
+    let source = [];
+    if (priceGrowthData && priceGrowthData.length > 0) {
+      source = priceGrowthData;
+    } else {
+      // Mock Fallback
+      const cities = ['北京', '上海', '广州', '深圳', '杭州', '南京', '成都', '武汉', '西安', '苏州'];
+      source = cities.map((city, i) => {
+         const lastYearPrice = 280 + Math.random() * 40;
+         const currentPrice = lastYearPrice * (1 + (Math.random() * 0.1 - 0.02));
+         const growthRate = ((currentPrice - lastYearPrice) / lastYearPrice * 100).toFixed(2) + '%';
+         
+         const laborCost = 30 + Math.random() * 10;
+         const recruitTrainCost = 10 + Math.random() * 5;
+         const totalCost = laborCost + recruitTrainCost;
+         const budget = 50 + Math.random() * 10;
+         const budgetUsageRate = ((totalCost / budget) * 100).toFixed(1) + '%';
+         const timeProgress = '75.0%';
+         const usageDiff = (parseFloat(budgetUsageRate) - 75).toFixed(1) + '%';
+
+         return {
+            city,
+            last_year_price: lastYearPrice,
+            current_price: currentPrice,
+            growth_rate: growthRate,
+            labor_cost: laborCost,
+            recruit_train_cost: recruitTrainCost,
+            total_cost: totalCost,
+            budget: budget,
+            budget_usage_rate: budgetUsageRate,
+            time_progress: timeProgress,
+            usage_progress_diff: usageDiff
+         };
+      });
+    }
+
+    return source.map((row, index) => ({
       key: index,
-      city: row['城市'],
-      lastYearPrice: parseFloat(row['去年客单价'] || 0),
-      currentPrice: parseFloat(row['今年客单价'] || 0),
-      yoyRate: row['客单价增长率'] || '0%',
-      laborCost: parseFloat(row['人工支出（工资+社保）'] || 0),
-      recruitTrainCost: parseFloat(row['招聘渠道费及培训费'] || 0),
-      totalCost: parseFloat(row['费用合计金额'] || 0),
-      budget: parseFloat(row['预算金额'] || 0),
-      budgetUsageRate: row['预算使用率'] || '0%',
-      timeProgress: row['时间进度'] || '0%',
-      usageProgressDiff: row['预算使用进度差'] || '0%'
+      city: row.city,
+      lastYearPrice: parseFloat(row.last_year_price || 0),
+      currentPrice: parseFloat(row.current_price || 0),
+      yoyRate: row.growth_rate || '0%',
+      laborCost: parseFloat(row.labor_cost || 0),
+      recruitTrainCost: parseFloat(row.recruit_train_cost || 0),
+      totalCost: parseFloat(row.total_cost || 0),
+      budget: parseFloat(row.budget || 0),
+      budgetUsageRate: row.budget_usage_rate || '0%',
+      timeProgress: row.time_progress || '0%',
+      usageProgressDiff: row.usage_progress_diff || '0%'
     }));
-  }, [data]);
+  }, [priceGrowthData]);
 
   const [modalColumns, setModalColumns] = useState([]);
 
@@ -464,260 +515,215 @@ const PriceDecompositionContainer = () => {
   };
 
   useEffect(() => {
-    const N = (procWeeks || []).length || 12;
-    const series = buildProcWeeklySeries(procMetric, N);
-    setProcValues(series.values);
-    setProcValuesLY(series.valuesLY);
-    const loadCSV = async () => {
-      try {
-        if (procMetric === 'returnRate') {
-          const resp = await fetch('/src/data/客单价-项目回头率.csv');
-          const text = await resp.text();
-          const parsed = parseCSV(text);
-          const headers = parsed.headers || [];
-          const rows = (parsed.rows || []).map((r, idx) => ({ key: `rr-${idx}`, ...r }));
-          const cols = headers.map((h) => {
-            if (h === '项目回头率') {
-              return {
-                key: h, title: h, dataIndex: h,
-                render: (val) => {
-                  const num = parseFloat(String(val).replace('%','')) || 0;
-                  const isHigh = num >= 30;
-                  return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
-                }
-              };
-            }
-            return { key: h, title: h, dataIndex: h };
-          });
-          setProcColumnsDyn(cols);
-          setProcCityRows(rows);
-          return;
-        }
-        if (procMetric === 'configRatio') {
-          const resp = await fetch('/src/data/城市维度床位人员配置比.csv');
-          const text = await resp.text();
-          const parsed = parseCSV(text);
-          const headers = parsed.headers || [];
-          const rows = (parsed.rows || []).map((r, idx) => ({ key: `cr-${idx}`, ...r }));
-          const cols = headers
-            .filter(h => h !== '床位人员配置比目标值' && h !== '是否达标')
-            .map((h) => {
-              if (h === '城市') {
-                return {
-                  key: h, title: h, dataIndex: h,
-                  render: (val) => (
-                    <span 
-                      className="text-[#a40035] cursor-pointer hover:underline"
-                      onClick={() => openCityModal(val)}
-                    >
-                      {val}
-                    </span>
-                  )
-                };
-              }
-              if (h === '今年床位人员配置比') {
-                return {
-                  key: h, title: h, dataIndex: h,
-                  render: (val, record) => {
-                    const num = parseFloat(String(val)) || 0;
-                    const target = parseFloat(String(record['床位人员配置比目标值'])) || 0.5;
-                    const isHigh = num >= target;
-                    return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
-                  }
-                };
-              }
-              if (h === '同比') {
-                return {
-                  key: h, title: h, dataIndex: h,
-                  render: (val) => {
-                    const num = parseFloat(String(val).replace('%','')) || 0;
-                    const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
-                    const sign = num > 0 ? '+' : '';
-                    return <span className={cls}>{`${sign}${num.toFixed(1)}%`}</span>;
-                  }
-                };
-              }
-              return { key: h, title: h, dataIndex: h };
-            });
-          setProcColumnsDyn(cols);
-          setProcCityRows(rows);
-          return;
-        }
-        if (procMetric === 'newEmpReturn') {
-          const resp = await fetch('/src/data/技术副总名单.csv');
-          const text = await resp.text();
-          const parsed = parseCSV(text);
-          
-          const rows = (parsed.rows || []).map((r, idx) => {
-            const seed = (String(r['城市'] || '') + String(r['技术副总'] || '')).split('').reduce((a, c) => a + c.charCodeAt(0), 0) + idx;
-            const rate = 75 + (seed % 21); // 75 to 95
-            return {
-              key: `ner-${idx}`,
-              '城市': r['城市'],
-              '技术副总姓名': r['技术副总'],
-              '新员工回头率达标率': `${rate.toFixed(1)}%`
-            };
-          });
+    // 1. Handle Trend Data
+    if (fetchedTrendData && fetchedTrendData.length > 0) {
+      // Expecting [{ week_num, current_value, last_year_value }, ...]
+      // Sort by week_num to ensure correct order
+      const sorted = [...fetchedTrendData].sort((a, b) => a.week_num - b.week_num);
+      setProcValues(sorted.map(d => Number(d.current_value)));
+      setProcValuesLY(sorted.map(d => Number(d.last_year_value)));
+    } else {
+      // Fallback to mock if SQL returns no data
+      const N = (procWeeks || []).length || 12;
+      const series = buildProcWeeklySeries(procMetric, N);
+      setProcValues(series.values);
+      setProcValuesLY(series.valuesLY);
+    }
 
-          const cols = [
-            { key: '城市', title: '城市', dataIndex: '城市' },
-            { 
-              key: '技术副总姓名', 
+    // 2. Handle City Data
+    if (fetchedCityData && fetchedCityData.length > 0) {
+      const cityCol = { 
+        key: 'city', 
+        title: '城市', 
+        dataIndex: 'city',
+        render: (val) => (
+          <span 
+            className="text-[#a40035] cursor-pointer hover:underline"
+            onClick={() => openCityModal(val)}
+          >
+            {val}
+          </span>
+        )
+      };
+
+      let cols = [];
+      if (procMetric === 'returnRate') {
+        cols = [
+           cityCol,
+           { key: 'value', title: '项目回头率', dataIndex: 'value', 
+             render: (val) => {
+                const num = parseFloat(String(val).replace('%','')) || 0;
+                const isHigh = num >= 30;
+                return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+             }
+           },
+           { key: 'target', title: '目标', dataIndex: 'target' },
+           { key: 'status', title: '状态', dataIndex: 'status' }
+        ];
+      } else if (procMetric === 'configRatio') {
+         cols = [
+           cityCol,
+           { key: 'value', title: '今年床位人员配置比', dataIndex: 'value',
+             render: (val, record) => {
+                const num = parseFloat(String(val)) || 0;
+                const target = parseFloat(String(record.target)) || 0.5;
+                const isHigh = num >= target;
+                return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+             }
+           },
+           { key: 'target', title: '目标', dataIndex: 'target' },
+           { key: 'status', title: '状态', dataIndex: 'status' }
+         ];
+      } else if (procMetric === 'newEmpReturn') {
+         cols = [
+           { 
+              key: 'city', 
+              title: '城市', 
+              dataIndex: 'city' 
+           },
+           { 
+              key: 'name', 
               title: '技术副总姓名', 
-              dataIndex: '技术副总姓名',
+              dataIndex: 'name', // SQL should return 'name'
               render: (val, record) => (
                 <span 
                   className="text-[#a40035] cursor-pointer hover:underline"
-                  onClick={() => openVPModal(val, record['城市'])}
+                  onClick={() => openVPModal(val, record.city)}
                 >
                   {val}
                 </span>
               )
-            },
-            { 
-              key: '新员工回头率达标率', 
+           },
+           { 
+              key: 'value', 
               title: '新员工回头率达标率', 
-              dataIndex: '新员工回头率达标率',
+              dataIndex: 'value',
               render: (val) => {
                 const num = parseFloat(String(val).replace('%', '')) || 0;
-                // Optional: color logic, e.g., >= 85 red (good), < 85 green? 
-                // Or just bold. Let's use red for high (good) as per other metrics if it's "达标率"
-                // Assuming high is good.
-                const isHigh = num >= 80; // arbitrary threshold based on "80%上下"
+                const isHigh = num >= 80;
                 return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
               }
-            }
-          ];
-          
-          setProcColumnsDyn(cols);
-          setProcCityRows(rows);
-          return;
-        }
-        if (procMetric === 'therapistYield') {
-          // Mock data based on city list from tableData
-          const rows = tableData.map((r, idx) => {
-            const seed = String(r.city).split('').reduce((a, c) => a + c.charCodeAt(0), 0) + idx;
-            const total = 50 + (seed % 150); // 50-200
-            const qualified = Math.floor(total * (0.6 + (seed % 30) / 100)); // 60-90%
-            const rate = (qualified / total) * 100;
-            return {
-              key: `ty-${idx}`,
-              '城市': r.city,
-              '在职推拿师人数': total,
-              '产值达标推拿师人数': qualified,
-              '推拿师产值达标率': `${rate.toFixed(1)}%`
-            };
-          });
-
-          const cols = [
+           }
+         ];
+      } else if (procMetric === 'therapistYield') {
+         cols = [
+            cityCol,
+            { key: 'total_therapists', title: '在职推拿师人数', dataIndex: 'total_therapists' },
+            { key: 'qualified_therapists', title: '产值达标推拿师人数', dataIndex: 'qualified_therapists' },
             { 
-              key: '城市', 
-              title: '城市', 
-              dataIndex: '城市',
-              render: (val) => (
-                <span 
-                  className="text-[#a40035] cursor-pointer hover:underline"
-                  onClick={() => openCityModal(val)}
-                >
-                  {val}
-                </span>
-              )
-            },
-            { key: '在职推拿师人数', title: '在职推拿师人数', dataIndex: '在职推拿师人数' },
-            { key: '产值达标推拿师人数', title: '产值达标推拿师人数', dataIndex: '产值达标推拿师人数' },
-            { 
-              key: '推拿师产值达标率', 
+              key: 'value', 
               title: '推拿师产值达标率', 
-              dataIndex: '推拿师产值达标率',
+              dataIndex: 'value',
               render: (val) => {
                 const num = parseFloat(String(val).replace('%', '')) || 0;
                 const isHigh = num >= 80;
                 return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
               }
             }
-          ];
-          setProcColumnsDyn(cols);
-          setProcCityRows(rows);
-          return;
-        }
-        const rows = buildProcCityRows(procMetric);
-        setProcCityRows(rows);
-        setProcColumnsDyn(procColumnsDefault);
-      } catch {
-        const rows = buildProcCityRows(procMetric);
-        setProcCityRows(rows);
-        setProcColumnsDyn(procColumnsDefault);
+         ];
+      } else {
+        cols = [
+          cityCol,
+          { key: 'value', title: '指标值', dataIndex: 'value' },
+          { key: 'target', title: '目标', dataIndex: 'target' },
+          { key: 'status', title: '达标', dataIndex: 'status',
+            render: (val) => {
+              const cls = val === '达标' ? 'text-green-600' : 'text-red-600';
+              return <span className={cls}>{val}</span>;
+            } 
+          },
+        ];
       }
-    };
-    loadCSV();
-  }, [procMetric, procWeeks, tableData]);
+      
+      setProcColumnsDyn(cols);
+      setProcCityRows(fetchedCityData.map((r, i) => ({ key: i, ...r })));
+    } else {
+      // Fallback to mock
+      const rows = buildProcCityRows(procMetric);
+      setProcCityRows(rows);
+      setProcColumnsDyn(procColumnsDefault);
+    }
+  }, [fetchedTrendData, fetchedCityData, procMetric, procWeeks]);
 
-  const openCityModal = async (cityName) => {
+  const openCityModal = (cityName) => {
     setSelectedCity(cityName);
-    const cityRow = tableData.find(r => r.city === cityName);
-    const weekRanges = buildLast12Weeks();
-    setWeeks(weekRanges);
-    const N = weekRanges.length;
+    setModalContextCity(cityName);
+    setIsModalOpen(true);
+  };
+
+  const openVPModal = (vpName, cityName) => {
+    setSelectedCity(vpName);
+    setModalContextCity(cityName);
+    setIsModalOpen(true);
+  };
+
+  useEffect(() => {
+    if (!isModalOpen || !selectedCity) return;
+
+    const seed = String(selectedCity || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
+    const getFallbackStores = () => ['门店A', '门店B', '门店C', '门店D'];
 
     if (procMetric === 'configRatio') {
-      const seed = String(cityName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-      const currSeries = [];
-      const lastSeries = [];
-      for (let i = 0; i < N; i++) {
-        const t = i / N;
-        const target = 0.5;
-        const base = target + 0.04 * Math.sin(t * Math.PI * 2);
-        const ly = (target - 0.03) + 0.03 * Math.cos(t * Math.PI * 2);
-        const noise = (((i * 17) % 11) - 5) / 1000 + ((seed % 100) / 5000);
-        const curr = Math.max(0.4, Math.min(0.6, base + noise));
-        const last = Math.max(0.4, Math.min(0.6, ly + noise * 0.6));
-        currSeries.push(Number(curr.toFixed(2)));
-        lastSeries.push(Number(last.toFixed(2)));
+      const weekRanges = buildLast12Weeks();
+      setWeeks(weekRanges);
+      
+      if (modalTrendData && modalTrendData.length > 0) {
+        const sorted = [...modalTrendData].sort((a,b) => a.week_num - b.week_num);
+        setWeeklyPrice(sorted.map(d => d.current_value));
+        setWeeklyPriceLY(sorted.map(d => d.last_year_value));
+      } else {
+        const N = weekRanges.length;
+        const currSeries = [], lastSeries = [];
+        for (let i = 0; i < N; i++) {
+          const t = i / N;
+          const target = 0.5;
+          const base = target + 0.04 * Math.sin(t * Math.PI * 2);
+          const ly = (target - 0.03) + 0.03 * Math.cos(t * Math.PI * 2);
+          const noise = (((i * 17) % 11) - 5) / 1000 + ((seed % 100) / 5000);
+          currSeries.push(Number(Math.max(0.4, Math.min(0.6, base + noise)).toFixed(2)));
+          lastSeries.push(Number(Math.max(0.4, Math.min(0.6, ly + noise * 0.6)).toFixed(2)));
+        }
+        setWeeklyPrice(currSeries);
+        setWeeklyPriceLY(lastSeries);
       }
-      setWeeklyPrice(currSeries);
-      setWeeklyPriceLY(lastSeries);
 
-      let storeNames = [];
-      const normalizeCity = (n) => String(n || '').replace(/市$/, '').trim();
-      try {
-        const resp = await fetch('/src/data/store_list.csv');
-        const text = await resp.text();
-        const parsed = parseCSV(text);
-        storeNames = parsed.rows
-          .filter(r => normalizeCity(r['城市名称']) === normalizeCity(cityName))
-          .map(r => r['门店名称']);
-      } catch {
-        storeNames = [];
+      if (modalStoreData && modalStoreData.length > 0) {
+         const configRows = modalStoreData.map((row, idx) => ({
+           key: idx,
+           '门店名称': row.store_name,
+           '去年推拿师人数': row.last_therapists,
+           '去年床位数量': row.last_beds,
+           '去年床位人员配置比': row.last_ratio,
+           '今年推拿师人数': row.curr_therapists,
+           '今年床位数量': row.curr_beds,
+           '今年床位人员配置比': row.curr_ratio,
+           '同比': row.yoy
+        }));
+        setStoreRows(configRows);
+      } else {
+        const storeNames = getFallbackStores();
+        const configRows = storeNames.map((name, idx) => {
+          const sLast = 5 + (seed + idx * 7) % 10; 
+          const bLast = Math.floor(sLast * (0.5 + ((idx % 3) * 0.1)));
+          const rLast = bLast / sLast;
+          const sCurr = 5 + (seed + idx * 13) % 12; 
+          const bCurr = Math.floor(sCurr * (0.45 + ((idx % 5) * 0.05)));
+          const rCurr = bCurr / sCurr;
+          const yoy = rLast ? ((rCurr - rLast) / rLast) * 100 : 0;
+          return {
+            key: `${name}-${idx}`,
+            '门店名称': name,
+            '去年推拿师人数': sLast,
+            '去年床位数量': bLast,
+            '去年床位人员配置比': rLast.toFixed(2),
+            '今年推拿师人数': sCurr,
+            '今年床位数量': bCurr,
+            '今年床位人员配置比': rCurr.toFixed(2),
+            '同比': `${yoy > 0 ? '+' : ''}${yoy.toFixed(1)}%`
+          };
+        });
+        setStoreRows(configRows);
       }
-      
-      if (storeNames.length === 0) {
-        storeNames = ['门店A', '门店B', '门店C', '门店D'];
-      }
-      
-      const configRows = storeNames.map((name, idx) => {
-        const sLast = 5 + (seed + idx * 7) % 10; // 5-14
-        const bLast = Math.floor(sLast * (0.5 + ((idx % 3) * 0.1)));
-        const rLast = bLast / sLast;
-        
-        const sCurr = 5 + (seed + idx * 13) % 12; // 5-16
-        const bCurr = Math.floor(sCurr * (0.45 + ((idx % 5) * 0.05)));
-        const rCurr = bCurr / sCurr;
-        
-        const yoy = rLast ? ((rCurr - rLast) / rLast) * 100 : 0;
-        
-        return {
-          key: `${name}-${idx}`,
-          '门店名称': name,
-          '去年推拿师人数': sLast,
-          '去年床位数量': bLast,
-          '去年床位人员配置比': rLast.toFixed(2),
-          '今年推拿师人数': sCurr,
-          '今年床位数量': bCurr,
-          '今年床位人员配置比': rCurr.toFixed(2),
-          '同比': `${yoy > 0 ? '+' : ''}${yoy.toFixed(1)}%`
-        };
-      });
-      setStoreRows(configRows);
       
       const storeCols = [
         { key: '门店名称', title: '门店名称', dataIndex: '门店名称' },
@@ -749,54 +755,37 @@ const PriceDecompositionContainer = () => {
         }
       ];
       setModalColumns(storeCols);
-      setIsModalOpen(true);
-      return;
-    }
 
-    if (procMetric === 'therapistYield') {
-      const seed = String(cityName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-      const months = Array.from({length: 12}, (_, i) => i + 1);
-      
-      // 1. Trend Data (Jan-Dec)
-      const currSeries = months.map((m, i) => {
-        const base = 80;
-        const noise = ((seed + i * 17) % 21) - 10; 
-        return Math.max(60, Math.min(100, base + noise));
-      });
-      const lastSeries = months.map((m, i) => {
-        const base = 78;
-        const noise = ((seed + i * 11) % 19) - 9;
-        return Math.max(60, Math.min(100, base + noise));
-      });
+    } else if (procMetric === 'therapistYield' || procMetric === 'newEmpReturn') {
+       const months = Array.from({length: 12}, (_, i) => i + 1);
+       const monthRanges = months.map(m => ({
+          weekNo: m,
+          label: `2025年${m}月`,
+          start: `2025-${String(m).padStart(2,'0')}-01`,
+          end: `2025-${String(m).padStart(2,'0')}-28`
+       }));
+       setWeeks(monthRanges);
 
-      const monthRanges = months.map(m => ({
-        weekNo: m,
-        label: `2025年${m}月`,
-        start: `2025-${String(m).padStart(2,'0')}-01`,
-        end: `2025-${String(m).padStart(2,'0')}-28`
-      }));
-      setWeeks(monthRanges);
-      setWeeklyPrice(currSeries);
-      setWeeklyPriceLY(lastSeries);
+       if (modalTrendData && modalTrendData.length > 0) {
+          const sorted = [...modalTrendData].sort((a,b) => a.week_num - b.week_num);
+          setWeeklyPrice(sorted.map(d => d.current_value));
+          setWeeklyPriceLY(sorted.map(d => d.last_year_value));
+       } else {
+          const base = procMetric === 'therapistYield' ? 80 : 85;
+          const currSeries = months.map((m, i) => Math.max(60, Math.min(100, base + ((seed + i * 17) % 21) - 10)));
+          const lastSeries = months.map((m, i) => Math.max(60, Math.min(100, (base-2) + ((seed + i * 11) % 19) - 9)));
+          setWeeklyPrice(currSeries);
+          setWeeklyPriceLY(lastSeries);
+       }
 
-      // 2. Fetch Stores
-      let storeNames = [];
-      const normalizeCity = (n) => String(n || '').replace(/市$/, '').trim();
-      try {
-        const resp = await fetch('/src/data/store_list.csv');
-        const text = await resp.text();
-        const parsed = parseCSV(text);
-        storeNames = parsed.rows
-          .filter(r => normalizeCity(r['城市名称']) === normalizeCity(cityName))
-          .map(r => r['门店名称']);
-      } catch {
-        storeNames = ['门店A', '门店B', '门店C', '门店D'];
-      }
-      
-      if (storeNames.length === 0) storeNames = ['门店A', '门店B', '门店C', '门店D'];
-
-      // 3. Store Pivot Table Data (Month x Store)
-      const storeCols = [
+       let storeNames = getFallbackStores();
+       if (modalStoreData && modalStoreData.length > 0) {
+          const stores = new Set();
+          modalStoreData.forEach(d => stores.add(d.store_name));
+          if (stores.size > 0) storeNames = Array.from(stores);
+       }
+       
+       const storeCols = [
         { key: 'month', title: '月份', dataIndex: 'month', fixed: 'left', width: 100 },
         ...storeNames.map(store => ({
           key: store,
@@ -808,193 +797,79 @@ const PriceDecompositionContainer = () => {
              return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
           }
         }))
-      ];
+       ];
+       setModalColumns(storeCols);
+       
+       const tableRows = months.map(m => {
+          const row = { key: `m-${m}`, month: `2025年${m}月` };
+          storeNames.forEach((store, sIdx) => {
+            const rateSeed = seed + m * 100 + sIdx * 10;
+            const rate = 70 + (rateSeed % 31); 
+            row[store] = `${rate.toFixed(1)}%`;
+          });
+          return row;
+       });
+       setStoreRows(tableRows);
 
-      const tableRows = months.map(m => {
-        const row = { key: `m-${m}`, month: `2025年${m}月` };
-        storeNames.forEach((store, sIdx) => {
-          const rateSeed = seed + m * 100 + sIdx * 10;
-          const rate = 70 + (rateSeed % 31); // 70-100%
-          row[store] = `${rate.toFixed(1)}%`;
-        });
-        return row;
-      });
+    } else {
+       const weekRanges = buildLast12Weeks();
+       setWeeks(weekRanges);
+       
+       const cityRow = priceGrowthData ? priceGrowthData.find(r => r.city === selectedCity) : null;
+       const bCurr = parseFloat(cityRow?.current_price || 0) || 300;
+       const bLast = parseFloat(cityRow?.last_year_price || 0) || 280;
+       
+       const N = weekRanges.length;
+       const currSeries = [], lastSeries = [];
+       for (let i = 0; i < N; i++) {
+          const smooth = 1 + 0.01 * Math.sin((i / N) * 2 * Math.PI);
+          const noise = ((Math.sin(i * 1.21 + seed) + Math.cos(i * 0.63 + seed)) * 0.5) * 0.015;
+          const curr = bCurr * (smooth + noise);
+          const last = bLast * (smooth + noise);
+          currSeries.push(Number(curr.toFixed(2)));
+          lastSeries.push(Number(last.toFixed(2)));
+       }
+       setWeeklyPrice(currSeries);
+       setWeeklyPriceLY(lastSeries);
 
-      setModalColumns(storeCols);
-      setStoreRows(tableRows);
-      setIsModalOpen(true);
-      return;
+       const storeNames = getFallbackStores();
+       const cityLabor = Number(cityRow?.labor_cost || 0);
+       const cityRecruit = Number(cityRow?.recruit_train_cost || 0);
+       const cityBudget = Number(cityRow?.budget || 0);
+       const cityUsageRate = parseFloat(String(cityRow?.budget_usage_rate || '0%')) || 0;
+       const timeProgress = parseFloat(String(cityRow?.time_progress || '0%')) || 0;
+
+       const stores = storeNames.map((name, idx) => {
+          const share = 1 / (storeNames.length || 1);
+          const sLast = bLast * (1 + ((idx%3)-1)*0.05);
+          const sCurr = bCurr * (1 + ((idx%3)-1)*0.05);
+          const yoy = sLast ? ((sCurr - sLast) / sLast) * 100 : 0;
+          const sLabor = cityLabor * share;
+          const sRecruit = cityRecruit * share;
+          const sTotal = sLabor + sRecruit;
+          const sBudget = cityBudget * share;
+          const sUsage = Math.max(0, Math.min(100, cityUsageRate + ((seed + idx * 7) % 9 - 4)));
+          const diff = sUsage - timeProgress;
+          
+          return {
+            key: `${name}-${idx}`,
+            city: name,
+            lastYearPrice: Number(sLast.toFixed(2)),
+            currentPrice: Number(sCurr.toFixed(2)),
+            yoyRate: `${yoy >= 0 ? '+' : ''}${yoy.toFixed(2)}%`,
+            laborCost: Number(sLabor.toFixed(2)),
+            recruitTrainCost: Number(sRecruit.toFixed(2)),
+            totalCost: Number(sTotal.toFixed(2)),
+            budget: Number(sBudget.toFixed(2)),
+            budgetUsageRate: `${sUsage.toFixed(1)}%`,
+            timeProgress: `${timeProgress.toFixed(1)}%`,
+            usageProgressDiff: `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`
+          };
+       });
+       setModalColumns(columnsForStore);
+       setStoreRows(stores);
     }
-
-    const seed = String(cityName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-    const mkNoise = (i, scale = 0.02) => ((Math.sin(i * 1.21 + seed) + Math.cos(i * 0.63 + seed)) * 0.5) * scale;
-    const baseCurr = Number(cityRow?.currentPrice || 0);
-    const baseLast = Number(cityRow?.lastYearPrice || 0);
-    const currSeries = [];
-    const lastSeries = [];
-    for (let i = 0; i < N; i++) {
-      const smooth = 1 + 0.01 * Math.sin((i / N) * 2 * Math.PI);
-      const curr = baseCurr * (smooth + mkNoise(i, 0.015));
-      const last = baseLast * (smooth + mkNoise(i, 0.015));
-      currSeries.push(Number(curr.toFixed(2)));
-      lastSeries.push(Number(last.toFixed(2)));
-    }
-    setWeeklyPrice(currSeries);
-    setWeeklyPriceLY(lastSeries);
-
-    let storeNames = [];
-    const normalizeCity = (n) => String(n || '').replace(/市$/, '').trim();
-    try {
-      const resp = await fetch('/src/data/store_list.csv');
-      const text = await resp.text();
-      const parsed = parseCSV(text);
-      storeNames = parsed.rows
-        .filter(r => normalizeCity(r['城市名称']) === normalizeCity(cityName))
-        .map(r => r['门店名称']);
-    } catch {
-      storeNames = ['门店A', '门店B', '门店C', '门店D'];
-    }
-    const weights = (() => {
-      const raw = storeNames.map((n) => {
-        const s = String(n);
-        let sum = 0;
-        for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i);
-        return 0.8 + ((sum % 41) / 100);
-      });
-      const tot = raw.reduce((a, b) => a + b, 0) || 1;
-      return raw.map(w => w / tot);
-    })();
-    const cityLabor = Number(cityRow?.laborCost || 0);
-    const cityRecruit = Number(cityRow?.recruitTrainCost || 0);
-    const cityBudget = Number(cityRow?.budget || 0);
-    const cityUsageRateStr = String(cityRow?.budgetUsageRate || '0%');
-    const cityUsageRate = parseFloat(cityUsageRateStr) || 0;
-    const timeProgressStr = String(cityRow?.timeProgress || '0%');
-    const timeProgress = parseFloat(timeProgressStr) || 0;
-    const stores = storeNames.map((name, idx) => {
-      const share = weights[idx] || 1 / (storeNames.length || 1);
-      const priceJitter = (j) => 1 + ((seed + idx * 17 + j * 11) % 21 - 10) / 1000;
-      const sLast = baseLast * priceJitter(1);
-      const sCurr = baseCurr * priceJitter(2);
-      const yoy = sLast ? ((sCurr - sLast) / sLast) * 100 : 0;
-      const sLabor = cityLabor * share;
-      const sRecruit = cityRecruit * share;
-      const sTotal = sLabor + sRecruit;
-      const sBudget = cityBudget * share;
-      const sUsage = Math.max(0, Math.min(100, cityUsageRate + ((seed + idx * 7) % 9 - 4)));
-      const diff = sUsage - timeProgress;
-      return {
-        key: `${name}-${idx}`,
-        city: name,
-        lastYearPrice: Number(sLast.toFixed(2)),
-        currentPrice: Number(sCurr.toFixed(2)),
-        yoyRate: `${yoy >= 0 ? '+' : ''}${yoy.toFixed(2)}%`,
-        laborCost: Number(sLabor.toFixed(2)),
-        recruitTrainCost: Number(sRecruit.toFixed(2)),
-        totalCost: Number(sTotal.toFixed(2)),
-        budget: Number(sBudget.toFixed(2)),
-        budgetUsageRate: `${sUsage.toFixed(1)}%`,
-        timeProgress: `${timeProgress.toFixed(1)}%`,
-        usageProgressDiff: `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`
-      };
-    });
-    setModalColumns(columnsForStore);
-    setStoreRows(stores);
-    setIsModalOpen(true);
-  };
-
-  const openVPModal = async (vpName, cityName) => {
-    setSelectedCity(vpName); // Using vpName as the modal title basically
-    // We need a way to distinguish this modal mode.
-    // Let's rely on procMetric === 'newEmpReturn' check in the render, 
-    // or set a special flag. For simplicity, we can infer from procMetric.
-    
-    // 1. Generate Trend Data (12 months)
-    const seed = String(vpName || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-    const months = Array.from({length: 12}, (_, i) => i + 1);
-    
-    const currSeries = months.map((m, i) => {
-      // Simulate trend 75-95%
-      const base = 85;
-      const noise = ((seed + i * 13) % 21) - 10; 
-      return Math.max(75, Math.min(95, base + noise));
-    });
-    const lastSeries = months.map((m, i) => {
-      // Simulate last year trend
-      const base = 82;
-      const noise = ((seed + i * 7) % 19) - 9;
-      return Math.max(70, Math.min(90, base + noise));
-    });
-
-    // We need to set 'weeks' to be months for the chart x-axis
-    // The chart component expects objects with weekNo, label, etc.
-    // We'll mock it.
-    const monthRanges = months.map(m => ({
-      weekNo: m,
-      label: `2025年${m}月`,
-      start: `2025-${String(m).padStart(2,'0')}-01`,
-      end: `2025-${String(m).padStart(2,'0')}-28`
-    }));
-    setWeeks(monthRanges);
-    setWeeklyPrice(currSeries);
-    setWeeklyPriceLY(lastSeries);
-
-    // 2. Fetch Stores and Filter for this VP
-    let storeNames = [];
-    const normalizeCity = (n) => String(n || '').replace(/市$/, '').trim();
-    try {
-      const resp = await fetch('/src/data/store_list.csv');
-      const text = await resp.text();
-      const parsed = parseCSV(text);
-      storeNames = parsed.rows
-        .filter(r => normalizeCity(r['城市名称']) === normalizeCity(cityName))
-        .map(r => r['门店名称']);
-    } catch {
-      storeNames = ['门店A', '门店B', '门店C', '门店D'];
-    }
-
-    // Since we don't know exactly which stores belong to which VP if there are multiple,
-    // we will deterministically slice the array based on the VP name hash.
-    // Or just take up to 5 stores for the demo to keep the table manageable.
-    const vpSeed = seed % 3; 
-    // Just take a subset to simulate "responsibility"
-    const subsetSize = Math.max(3, Math.floor(storeNames.length / 2));
-    const startIdx = (seed) % (storeNames.length - subsetSize + 1);
-    const myStores = storeNames.slice(startIdx, startIdx + subsetSize);
-    
-    if (myStores.length === 0) myStores.push('模拟门店1', '模拟门店2');
-
-    // 3. Generate Table Data (Rows = Months, Cols = Stores)
-    // Columns: Month, Store1, Store2...
-    const storeCols = [
-      { key: 'month', title: '月份', dataIndex: 'month', fixed: 'left', width: 100 },
-      ...myStores.map(store => ({
-        key: store,
-        title: store,
-        dataIndex: store,
-        render: (val) => {
-           const num = parseFloat(String(val).replace('%', '')) || 0;
-           const isHigh = num >= 80;
-           return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
-        }
-      }))
-    ];
-
-    const tableRows = months.map(m => {
-      const row = { key: `m-${m}`, month: `2025年${m}月` };
-      myStores.forEach((store, sIdx) => {
-        // Generate rate
-        const rateSeed = seed + m * 100 + sIdx * 10;
-        const rate = 75 + (rateSeed % 21);
-        row[store] = `${rate.toFixed(1)}%`;
-      });
-      return row;
-    });
-
-    setModalColumns(storeCols);
-    setStoreRows(tableRows);
-    setIsModalOpen(true);
-  };
+  }, [isModalOpen, selectedCity, modalContextCity, procMetric, modalTrendData, modalStoreData, priceGrowthData]);
 
   const renderHQOverview = () => {
     const targetRate = 3.0;

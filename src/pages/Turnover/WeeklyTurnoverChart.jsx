@@ -1,120 +1,127 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LineTrendChart from "../../components/Common/LineTrendChart";
+import useFetchData from "../../hooks/useFetchData";
 
 const WeeklyTurnoverChart = () => {
   // 定义指标配置
   const METRICS = [
-    { key: 'revenue', label: '周度营业额', unit: '元', format: (val) => `¥ ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 10000).toFixed(0) + '万' },
-    { key: 'ytdRevenue', label: '年度累计营业额', unit: '元', format: (val) => `¥ ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 100000000).toFixed(2) + '亿' },
-    { key: 'dailyAvgRevenue', label: '天均营业额', unit: '元', format: (val) => `¥ ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 10000).toFixed(1) + '万' },
+    { key: 'revenue', label: '周度营业额', unit: '元', format: (val) => `¥ ${(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 10000).toFixed(0) + '万' },
+    { key: 'ytdRevenue', label: '年度累计营业额', unit: '元', format: (val) => `¥ ${(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 100000000).toFixed(2) + '亿' },
+    { key: 'dailyAvgRevenue', label: '天均营业额', unit: '元', format: (val) => `¥ ${(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 10000).toFixed(1) + '万' },
   ];
 
   const [selectedMetricKey, setSelectedMetricKey] = useState('revenue');
   const [showTrend, setShowTrend] = useState(true);
   const [showExtremes, setShowExtremes] = useState(true);
   const [showYoY, setShowYoY] = useState(false);
+  const [chartData, setChartData] = useState([]);
+
+  const { data: fetchedData, loading, fetchData } = useFetchData('getWeeklyTurnover');
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
+      // Process fetched data
+      let cumulativeRevenue = 0; 
+      let cumulativeRevenueLY = 0;
+
+      const processed = fetchedData.map((row, index) => {
+        const revenue = Number(row.revenue) || 0;
+        const revenueLY = Number(row.revenue_ly) || 0;
+        
+        cumulativeRevenue += revenue;
+        cumulativeRevenueLY += revenueLY;
+
+        const dailyAvgRevenue = revenue / 7;
+        const dailyAvgRevenueLY = revenueLY / 7;
+        
+        const dailyAvgPrice = Number(row.avg_price) || 0;
+        const dailyAvgPriceLY = Number(row.avg_price_ly) || 0;
+        const dailyAvgCustomer = dailyAvgPrice ? dailyAvgRevenue / dailyAvgPrice : 0;
+        const dailyAvgCustomerLY = dailyAvgPriceLY ? dailyAvgRevenueLY / dailyAvgPriceLY : 0;
+
+        return {
+          weekNum: row.week_num,
+          weekLabel: row.week_label || `${row.week_num}周`,
+          dateRange: row.date_range || '',
+          
+          revenue,
+          ytdRevenue: cumulativeRevenue,
+          dailyAvgRevenue,
+          dailyAvgCustomer: Math.round(dailyAvgCustomer),
+          dailyAvgPrice,
+          avgServiceDuration: 0, 
+
+          revenueLastYear: revenueLY,
+          ytdRevenueLastYear: cumulativeRevenueLY,
+          dailyAvgRevenueLastYear: dailyAvgRevenueLY,
+          dailyAvgCustomerLastYear: Math.round(dailyAvgCustomerLY),
+          dailyAvgPriceLastYear: dailyAvgPriceLY,
+          avgServiceDurationLastYear: 0
+        };
+      });
+      setChartData(processed);
+    } else {
+      // Mock Fallback
+      const currentWeek = 12;
+      const weeks = Array.from({ length: 12 }, (_, i) => currentWeek - 11 + i);
+      
+      let cumRev = 0;
+      let cumRevLY = 0;
+
+      const mockData = weeks.map((w, i) => {
+        // Base revenue ~40M with some trend
+        const base = 40000000; 
+        const noise = (Math.random() - 0.5) * 5000000;
+        const trend = (i / 12) * 5000000;
+        
+        const rev = base + trend + noise;
+        const revLY = rev * (0.9 + Math.random() * 0.2); // +/- 10% YoY diff
+
+        cumRev += rev;
+        cumRevLY += revLY;
+
+        const dAvgRev = rev / 7;
+        const dAvgRevLY = revLY / 7;
+        const price = 150 + Math.random() * 20;
+        const priceLY = 145 + Math.random() * 20;
+
+        return {
+          weekNum: w,
+          weekLabel: `${w}周`,
+          dateRange: '',
+          
+          revenue: rev,
+          ytdRevenue: cumRev,
+          dailyAvgRevenue: dAvgRev,
+          dailyAvgCustomer: Math.round(dAvgRev / price),
+          dailyAvgPrice: price,
+          
+          revenueLastYear: revLY,
+          ytdRevenueLastYear: cumRevLY,
+          dailyAvgRevenueLastYear: dAvgRevLY,
+          dailyAvgCustomerLastYear: Math.round(dAvgRevLY / priceLY),
+          dailyAvgPriceLastYear: priceLY
+        };
+      });
+      setChartData(mockData);
+    }
+  }, [fetchedData]);
 
   const currentMetric = METRICS.find(m => m.key === selectedMetricKey);
-
-  // 模拟近12周数据
-  // 2025年截至12月15日总营业额 391,063,245.03
-  // 12月15日约为第50周结束（实际是第51周开始），粗略按50周计算周均值
-  // 周均值 ≈ 391,063,245.03 / 50 ≈ 7,821,265
-  const generateData = () => {
-    const data = [];
-    const baseRevenue = 7821265; // 基准营业额 782万
-    
-    // 假设最后一周是第51周（12/15 ~ 12/21）
-    // 倒推12周，起始周为第40周
-    const endWeek = 51;
-    const startWeek = endWeek - 11;
-    
-    // 辅助函数：根据周数计算日期范围（2025年）
-    const getWeekDateRange = (weekNum) => {
-      const refDate = new Date(2025, 11, 15); // 12月15日
-      const diffWeeks = 51 - weekNum;
-      
-      const monday = new Date(refDate);
-      monday.setDate(refDate.getDate() - diffWeeks * 7);
-      
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      
-      const fmt = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
-      return `${fmt(monday)} ～ ${fmt(sunday)}`;
-    };
-
-    let cumulativeRevenue = 391063245.03 - (12 * baseRevenue); // 倒推初始累计值
-    let cumulativeRevenueLY = (391063245.03 * 0.85) - (12 * baseRevenue * 0.85); // 去年累计初始值 (假设去年同期是85%)
-
-    for (let i = 0; i < 12; i++) {
-      const weekNum = startWeek + i;
-      // 模拟更明显的波动 +/- 10% 以体现累计营业额的斜率变化
-      const fluctuation = (Math.sin(i * 0.8) * 0.08) + (Math.random() - 0.5) * 0.05; 
-      const revenue = baseRevenue * (1 + fluctuation);
-      
-      // 去年同期模拟：趋势保持一致（同向波动），数值整体偏小（约85%），叠加微小随机差异
-      // 这里的差异 (Math.random() - 0.5) * 0.02 使得两条线不会完全平行，但趋势高度一致
-      const revenueLY = revenue * (0.85 + (Math.random() - 0.5) * 0.02);
-
-      cumulativeRevenue += revenue;
-      cumulativeRevenueLY += revenueLY;
-
-      const dailyAvgRevenue = revenue / 7;
-      const dailyAvgRevenueLY = revenueLY / 7;
-
-      // 客单价在 170 上下小幅波动
-      const dailyAvgPrice = 170 * (1 + (Math.random() - 0.5) * 0.05); 
-      // 去年客单价略低，且趋势大致跟随
-      const dailyAvgPriceLY = dailyAvgPrice * (0.95 + (Math.random() - 0.5) * 0.02); 
-
-      const dailyAvgCustomer = dailyAvgRevenue / dailyAvgPrice;
-      const dailyAvgCustomerLY = dailyAvgRevenueLY / dailyAvgPriceLY;
-
-      // 推拿师日均服务时长 300分钟
-      const avgServiceDuration = 300 * (1 + (Math.random() - 0.5) * 0.1);
-      // 去年服务时长略低或接近，趋势跟随
-      const avgServiceDurationLY = avgServiceDuration * (0.98 + (Math.random() - 0.5) * 0.02);
-
-      data.push({
-        weekNum: weekNum,
-        weekLabel: `2025 年第 ${weekNum} 周`,
-        dateRange: getWeekDateRange(weekNum),
-        
-        // 本期数据
-        revenue: revenue,
-        ytdRevenue: cumulativeRevenue,
-        dailyAvgRevenue: dailyAvgRevenue,
-        dailyAvgCustomer: Math.round(dailyAvgCustomer),
-        dailyAvgPrice: dailyAvgPrice,
-        avgServiceDuration: Math.round(avgServiceDuration),
-
-        // 去年同期数据 (字段名对应 METRICS 中的 key + 'LastYear')
-        revenueLastYear: revenueLY,
-        ytdRevenueLastYear: cumulativeRevenueLY,
-        dailyAvgRevenueLastYear: dailyAvgRevenueLY,
-        dailyAvgCustomerLastYear: Math.round(dailyAvgCustomerLY),
-        dailyAvgPriceLastYear: dailyAvgPriceLY,
-        avgServiceDurationLastYear: Math.round(avgServiceDurationLY),
-      });
-    }
-    return data;
-  };
-
-  const [data] = useState(generateData());
-
-  // 获取当前选中指标的数据数组
-  const currentKey = selectedMetricKey;
-  const lastYearKey = `${selectedMetricKey}LastYear`;
   
-  const currentDataValues = data.map(d => d[currentKey]);
-  const lastYearDataValues = data.map(d => d[lastYearKey]);
+  // Use chartData instead of generateData()
+  const currentDataValues = chartData.map(d => d[selectedMetricKey]);
+  const lastYearKey = `${selectedMetricKey}LastYear`;
+  const lastYearDataValues = chartData.map(d => d[lastYearKey]);
 
   // 图表尺寸配置
   const width = 800;
   const height = 320;
-  const padding = { top: 40, right: 40, bottom: 60, left: 45 }; // 优化左边距以平衡视觉协调性与数值显示
-
+  const padding = { top: 40, right: 40, bottom: 60, left: 45 };
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm">
@@ -174,25 +181,31 @@ const WeeklyTurnoverChart = () => {
         </button>
       </div>
       
-      <LineTrendChart
-        headerTitle={`${currentMetric.label}趋势`}
-        headerUnit={currentMetric.unit}
-        values={currentDataValues}
-        valuesYoY={lastYearDataValues}
-        xLabels={data.map(d => `${d.weekNum}周`)}
-        showYoY={showYoY}
-        showTrend={showTrend}
-        showExtremes={showExtremes}
-        yAxisFormatter={currentMetric.axisFormat}
-        valueFormatter={currentMetric.format}
-        width={width}
-        height={height}
-        padding={padding}
-        colorPrimary="#a40035"
-        colorYoY="#2563eb"
-        getHoverTitle={(i) => `周数：${data[i].weekLabel}`}
-        getHoverSubtitle={(i) => `日期范围：${data[i].dateRange}`}
-      />
+      {loading ? (
+        <div className="flex justify-center items-center h-[320px] text-gray-400">加载中...</div>
+      ) : chartData.length > 0 ? (
+        <LineTrendChart
+          headerTitle={`${currentMetric.label}趋势`}
+          headerUnit={currentMetric.unit}
+          values={currentDataValues}
+          valuesYoY={lastYearDataValues}
+          xLabels={chartData.map(d => `${d.weekNum}周`)}
+          showYoY={showYoY}
+          showTrend={showTrend}
+          showExtremes={showExtremes}
+          yAxisFormatter={currentMetric.axisFormat}
+          valueFormatter={currentMetric.format}
+          width={width}
+          height={height}
+          padding={padding}
+          colorPrimary="#a40035"
+          colorYoY="#2563eb"
+          getHoverTitle={(i) => chartData[i] ? `周数：${chartData[i].weekLabel}` : ''}
+          getHoverSubtitle={(i) => chartData[i] ? `日期范围：${chartData[i].dateRange || '--'}` : ''}
+        />
+      ) : (
+        <div className="flex justify-center items-center h-[320px] text-gray-400">暂无数据</div>
+      )}
     </div>
   );
 };
