@@ -1,72 +1,68 @@
-// src/utils/dataLoader.js
-/**
- * 数据加载和处理工具
- */
+import cacheManager from './cacheManager';
 
-// 解析CSV数据
-export const parseCSV = (csvText) => {
-  const lines = csvText.trim().split('\n');
-  const headers = lines[0].split(',').map(header => header.trim());
-  const rows = [];
-  
-  for (let i = 1; i < lines.length; i++) {
-    // 更健壮的CSV行解析
-    const values = [];
-    let currentValue = '';
-    let inQuotes = false;
-    
-    for (let j = 0; j < lines[i].length; j++) {
-      const char = lines[i][j];
-      
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(currentValue.trim());
-        currentValue = '';
-      } else {
-        currentValue += char;
+// List of all query keys used in the application
+// This should ideally be synced with server/queryRegistry.js
+export const PRELOAD_QUERIES = [
+  'getTurnoverOverview',
+  'getHQMetrics',
+  'getWeeklyTurnover',
+  'getWeeklyTurnoverCum',
+  'getWeeklyTurnoverAvgDay',
+  'getCityTurnover',
+  'getStoreList',
+  'getProcessMetricTrend',
+  'getProcessCityData',
+  'getVolumeTrend',
+  'getVolumeInfluenceCity',
+  'getCityPriceGrowth',
+  'getCityModalTrend',
+  'getCityModalStoreData',
+  'getVolumeCityBreakdown',
+  'getVolumeHQOverview',
+  'getVolumeInfluenceTrend',
+  'getVolumeCityModalTrend',
+  'getVolumeCityModalStoreData'
+];
+
+class DataLoader {
+  /**
+   * Prefetch all registered queries.
+   * Checks cache first; if missing or stale, fetches from server.
+   */
+  async prefetchAll() {
+    console.log('Starting data prefetch...');
+    const promises = PRELOAD_QUERIES.map(async (queryKey) => {
+      // 1. Check if valid cache exists
+      const cached = cacheManager.get(queryKey);
+      if (cached) {
+        // console.log(`[Prefetch] Cache hit for ${queryKey}`);
+        return;
       }
-    }
-    
-    // 添加最后一个值
-    values.push(currentValue.trim());
-    
-    // 创建行对象
-    const row = {};
-    headers.forEach((header, index) => {
-      row[header] = values[index] || '';
+
+      // 2. Fetch from server
+      try {
+        // console.log(`[Prefetch] Fetching ${queryKey}...`);
+        const response = await fetch('/api/fetch-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queryKey, params: [] }), // Assuming most preloads don't need params or use default
+        });
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          cacheManager.set(queryKey, result.data);
+          // console.log(`[Prefetch] Fetched & Cached ${queryKey}`);
+        } else {
+          console.warn(`[Prefetch] Failed to fetch ${queryKey}: ${result.message}`);
+        }
+      } catch (err) {
+        console.error(`[Prefetch] Network error for ${queryKey}:`, err);
+      }
     });
-    rows.push(row);
+
+    await Promise.allSettled(promises);
+    console.log('Data prefetch completed.');
   }
-  
-  return { headers, rows };
-};
+}
 
-// 获取唯一的值列表
-export const getUniqueValues = (data, fieldName) => {
-  const values = [...new Set(data.rows.map(row => row[fieldName]))];
-  return values.filter(value => value).sort();
-};
-
-// 获取指标字段（排除指定字段）
-export const getMetricsFields = (headers, excludeFields = []) => {
-  return headers.filter(header => !excludeFields.includes(header));
-};
-
-// 根据条件过滤数据
-export const filterData = (data, filters) => {
-  return data.rows.filter(row => {
-    return Object.keys(filters).every(key => {
-      const filterValue = filters[key];
-      if (!filterValue || filterValue.length === 0) return true;
-      
-      if (Array.isArray(filterValue)) {
-        // 多选过滤
-        return filterValue.includes(row[key]) || filterValue.includes('全部');
-      } else {
-        // 单选过滤
-        return row[key] === filterValue;
-      }
-    });
-  });
-};
+export default new DataLoader();

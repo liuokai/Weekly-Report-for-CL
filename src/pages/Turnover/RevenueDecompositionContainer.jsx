@@ -5,18 +5,7 @@ import LineTrendChart from "../../components/Common/LineTrendChart";
 import useFetchData from "../../hooks/useFetchData";
 import { getTimeProgress } from "../../components/Common/TimeProgressUtils";
 
-// Static config for targets and budgets (could be moved to DB later)
-const CITY_CONFIG = {
-  "北京": { target: 3000000, budget: 180000, budgetSpent: 135000 },
-  "上海": { target: 19000000, budget: 260000, budgetSpent: 182000 },
-  "广州": { target: 16500000, budget: 220000, budgetSpent: 165000 },
-  "深圳": { target: 61000000, budget: 480000, budgetSpent: 392000 },
-  "杭州": { target: 20500000, budget: 210000, budgetSpent: 168000 },
-  "南京": { target: 6000000, budget: 120000, budgetSpent: 91000 },
-  "宁波": { target: 3500000, budget: 90000, budgetSpent: 62000 },
-  "成都": { target: 175000000, budget: 900000, budgetSpent: 735000 },
-  "重庆": { target: 51000000, budget: 420000, budgetSpent: 336000 }
-};
+// Static config removed as per user request (mock data is meaningless)
 
 const RevenueDecompositionContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,60 +31,39 @@ const RevenueDecompositionContainer = () => {
   useEffect(() => {
     if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
       const timeProgressVal = getTimeProgress();
+      const totalRevenue = fetchedData.reduce((acc, curr) => acc + (Number(curr.actual_turnover) || 0), 0);
 
       const processedRows = fetchedData.map(item => {
-        const city = item.city;
-        const revenue = Number(item.revenue) || 0;
-        const config = CITY_CONFIG[city] || { target: 0, budget: 0, budgetSpent: 0 };
+        // Fallback logic for city name if statistics_city_name is missing/null
+        const city = item.statistics_city_name || item.city || '未知城市';
         
-        const target = config.target;
-        const budget = config.budget;
-        const budgetSpent = config.budgetSpent;
+        // Use actual_turnover and turnover_target from SQL
+        const revenue = Number(item.actual_turnover) || 0;
+        const target = Number(item.turnover_target) || 0;
+        
+        // Budget data is not available in SQL yet, showing as missing per user request
+        const budget = null;
+        const budgetSpent = null;
 
         // Calculations
         const completionRate = target ? (revenue / target) * 100 : 0;
-        const consumptionRate = budget ? (budgetSpent / budget) * 100 : 0;
+        const contributionRate = totalRevenue ? (revenue / totalRevenue) * 100 : 0;
 
         return {
-          城市名称: `${city}市`,
+          城市名称: city,
           营业额: Math.round(revenue),
           营业额目标: Math.round(target),
           时间进度: `${timeProgressVal}%`,
           营业额完成率: `${completionRate.toFixed(1)}%`,
-          预算金额: Math.round(budget),
-          预算花费金额: Math.round(budgetSpent),
-          预算消耗率: `${consumptionRate.toFixed(1)}%`,
+          预算金额: budget,
+          预算花费金额: budgetSpent,
+          预算消耗率: null,
+          营业额贡献率: `${contributionRate.toFixed(1)}%` 
         };
       });
       setRows(processedRows);
     } else {
-      // Mock Fallback
-      const timeProgressVal = getTimeProgress();
-
-      const mockRows = Object.keys(CITY_CONFIG).map(city => {
-        const config = CITY_CONFIG[city];
-        const target = config.target;
-        // Mock revenue logic
-        const revenue = target * (timeProgressVal / 100) * (0.85 + Math.random() * 0.2); 
-        
-        const budget = config.budget;
-        const budgetSpent = config.budgetSpent; 
-
-        const completionRate = target ? (revenue / target) * 100 : 0;
-        const consumptionRate = budget ? (budgetSpent / budget) * 100 : 0;
-
-        return {
-          城市名称: `${city}市`,
-          营业额: Math.round(revenue),
-          营业额目标: Math.round(target),
-          时间进度: `${timeProgressVal}%`,
-          营业额完成率: `${completionRate.toFixed(1)}%`,
-          预算金额: Math.round(budget),
-          预算花费金额: Math.round(budgetSpent),
-          预算消耗率: `${consumptionRate.toFixed(1)}%`,
-        };
-      });
-      setRows(mockRows);
+      setRows([]);
     }
   }, [fetchedData]);
 
@@ -156,7 +124,7 @@ const RevenueDecompositionContainer = () => {
     fetchModalTrendData([cityName]);
 
     const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
-    const city = fetchedData ? fetchedData.find(c => normalizeCity(c.city) === normalizeCity(cityName)) : null;
+    const city = fetchedData ? fetchedData.find(c => normalizeCity(c.statistics_city_name || c.city) === normalizeCity(cityName)) : null;
 
     if (city) {
       const weekRanges = buildLast12Weeks();
@@ -164,7 +132,7 @@ const RevenueDecompositionContainer = () => {
       
       // If we don't have SQL data yet (loading or empty), we set up fallback structure
       // But actual rendering checks modalTrendData in buildCitySeries
-      const base = city.revenue / 52;
+      const base = (Number(city.actual_turnover) || 0) / 52;
       const nameSeed = String(cityName).split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
       const N = weekRanges.length;
       const weeklyValues = weekRanges.map((_, i) => {
@@ -185,7 +153,7 @@ const RevenueDecompositionContainer = () => {
   useEffect(() => {
     if (selectedCity && weeklyData.length > 0 && fetchedData) {
       const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
-      const city = fetchedData.find(c => normalizeCity(c.city) === normalizeCity(selectedCity));
+      const city = fetchedData.find(c => normalizeCity(c.statistics_city_name || c.city) === normalizeCity(selectedCity));
       
       if (!city) return;
 
@@ -246,20 +214,20 @@ const RevenueDecompositionContainer = () => {
       const stores = storeNames.map((name, idx) => {
         const share = weights[idx] || 1 / (storeNames.length || 1);
         const sRevenue = rawRevenues[idx] * scale;
-        const sTarget = (city.target / 52) * share;
-        const sBudget = (city.budget / 52) * share;
-        const sSpent = (city.budgetSpent / 52) * share * consFactor(name, selectedWeekIndex);
+        const sTarget = (Number(city.turnover_target) || 0) / 52 * share;
+        const sBudget = null;
+        const sSpent = null;
         const completionRate = sTarget ? (sRevenue / sTarget) * 100 : 0;
-        const consumptionRate = sBudget ? (sSpent / sBudget) * 100 : 0;
+        
         return {
           城市名称: name,
           营业额: Math.round(sRevenue),
           营业额目标: Math.round(sTarget),
           时间进度: `${timeProgressVal}%`,
           营业额完成率: `${completionRate.toFixed(1)}%`,
-          预算金额: Math.round(sBudget),
-          预算花费金额: Math.round(sSpent),
-          预算消耗率: `${consumptionRate.toFixed(1)}%`,
+          预算金额: sBudget,
+          预算花费金额: sSpent,
+          预算消耗率: null,
         };
       });
       setStoreRows(stores);
@@ -388,9 +356,18 @@ const RevenueDecompositionContainer = () => {
         </button>
       )
     },
-    { key: "rev", title: "营业额", dataIndex: "营业额" },
-    { key: "revTarget", title: "营业额目标", dataIndex: "营业额目标" },
-    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度" },
+    { 
+      key: "revTarget", 
+      title: "营业额目标", 
+      dataIndex: "营业额目标",
+      render: (value) => value ? Number(value).toLocaleString() : value
+    },
+    { 
+      key: "rev", 
+      title: "营业额", 
+      dataIndex: "营业额",
+      render: (value) => value ? Number(value).toLocaleString() : value
+    },
     { 
       key: "revRate", 
       title: "营业额完成率", 
@@ -403,6 +380,7 @@ const RevenueDecompositionContainer = () => {
         return <span className={cls}>{value}</span>;
       }
     },
+    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度" },
     { key: "budget", title: "预算金额", dataIndex: "预算金额" },
     { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额" },
     { 
@@ -420,9 +398,18 @@ const RevenueDecompositionContainer = () => {
 
   const columnsForStore = [
     { key: "city", title: "城市名称", dataIndex: "城市名称" },
-    { key: "rev", title: "营业额", dataIndex: "营业额" },
-    { key: "revTarget", title: "营业额目标", dataIndex: "营业额目标" },
-    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度" },
+    { 
+      key: "revTarget", 
+      title: "营业额目标", 
+      dataIndex: "营业额目标",
+      render: (value) => value ? Number(value).toLocaleString() : value
+    },
+    { 
+      key: "rev", 
+      title: "营业额", 
+      dataIndex: "营业额",
+      render: (value) => value ? Number(value).toLocaleString() : value
+    },
     { 
       key: "revRate", 
       title: "营业额完成率", 
@@ -435,6 +422,7 @@ const RevenueDecompositionContainer = () => {
         return <span className={cls}>{value}</span>;
       }
     },
+    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度" },
     { key: "budget", title: "预算金额", dataIndex: "预算金额" },
     { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额" },
     { 

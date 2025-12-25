@@ -20,6 +20,7 @@ const LineTrendChart = ({
   padding = { top: 40, right: 40, bottom: 60, left: 45 },
   colorPrimary = "#a40035",
   colorYoY = "#2563eb",
+  includeLastPointInTrend = true,
   getHoverTitle,
   getHoverSubtitle
 }) => {
@@ -42,8 +43,11 @@ const LineTrendChart = ({
     );
   }
 
-  const maxVal = Math.max(...allValues) * 1.05;
-  const minVal = Math.min(...allValues) * 0.95;
+  const dataMax = Math.max(...allValues);
+  const dataMin = Math.min(...allValues);
+  const paddingVal = (dataMax - dataMin || Math.abs(dataMax) || 1) * 0.05;
+  const maxVal = dataMax + paddingVal;
+  const minVal = dataMin - paddingVal;
 
   const getX = (index) => padding.left + (index / (Math.max(safeValues.length - 1, 1))) * graphWidth;
   const getY = (value) => {
@@ -54,19 +58,27 @@ const LineTrendChart = ({
   const calculateTrendLine = () => {
     const n = safeValues.length;
     if (n < 2) return [];
+
+    // Optimize: Exclude the last data point from calculation if configured.
+    // This allows excluding incomplete weeks from skewing the trend.
+    // If includeLastPointInTrend is false, we use n - 1 points (if n > 1).
+    const calcN = (!includeLastPointInTrend && n > 1) ? n - 1 : n;
+
     let sumX = 0;
     let sumY = 0;
     let sumXY = 0;
     let sumXX = 0;
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < calcN; i++) {
       const val = values[i];
       sumX += i;
       sumY += val;
       sumXY += i * val;
       sumXX += i * i;
     }
-    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-    const intercept = (sumY - slope * sumX) / n;
+    const slope = (calcN * sumXY - sumX * sumY) / (calcN * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / calcN;
+    
+    // Project the trend line across ALL points (including the excluded last one)
     return values.map((_, i) => slope * i + intercept);
   };
 

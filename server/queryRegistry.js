@@ -15,19 +15,27 @@ const loadSql = (filename) => {
 const queryRegistry = {
   getTurnoverOverview: {
     sql: loadSql('turnover_overview.sql'),
-    description: 'Get annual turnover overview'
+    description: '营业额概览中的年度累计营业额'
   },
   getHQMetrics: {
     sql: loadSql('hq_metrics.sql'),
     description: 'Get HQ metrics trend data'
   },
   getWeeklyTurnover: {
-    sql: loadSql('weekly_turnover.sql'),
+    sql: loadSql('turnover_weekly.sql'),
     description: 'Get weekly turnover trend data'
   },
+  getWeeklyTurnoverCum: {
+    sql: loadSql('turnover_weekly_cum_yoy.sql'),
+    description: 'Get weekly cumulative turnover data'
+  },
+  getWeeklyTurnoverAvgDay: {
+    sql: loadSql('turnover_weekly_avg_per_day_yoy.sql'),
+    description: 'Get weekly average daily turnover data'
+  },
   getCityTurnover: {
-    sql: loadSql('city_turnover.sql'),
-    description: 'Get city turnover data'
+    sql: loadSql('turnover_city_actual_target.sql'),
+    description: 'Get city turnover data with targets'
   },
   getStoreList: {
     sql: loadSql('store_list.sql'),

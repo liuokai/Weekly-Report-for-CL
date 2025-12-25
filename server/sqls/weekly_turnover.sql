@@ -1,5 +1,0 @@
-SELECT 1 as week_num, 100000 as revenue, 90000 as revenue_ly
-UNION ALL
-SELECT 2, 110000, 95000
-UNION ALL
-SELECT 3, 105000, 92000

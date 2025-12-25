@@ -1,12 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TurnoverReport from "../Turnover";
+import StoreTab from "../Store";
 import CostAndProfitTab from "../CostAndProfit";
 import CashFlowTab from "../CashFlow";
-import StoreTab from "../Store";
+import dataLoader from "../../utils/dataLoader";
 
 const WeeklyReport = () => {
   // Tab导航状态管理
   const [activeTab, setActiveTab] = useState(0);
+
+  // Prefetch data on mount
+  useEffect(() => {
+    dataLoader.prefetchAll();
+  }, []);
   
   // Tab列表
   const tabs = [
