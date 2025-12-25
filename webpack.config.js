@@ -27,6 +27,7 @@ module.exports = {
     new (require('html-webpack-plugin'))({
       template: './public/index.html',
     }),
+    new (require('dotenv-webpack'))()
   ],
   devServer: {
     static: [

@@ -15,7 +15,7 @@ export const BusinessTargets = {
   // =================================================================
   turnover: {
     // 本年累计营业额目标值（单位：万元）
-    annualTarget: 45000,
+    annualTarget: 48000,
     
     // 预算相关配置
     budget: {

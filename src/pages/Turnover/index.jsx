@@ -8,6 +8,7 @@ import AiAnalysisBox from "../../components/Common/AiAnalysisBox";
 import UnifiedProgressBar from "../../components/Common/UnifiedProgressBar";
 import BusinessTargets from "../../config/businessTargets";
 import { getTimeProgress } from "../../components/Common/TimeProgressUtils";
+import difyService from "../../services/difyService";
 
 // Global cache object to store data during the session (cleared on page refresh)
 const sessionCache = {
@@ -133,44 +134,27 @@ const TurnoverReport = () => {
         }
       }
 
-      // 2. Fetch AI Analysis (Slow) - only if not cached
-      if (!sessionCache.aiFetched) {
+      // 2. Fetch AI Analysis (Slow) - only if not cached AND enabled
+      if (!sessionCache.aiFetched && difyService.isEnabled) {
         try {
-          // Create a timeout promise (Extended to 120s for Dify Workflow)
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Request timed out')), 120000)
-          );
-
-          const fetchPromise = fetch('/api/fetch-data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              queryKey: 'getTurnoverOverview',
-              analyze: true // Second request for AI
-            }),
-          });
-
-          const aiResponse = await Promise.race([fetchPromise, timeoutPromise]);
+          // Prepare data context for AI (using the data we just fetched or cached)
+          // Ideally we should wait for newData to be available. 
+          // If this runs in parallel with fetch, we might need to await the data first or pass it if available.
+          // For simplicity, let's assume we can fetch data first then AI, or just pass simple inputs.
           
-          // Check if response is OK before parsing JSON
-          if (!aiResponse.ok) {
-            throw new Error(`HTTP error! status: ${aiResponse.status}`);
-          }
-
-          const aiResult = await aiResponse.json();
+          // Note: In a real scenario, you might want to pass summarized data to Dify.
+          // For now, we'll just trigger the workflow.
+          
+          const aiResultText = await difyService.runWorkflow('turnoverOverview', {
+             // Pass any dynamic inputs here if your Dify workflow needs them, e.g.:
+             // analysis_date: new Date().toISOString()
+          });
           
           if (isMounted) {
-            if (aiResult.status === 'success' && aiResult.analysis) {
-              setAiAnalysis(aiResult.analysis);
-              sessionCache.aiAnalysis = aiResult.analysis;
-              sessionCache.aiFetched = true;
-              setAiError(null);
-            } else {
-               // Handle case where status is success but analysis is missing/error string returned
-               if (aiResult.analysis && aiResult.analysis.startsWith('AI Analysis failed')) {
-                  setAiError(aiResult.analysis);
-               }
-            }
+            setAiAnalysis(aiResultText);
+            sessionCache.aiAnalysis = aiResultText;
+            sessionCache.aiFetched = true;
+            setAiError(null);
           }
         } catch (err) {
           if (isMounted) {
@@ -184,7 +168,7 @@ const TurnoverReport = () => {
           }
         }
       } else {
-          // AI already fetched, ensure loading is false
+          // AI already fetched OR disabled, ensure loading is false
           if (isMounted) setLoading(false);
       }
     };
@@ -298,13 +282,15 @@ const TurnoverReport = () => {
         </div>
 
         {/* AI 分析展示 - 移动到容器下方 */}
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <AiAnalysisBox 
-            analysisText={aiAnalysis} 
-            isLoading={loading} 
-            error={aiError} 
-          />
-        </div>
+        {difyService.isEnabled && (
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <AiAnalysisBox 
+              analysisText={aiAnalysis} 
+              isLoading={loading} 
+              error={aiError} 
+            />
+          </div>
+        )}
       </div>
 
       {/* 核心指标区域已移除，移动到 WeeklyReport 的 CoreMetricsBar 中 */}

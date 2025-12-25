@@ -1,9 +1,10 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
+const axios = require('axios');
 const queryRegistry = require('./queryRegistry');
-const { generateAnalysis } = require('./services/aiService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,9 +26,9 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// API Route: Fetch Data (with optional AI Analysis)
+// API Route: Fetch Data
 app.post('/api/fetch-data', async (req, res) => {
-  const { queryKey, params = [], analyze = false } = req.body;
+  const { queryKey, params = [] } = req.body;
 
   // 1. Validate Query Key
   const queryConfig = queryRegistry[queryKey];
@@ -49,26 +50,42 @@ app.post('/api/fetch-data', async (req, res) => {
       analysis: null
     };
 
-    // 3. Optional AI Analysis
-    // Check if analysis is requested, template exists, and Dify is enabled for this query
-    if (analyze && queryConfig.promptTemplate && queryConfig.enableDify) {
-      try {
-        console.log(`Starting AI analysis for ${queryKey}...`);
-        const analysisResult = await generateAnalysis(rows, queryConfig.promptTemplate);
-        result.analysis = analysisResult;
-      } catch (aiError) {
-        console.error('AI Analysis failed but data is intact:', aiError);
-        // We don't fail the whole request if AI fails, just return data with error note
-        result.analysis = 'Error generating analysis. Please try again later.';
-      }
-    }
-
     res.json(result);
 
   } catch (error) {
     if (connection) connection.release();
     console.error('Data fetch failed:', error);
     res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// API Route: Dify Workflow Proxy
+app.post('/api/dify/run-workflow', async (req, res) => {
+  const { inputs, user } = req.body;
+
+  try {
+    const response = await axios.post(
+      process.env.DIFY_BASE_URL,
+      {
+        inputs: inputs || {},
+        response_mode: 'blocking',
+        user: user || process.env.DIFY_USER || 'changle-user'
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.DIFY_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Dify API Error:', error.response ? error.response.data : error.message);
+    res.status(error.response ? error.response.status : 500).json({
+      status: 'error',
+      message: error.response ? error.response.data : 'Failed to call Dify API'
+    });
   }
 });
 
