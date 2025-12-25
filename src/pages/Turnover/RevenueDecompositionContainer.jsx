@@ -18,6 +18,7 @@ const RevenueDecompositionContainer = () => {
   const [showYoY, setShowYoY] = useState(false);
   const [showTrend, setShowTrend] = useState(true);
   const [showExtremes, setShowExtremes] = useState(true);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   
   const { data: fetchedData, loading, fetchData } = useFetchData('getCityTurnover');
   const { data: storeData, fetchData: fetchStoreData } = useFetchData('getStoreList');
@@ -438,10 +439,73 @@ const RevenueDecompositionContainer = () => {
     },
   ];
 
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedRows = useMemo(() => {
+    let sortableItems = [...rows];
+    if (sortConfig.key) {
+      const column = columns.find(c => c.key === sortConfig.key);
+      const dataIndex = column ? column.dataIndex : sortConfig.key;
+
+      sortableItems.sort((a, b) => {
+        let aValue = a[dataIndex];
+        let bValue = b[dataIndex];
+
+        const cleanValue = (val) => {
+             if (val == null) return -Infinity;
+             if (typeof val === 'number') return val;
+             if (typeof val === 'string') {
+                 // Check if string contains only non-numeric characters (like Chinese)
+                 // If so, return as string for localeCompare
+                 if (/^[^0-9]+$/.test(val) && val !== '-Infinity' && val !== 'Infinity') {
+                     return val;
+                 }
+                 
+                 // Try parsing percent or number with comma
+                 const cleanStr = val.replace(/,/g, '').replace('%', '');
+                 const num = parseFloat(cleanStr);
+                 if (!isNaN(num)) return num;
+                 return val;
+             }
+             return val;
+        };
+
+        const aClean = cleanValue(aValue);
+        const bClean = cleanValue(bValue);
+
+        if (typeof aClean === 'string' && typeof bClean === 'string') {
+            return sortConfig.direction === 'asc' 
+                ? aClean.localeCompare(bClean, 'zh-CN') 
+                : bClean.localeCompare(aClean, 'zh-CN');
+        }
+
+        if (aClean < bClean) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aClean > bClean) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [rows, sortConfig, columns]);
+
   const renderContent = () => {
     return (
       <div className="space-y-4">
-        <DataTable data={rows} columns={columns} />
+        <DataTable 
+          data={sortedRows} 
+          columns={columns} 
+          onSort={handleSort}
+          sortConfig={sortConfig}
+        />
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={() => setIsModalOpen(false)}></div>
