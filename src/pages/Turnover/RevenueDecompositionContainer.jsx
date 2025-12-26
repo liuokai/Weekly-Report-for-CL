@@ -123,6 +123,7 @@ const RevenueDecompositionContainer = () => {
   const openCityModal = async (cityName) => {
     setSelectedCity(cityName);
     setIsModalOpen(true);
+    setSelectedMetricKey("revenue");
     fetchStoreData();
     fetchModalTrendData([cityName]);
     fetchModalCumData([cityName]);
@@ -477,7 +478,7 @@ const RevenueDecompositionContainer = () => {
           sortConfig={sortConfig}
         />
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={() => setIsModalOpen(false)}></div>
             <div className="relative bg-white rounded-lg shadow-lg w-[90vw] max-w-4xl p-6 space-y-6 max-h-[85vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
