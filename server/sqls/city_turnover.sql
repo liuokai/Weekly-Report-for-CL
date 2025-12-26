@@ -1,5 +1,0 @@
-SELECT '北京' as city, 2557547.5 as revenue
-UNION ALL
-SELECT '上海', 18263334.94
-UNION ALL
-SELECT '广州', 1234567.89

@@ -22,7 +22,9 @@ const RevenueDecompositionContainer = () => {
   
   const { data: fetchedData, loading, fetchData } = useFetchData('getCityTurnover');
   const { data: storeData, fetchData: fetchStoreData } = useFetchData('getStoreList');
-  const { data: modalTrendData, fetchData: fetchModalTrendData } = useFetchData('getCityModalTrend', [], []); // New hook for modal trend
+  const { data: modalTrendData, loading: modalLoading, error: modalError, fetchData: fetchModalTrendData } = useFetchData('getCityWeeklyTrend', [], [], { manual: true });
+  const { data: modalCumData, loading: modalCumLoading, error: modalCumError, fetchData: fetchModalCumData } = useFetchData('getCityWeeklyCumTrend', [], [], { manual: true });
+  const { data: modalAvgDayData, loading: modalAvgDayLoading, error: modalAvgDayError, fetchData: fetchModalAvgDayData } = useFetchData('getCityWeeklyAvgDayTrend', [], [], { manual: true });
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
@@ -123,6 +125,8 @@ const RevenueDecompositionContainer = () => {
     setIsModalOpen(true);
     fetchStoreData();
     fetchModalTrendData([cityName]);
+    fetchModalCumData([cityName]);
+    fetchModalAvgDayData([cityName]);
 
     const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
     const city = fetchedData ? fetchedData.find(c => normalizeCity(c.statistics_city_name || c.city) === normalizeCity(cityName)) : null;
@@ -241,106 +245,70 @@ const RevenueDecompositionContainer = () => {
     { key: "dailyAvgRevenue", label: "天均营业额", unit: "元", format: (val) => `¥ ${Math.round(val).toLocaleString("zh-CN")}`, axisFormat: (val) => (val / 10000).toFixed(1) + "万" },
   ];
 
+  const calculateTrendLineLogic = (values, rawData) => {
+    if (!values || values.length === 0) return true;
+    const lastIndex = values.length - 1;
+    const lastItem = rawData && rawData[lastIndex];
+    if (!lastItem || !lastItem.date_range) return true;
+    
+    const parts = lastItem.date_range.split('~');
+    if (parts.length < 2) return true;
+    
+    const endDateStr = parts[1].trim();
+    const endDate = new Date(endDateStr);
+    const today = new Date();
+    endDate.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+    
+    return endDate < today;
+  };
+
   const buildCitySeries = () => {
-    // Priority 1: SQL Fetched Data
-    if (modalTrendData && modalTrendData.length > 0) {
+    let currentData = [];
+    let currentKey = '';
+    let lyKey = null;
+
+    if (selectedMetricKey === 'revenue') {
+      currentData = modalTrendData;
+      currentKey = 'current_value';
+      lyKey = 'last_year_value';
+    } else if (selectedMetricKey === 'ytdRevenue') {
+      currentData = modalCumData;
+      currentKey = 'running_total_revenue';
+      lyKey = null;
+    } else if (selectedMetricKey === 'dailyAvgRevenue') {
+      currentData = modalAvgDayData;
+      currentKey = '周天均营业额';
+      lyKey = '去年同期天均营业额';
+    }
+
+    if (currentData && currentData.length > 0) {
       const labels = [];
-      const series = {
-        revenue: [],
-        ytdRevenue: [],
-        dailyAvgRevenue: [],
-        dailyAvgPrice: [],
-        dailyAvgCustomer: [],
-        avgServiceDuration: [],
-      };
-      const seriesLY = {
-        revenue: [],
-        ytdRevenue: [],
-        dailyAvgRevenue: [],
-        dailyAvgPrice: [],
-        dailyAvgCustomer: [],
-        avgServiceDuration: [],
-      };
-
-      // Ensure chronological order
-      const sorted = [...modalTrendData].sort((a, b) => (a.week_num || 0) - (b.week_num || 0));
-
-      sorted.forEach(row => {
-        labels.push(row.week_label || `第${row.week_num}周`);
+      const series = { [selectedMetricKey]: [] };
+      const seriesLY = { [selectedMetricKey]: [] };
+      
+      const sortedAll = [...currentData].sort((a, b) => a.week - b.week);
+      const recent12 = sortedAll.slice(-12);
+      
+      recent12.forEach(row => {
+        const weekNum = String(row.week).padStart(2, '0');
+        labels.push(`第${weekNum}周`);
         
-        const rev = Number(row.revenue) || 0;
-        const revLY = Number(row.revenue_ly) || 0;
-        const price = Number(row.avg_price) || 0;
-        const priceLY = Number(row.avg_price_ly) || 0;
-
-        series.revenue.push(rev);
-        series.ytdRevenue.push(Number(row.ytd_revenue) || 0);
-        series.dailyAvgRevenue.push(rev / 7);
-        series.dailyAvgPrice.push(price);
-        series.dailyAvgCustomer.push(price ? Math.round((rev / 7) / price) : 0);
-        series.avgServiceDuration.push(0);
-
-        seriesLY.revenue.push(revLY);
-        seriesLY.ytdRevenue.push(Number(row.ytd_revenue_ly) || 0);
-        seriesLY.dailyAvgRevenue.push(revLY / 7);
-        seriesLY.dailyAvgPrice.push(priceLY);
-        seriesLY.dailyAvgCustomer.push(priceLY ? Math.round((revLY / 7) / priceLY) : 0);
-        seriesLY.avgServiceDuration.push(0);
+        const val = Number(row[currentKey]) || 0;
+        series[selectedMetricKey].push(val);
+        
+        if (lyKey) {
+          const valLY = Number(row[lyKey]) || 0;
+          seriesLY[selectedMetricKey].push(valLY);
+        } else {
+          seriesLY[selectedMetricKey].push(0);
+        }
       });
-      return { series, seriesLY, labels };
+      
+      return { series, seriesLY, labels, rawData: recent12 };
     }
 
-    // Priority 2: Fallback Mock Data
-    const N = weeklyData.length;
-    if (N === 0) return { series: {}, seriesLY: {}, labels: [] };
-    const labels = weeks.map(w => `第${String(w.weekNo).padStart(2, "0")}周`);
-    const seed = String(selectedCity || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-    const noise = (i, scale = 0.02) => ((Math.sin(i * 1.31 + seed) + Math.cos(i * 0.77 + seed)) * 0.5) * scale;
-    const series = {
-      revenue: [],
-      ytdRevenue: [],
-      dailyAvgRevenue: [],
-      dailyAvgPrice: [],
-      dailyAvgCustomer: [],
-      avgServiceDuration: [],
-    };
-    const seriesLY = {
-      revenue: [],
-      ytdRevenue: [],
-      dailyAvgRevenue: [],
-      dailyAvgPrice: [],
-      dailyAvgCustomer: [],
-      avgServiceDuration: [],
-    };
-    let cum = 0;
-    let cumLY = 0;
-    for (let i = 0; i < N; i++) {
-      const rev = weeklyData[i];
-      const revLY = rev * (0.85 + noise(i, 0.02));
-      cum += rev;
-      cumLY += revLY;
-      const dAvgRev = rev / 7;
-      const dAvgRevLY = revLY / 7;
-      const price = 170 * (1 + noise(i, 0.03));
-      const priceLY = price * (0.95 + noise(i, 0.02));
-      const cust = dAvgRev / price;
-      const custLY = dAvgRevLY / priceLY;
-      const dur = 300 * (1 + noise(i, 0.05));
-      const durLY = dur * (0.98 + noise(i, 0.02));
-      series.revenue.push(rev);
-      series.ytdRevenue.push(cum);
-      series.dailyAvgRevenue.push(dAvgRev);
-      series.dailyAvgPrice.push(price);
-      series.dailyAvgCustomer.push(cust);
-      series.avgServiceDuration.push(dur);
-      seriesLY.revenue.push(revLY);
-      seriesLY.ytdRevenue.push(cumLY);
-      seriesLY.dailyAvgRevenue.push(dAvgRevLY);
-      seriesLY.dailyAvgPrice.push(priceLY);
-      seriesLY.dailyAvgCustomer.push(custLY);
-      seriesLY.avgServiceDuration.push(durLY);
-    }
-    return { series, seriesLY, labels };
+    return { series: {}, seriesLY: {}, labels: [], rawData: [] };
   };
 
   const columns = [
@@ -498,6 +466,8 @@ const RevenueDecompositionContainer = () => {
   }, [rows, sortConfig, columns]);
 
   const renderContent = () => {
+    const { series, seriesLY, labels, rawData } = buildCitySeries();
+
     return (
       <div className="space-y-4">
         <DataTable 
@@ -538,6 +508,7 @@ const RevenueDecompositionContainer = () => {
                       </button>
                     ))}
                   </div>
+                  
                   <div className="flex gap-2 mb-4">
                     <button
                       onClick={() => setShowYoY(!showYoY)}
@@ -549,7 +520,7 @@ const RevenueDecompositionContainer = () => {
                       onClick={() => setShowTrend(!showTrend)}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showTrend ? "bg-[#a40035]/10 text-[#a40035] border-[#a40035]" : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"}`}
                     >
-                      显示均线
+                      显示趋势
                     </button>
                     <button
                       onClick={() => setShowExtremes(!showExtremes)}
@@ -558,23 +529,38 @@ const RevenueDecompositionContainer = () => {
                       显示极值
                     </button>
                   </div>
-                  <LineTrendChart
-                    headerTitle={`${(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).label}趋势`}
-                    headerUnit={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).unit}
-                    values={(buildCitySeries().series[selectedMetricKey] || [])}
-                    valuesYoY={(buildCitySeries().seriesLY[selectedMetricKey] || [])}
-                    xLabels={buildCitySeries().labels}
-                    showYoY={showYoY}
-                    showTrend={showTrend}
-                    showExtremes={showExtremes}
-                    yAxisFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).axisFormat}
-                    valueFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).format}
-                    width={800}
-                    height={280}
-                    padding={{ top: 40, right: 40, bottom: 60, left: 45 }}
-                    colorPrimary="#a40035"
-                    colorYoY="#2563eb"
-                  />
+
+                  <div className="min-h-[300px] w-full bg-gray-50 rounded-lg p-4 flex items-center justify-center">
+                    {(modalLoading || modalCumLoading || modalAvgDayLoading) ? (
+                      <div className="flex flex-col items-center text-gray-400">
+                        <div className="w-8 h-8 border-4 border-gray-200 border-t-[#a40035] rounded-full animate-spin mb-2"></div>
+                        <span>数据加载中...</span>
+                      </div>
+                    ) : (modalError || modalCumError || modalAvgDayError) ? (
+                        <div className="text-red-500">
+                            数据加载失败: {modalError || modalCumError || modalAvgDayError}
+                        </div>
+                    ) : (
+                      <LineTrendChart
+                        headerTitle={`${(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).label}趋势`}
+                        headerUnit={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).unit}
+                        values={(series[selectedMetricKey] || [])}
+                        valuesYoY={(seriesLY[selectedMetricKey] || [])}
+                        xLabels={labels}
+                        showYoY={showYoY}
+                        showTrend={showTrend}
+                        showExtremes={showExtremes}
+                        includeLastPointInTrend={calculateTrendLineLogic(series[selectedMetricKey], rawData)}
+                        yAxisFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).axisFormat}
+                        valueFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).format}
+                        width={800}
+                        height={280}
+                        padding={{ top: 40, right: 40, bottom: 60, left: 45 }}
+                        colorPrimary="#a40035"
+                        colorYoY="#2563eb"
+                      />
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center">

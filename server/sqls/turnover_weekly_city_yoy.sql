@@ -52,7 +52,8 @@ LEFT JOIN weekly_city_sales prev
    AND curr.sales_year = prev.sales_year + 1
    AND curr.sales_week = prev.sales_week
 WHERE curr.sales_year = 2025
+  AND curr.statistics_city_name = ?
 ORDER BY
     curr.statistics_city_name,
-    curr.sales_year DESC,
+    curr.statistics_city_name,
     curr.sales_week DESC;

@@ -61,6 +61,18 @@ const queryRegistry = {
     sql: loadSql('city_price_growth.sql'),
     description: 'Get city price growth and cost data'
   },
+  getCityWeeklyTrend: {
+    sql: loadSql('turnover_weekly_city_yoy.sql'),
+    description: 'Get city weekly turnover trend data'
+  },
+  getCityWeeklyCumTrend: {
+    sql: loadSql('turnover_weekly_city_cum_yoy.sql'),
+    description: 'Get city weekly cumulative turnover trend data'
+  },
+  getCityWeeklyAvgDayTrend: {
+    sql: loadSql('turnover_weekly_city_per_day_yoy.sql'),
+    description: 'Get city weekly average daily turnover trend data'
+  },
   getCityModalTrend: {
     sql: loadSql('city_modal_trend.sql'),
     description: 'Get city modal trend data'

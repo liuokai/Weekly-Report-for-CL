@@ -63,8 +63,10 @@ const useFetchData = (queryKey, params = [], initialData = null, options = {}) =
 
   // Optionally auto-fetch on mount
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!options.manual) {
+      fetchData();
+    }
+  }, [fetchData, options.manual]);
   
   return { data, loading, error, fetchData, setData };
 };
