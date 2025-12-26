@@ -18,24 +18,24 @@ const queryRegistry = {
     description: '营业额概览中的年度累计营业额'
   },
   getHQMetrics: {
-    sql: loadSql('hq_metrics.sql'),
+    sql: loadSql('hq_metrics.sql'), // 不知是什么文件
     description: 'Get HQ metrics trend data'
   },
   getWeeklyTurnover: {
     sql: loadSql('turnover_weekly.sql'),
-    description: 'Get weekly turnover trend data'
+    description: '获取周度营业额'
   },
   getWeeklyTurnoverCum: {
     sql: loadSql('turnover_weekly_cum_yoy.sql'),
-    description: 'Get weekly cumulative turnover data'
+    description: '获取周度营业额累计数据'
   },
   getWeeklyTurnoverAvgDay: {
     sql: loadSql('turnover_weekly_avg_per_day_yoy.sql'),
-    description: 'Get weekly average daily turnover data'
+    description: '获取周度营业额日均数据'
   },
   getCityTurnover: {
     sql: loadSql('turnover_city_actual_target.sql'),
-    description: 'Get city turnover data with targets'
+    description: '获取城市年度营业额数据'
   },
   getStoreList: {
     sql: loadSql('store_list.sql'),
