@@ -877,6 +877,8 @@ const PriceDecompositionContainer = () => {
     }
   }, [isModalOpen, selectedCity, modalContextCity, procMetric, modalTrendData, modalStoreData, priceGrowthData]);
 
+  const [showReminder, setShowReminder] = useState(false);
+
   const renderHQOverview = () => {
     const { targetGrowthRate } = BusinessTargets.turnover.priceDecomposition;
     const targetRate = targetGrowthRate !== undefined ? targetGrowthRate : 3.0;
@@ -895,97 +897,111 @@ const PriceDecompositionContainer = () => {
     const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
     return (
-      <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 mb-6 space-y-6 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 mb-6 relative overflow-hidden">
         <div className="absolute right-0 top-0 w-32 h-32 bg-[#a40035]/5 rounded-bl-full pointer-events-none"></div>
-        <div className="flex flex-wrap items-center justify-between z-10 gap-10">
-          <div className="flex items-center gap-12">
-            <div>
-              <div className="text-sm text-gray-500 mb-1">截止本周年度平均客单价</div>
-              <div className="text-4xl font-bold text-[#a40035] flex items-baseline gap-2">
-                ¥{hqData.currentPrice.toFixed(2)}
-                <span className="text-sm font-normal text-gray-400">元/人次</span>
-              </div>
-            </div>
-            <div className="hidden md:block border-l border-gray-200 pl-8">
-              <div className="text-sm text-gray-500 mb-1">去年平均客单价</div>
-              <div className="text-2xl font-semibold text-gray-700">
-                ¥{hqData.lastYearPrice.toFixed(2)}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-6">
-             <div className="text-right">
-                <div className="text-sm text-gray-500 mb-1">增长率</div>
-                <div className={`text-2xl font-bold ${hqData.growthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                  {hqData.growthRate > 0 ? '+' : ''}{hqData.growthRate.toFixed(2)}%
+        
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left: Price Compliance */}
+          <div className="flex-1 z-10 flex flex-col justify-center">
+            <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">截止本周年度平均客单价</div>
+                  <div className="text-4xl font-bold text-[#a40035] flex items-baseline gap-2">
+                    ¥{hqData.currentPrice.toFixed(2)}
+                    <span className="text-sm font-normal text-gray-400">元/人次</span>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  目标: <span className="font-medium text-gray-600">{targetRate.toFixed(1)}%</span>
-                  <span className="mx-1">|</span>
-                  {isAchieved ? (
-                    <span className="text-red-600">已达标 (+{diff.toFixed(2)}%)</span>
-                  ) : (
-                    <span className="text-gray-500">未达标 ({diff.toFixed(2)}%)</span>
-                  )}
+                
+                <div className="hidden md:block border-l border-gray-200 pl-4">
+                  <div className="text-sm text-gray-500 mb-1">去年平均客单价</div>
+                  <div className="text-2xl font-semibold text-gray-700">
+                    ¥{hqData.lastYearPrice.toFixed(2)}
+                  </div>
                 </div>
-             </div>
-             <div className="relative flex items-center justify-center">
-                <svg width={size} height={size} className="transform -rotate-90">
-                  <circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    stroke="#f3f4f6"
-                    strokeWidth={strokeWidth}
-                    fill="none"
-                  />
-                  <circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    stroke="#a40035"
-                    strokeWidth={strokeWidth}
-                    fill="none"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
-                <div className="absolute flex flex-col items-center">
-                  <span className="text-xs text-gray-400">达成率</span>
-                  <span className="text-sm font-bold text-[#a40035]">
-                    {progressPercent.toFixed(0)}%
-                  </span>
+
+                <div className="hidden md:block border-l border-gray-200 pl-4 text-right">
+                    <div className="text-sm text-gray-500 mb-1">增长率</div>
+                    <div className={`text-2xl font-bold ${hqData.growthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {hqData.growthRate > 0 ? '+' : ''}{hqData.growthRate.toFixed(2)}%
+                    </div>
                 </div>
-             </div>
-          </div>
-        </div>
-        <div className="h-px bg-gray-100/70"></div>
-        <div className="z-10">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm text-gray-600">预算使用（2025年1-9月）</div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2.5 py-1 rounded-full bg-[#a40035]/10 text-[#a40035]">费用占比 1.8%</span>
+
+                <div className="flex items-center gap-4">
+                   <div className="text-right">
+                      <div className="text-xs text-gray-400 mb-1">目标: <span className="font-medium text-gray-600">{targetRate.toFixed(1)}%</span></div>
+                      {isAchieved ? (
+                        <div className="text-sm text-red-600 font-medium">已达标 (+{diff.toFixed(2)}%)</div>
+                      ) : (
+                        <div className="text-sm text-gray-500 font-medium">未达标 ({diff.toFixed(2)}%)</div>
+                      )}
+                   </div>
+                   <div className="relative flex items-center justify-center">
+                      <svg width={size} height={size} className="transform -rotate-90">
+                        <circle
+                          cx={size / 2}
+                          cy={size / 2}
+                          r={radius}
+                          stroke="#f3f4f6"
+                          strokeWidth={strokeWidth}
+                          fill="none"
+                        />
+                        <circle
+                          cx={size / 2}
+                          cy={size / 2}
+                          r={radius}
+                          stroke="#a40035"
+                          strokeWidth={strokeWidth}
+                          fill="none"
+                          strokeDasharray={circumference}
+                          strokeDashoffset={strokeDashoffset}
+                          strokeLinecap="round"
+                          className="transition-all duration-1000 ease-out"
+                        />
+                      </svg>
+                      <div className="absolute flex flex-col items-center">
+                        <span className="text-[10px] text-gray-400">达成率</span>
+                        <span className="text-xs font-bold text-[#a40035]">
+                          {progressPercent.toFixed(0)}%
+                        </span>
+                      </div>
+                   </div>
+                </div>
             </div>
           </div>
-          <div className="flex items-center gap-8">
-            <div className="flex-none">
-              <div className="text-xs text-gray-500 mb-1">合计</div>
-              <div className="text-3xl md:text-4xl font-bold text-[#a40035]">¥545.8万</div>
-            </div>
-            <div className="flex-1 grid grid-cols-1 gap-2">
-              <div className="text-sm text-gray-600">
-                人工支出（工资+社保）：<span className="text-lg font-semibold text-gray-800">¥379.8万</span>
+
+          {/* Vertical Divider */}
+          <div className="hidden lg:block w-px bg-gray-200 self-stretch"></div>
+
+          {/* Right: Budget Execution */}
+          <div className="flex-1 z-10 flex flex-col justify-center">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm text-gray-600">预算使用（2025年1-9月）</div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-[#a40035]/10 text-[#a40035]">费用占比 1.8%</span>
               </div>
-              <div className="text-sm text-gray-600">
-                招聘渠道费及培训费：<span className="text-lg font-semibold text-gray-800">¥166万</span>
-                <span className="ml-2 text-xs text-gray-400">含介绍费、推拿师导师、外聘导师</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="flex-none">
+                <div className="text-xs text-gray-500 mb-1">合计</div>
+                <div className="text-3xl md:text-4xl font-bold text-[#a40035]">¥545.8万</div>
+              </div>
+              <div className="flex-1 grid grid-cols-1 gap-1">
+                <div className="text-sm text-gray-600 flex items-center justify-between">
+                  <span>人工支出：</span>
+                  <span className="text-base font-semibold text-gray-800">¥379.8万</span>
+                </div>
+                <div className="text-sm text-gray-600 flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <span>招聘培训：</span>
+                    <span className="text-base font-semibold text-gray-800">¥166万</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 mt-0.5">（含介绍费、推拿师导师、外聘导师）</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-2 bg-[#a40035]" style={{ width: '1.8%' }}></div>
+            <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-2 bg-[#a40035]" style={{ width: '1.8%' }}></div>
+            </div>
           </div>
         </div>
       </div>
@@ -993,7 +1009,27 @@ const PriceDecompositionContainer = () => {
   };
 
   const renderContent = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      <div className="flex justify-end relative z-30">
+        <button
+          onClick={() => setShowReminder(!showReminder)}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#a40035] to-[#c81e50] text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          {showReminder ? '收起提醒' : '岗位提醒'}
+        </button>
+
+        <div 
+           className={`absolute top-12 right-0 h-16 flex items-center bg-white/95 backdrop-blur shadow-lg border-l-4 border-[#a40035] rounded-l-lg overflow-hidden transition-all duration-500 ease-in-out z-20 ${showReminder ? 'w-96 opacity-100' : 'w-0 opacity-0'}`}
+        >
+           <div className="whitespace-nowrap px-6 text-gray-700 font-medium">
+              客单价达标 @ 熊生兵（推拿之家总监）
+           </div>
+        </div>
+      </div>
+
       {renderHQOverview()}
       <HQMetricsTrendChart />
       <div>

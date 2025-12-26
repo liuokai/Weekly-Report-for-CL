@@ -20,15 +20,15 @@ const CashFlowTab = () => {
 
   // City Cash Flow Data (from src/data/城市维度现金流.csv)
   const cityCashFlowData = [
-    { city: "成都市", newStoreInvestment: 529, operatingCashFlow: 2839, annualSurplus: 2310 },
-    { city: "重庆市", newStoreInvestment: 116, operatingCashFlow: 649, annualSurplus: 533 },
-    { city: "深圳市", newStoreInvestment: 449, operatingCashFlow: 618, annualSurplus: 169 },
-    { city: "杭州市", newStoreInvestment: 129, operatingCashFlow: 155, annualSurplus: 26 },
-    { city: "南京市", newStoreInvestment: 59, operatingCashFlow: 47, annualSurplus: -12 },
-    { city: "宁波市", newStoreInvestment: 0, operatingCashFlow: -15, annualSurplus: -15 },
-    { city: "广州市", newStoreInvestment: 65, operatingCashFlow: 115, annualSurplus: 50 },
-    { city: "上海市", newStoreInvestment: 71, operatingCashFlow: 146, annualSurplus: 75 },
-    { city: "北京市", newStoreInvestment: 397, operatingCashFlow: 236, annualSurplus: -161 }
+    { city: "成都市", newStoreInvestment: 529, operatingCashFlow: 2839, annualSurplus: 2310, safetyLine: 2000 },
+    { city: "重庆市", newStoreInvestment: 116, operatingCashFlow: 649, annualSurplus: 533, safetyLine: 450 },
+    { city: "深圳市", newStoreInvestment: 449, operatingCashFlow: 618, annualSurplus: 169, safetyLine: 400 },
+    { city: "杭州市", newStoreInvestment: 129, operatingCashFlow: 155, annualSurplus: 26, safetyLine: 120 },
+    { city: "南京市", newStoreInvestment: 59, operatingCashFlow: 47, annualSurplus: -12, safetyLine: 40 },
+    { city: "宁波市", newStoreInvestment: 0, operatingCashFlow: -15, annualSurplus: -15, safetyLine: 0 },
+    { city: "广州市", newStoreInvestment: 65, operatingCashFlow: 115, annualSurplus: 50, safetyLine: 80 },
+    { city: "上海市", newStoreInvestment: 71, operatingCashFlow: 146, annualSurplus: 75, safetyLine: 100 },
+    { city: "北京市", newStoreInvestment: 397, operatingCashFlow: 236, annualSurplus: -161, safetyLine: 150 }
   ];
 
   // Helper to calculate YoY
@@ -63,6 +63,13 @@ const CashFlowTab = () => {
       lastValue: data.lastYear.annualSurplus,
       yoY: calculateYoY(data.current.annualSurplus, data.lastYear.annualSurplus),
       highlight: true // Special highlight for this metric
+    },
+    {
+      key: 'safetyLine',
+      label: '资金安全线',
+      value: 16000000,
+      unit: '(元)',
+      isStatic: true
     }
   ];
 
@@ -189,7 +196,8 @@ const CashFlowTab = () => {
     },
     { key: 'newStoreInvestment', title: '今年新店投资', dataIndex: 'newStoreInvestment' },
     { key: 'operatingCashFlow', title: '今年经营现金流', dataIndex: 'operatingCashFlow' },
-    { key: 'annualSurplus', title: '今年年度结余', dataIndex: 'annualSurplus' }
+    { key: 'annualSurplus', title: '今年年度结余', dataIndex: 'annualSurplus' },
+    { key: 'safetyLine', title: '资金安全线', dataIndex: 'safetyLine', render: (val) => val?.toLocaleString() }
   ];
 
   const storeColumns = [
@@ -295,34 +303,42 @@ const CashFlowTab = () => {
           总部现金流概览
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-100">
           {metrics.map((metric) => (
             <div key={metric.key} className={`p-6 flex flex-col items-center justify-center text-center ${metric.highlight ? 'bg-red-50/30' : ''}`}>
-              <h3 className="text-gray-500 text-sm font-medium mb-2">{metric.label} (万元)</h3>
+              <h3 className="text-gray-500 text-sm font-medium mb-2">{metric.label} {metric.unit || '(万元)'}</h3>
               <div className={`text-3xl font-bold mb-2 ${metric.highlight ? 'text-[#a40035]' : 'text-gray-900'}`}>
                 {metric.value.toLocaleString()}
               </div>
               
               <div className="flex flex-col items-center space-y-1">
-                <div className="flex items-center text-sm">
-                  <span className="text-gray-400 mr-2">去年同期: {metric.lastValue.toLocaleString()}</span>
-                </div>
-                
-                <div className={`flex items-center text-sm px-2 py-0.5 rounded-full ${metric.yoY.direction === 'up' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                  <span className="font-medium mr-1">同比</span>
-                  <span className="font-bold flex items-center">
-                    {metric.yoY.sign}{metric.yoY.value}%
-                    {metric.yoY.direction === 'up' ? (
-                      <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                      </svg>
-                    )}
-                  </span>
-                </div>
+                {!metric.isStatic ? (
+                  <>
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-400 mr-2">去年同期: {metric.lastValue.toLocaleString()}</span>
+                    </div>
+                    
+                    <div className={`flex items-center text-sm px-2 py-0.5 rounded-full ${metric.yoY.direction === 'up' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                      <span className="font-medium mr-1">同比</span>
+                      <span className="font-bold flex items-center">
+                        {metric.yoY.sign}{metric.yoY.value}%
+                        {metric.yoY.direction === 'up' ? (
+                          <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                          </svg>
+                        )}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center text-sm text-gray-400 mt-2 min-h-[48px]">
+                     固定指标
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -371,7 +387,7 @@ const CashFlowTab = () => {
       
       {/* City Cash Flow Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">城市资金流向</h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">城市资金结余一览</h3>
         <DataTable data={cityCashFlowData} columns={cityColumns} />
       </div>
 

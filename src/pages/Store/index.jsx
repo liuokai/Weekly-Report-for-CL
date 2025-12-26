@@ -209,7 +209,8 @@ const CityStoresSection = () => {
         ...r,
         新店投资预算金额: budget > 0 ? budget : '-',
         新店投资金额: budget > 0 ? used : '-',
-        预算使用率: budget > 0 ? `${usage}%` : '-'
+        预算使用率: budget > 0 ? `${usage}%` : '-',
+        投资回收期: 36
       };
     });
   }, [baseRows]);
@@ -246,6 +247,7 @@ const CityStoresSection = () => {
     { key: 'budgetPlan', title: '新店投资预算金额', dataIndex: '新店投资预算金额' },
     { key: 'budgetUsed', title: '新店投资金额', dataIndex: '新店投资金额' },
     { key: 'budgetUsage', title: '预算使用率', dataIndex: '预算使用率' },
+    { key: 'paybackPeriod', title: '投资回收期 (月)', dataIndex: '投资回收期' },
   ]), []);
 
   useEffect(() => {
@@ -346,6 +348,7 @@ const CityStoresSection = () => {
         累计营业额: revenue,
         营业额目标: target,
         营业额达标率: `${rate}%`,
+        投资回收期: 36,
       };
     });
   }, [selectedCity, cityStoreMap]);
@@ -430,6 +433,7 @@ const CityStoresSection = () => {
                     { key: 'revenue', title: '累计营业额', dataIndex: '累计营业额' },
                     { key: 'target', title: '营业额目标', dataIndex: '营业额目标' },
                     { key: 'rate', title: '营业额达标率', dataIndex: '营业额达标率' },
+                    { key: 'paybackPeriod', title: '投资回收期 (月)', dataIndex: '投资回收期' },
                   ]}
                   getKey={(item, idx) => `${item.门店名称}-${idx}`}
                 />
