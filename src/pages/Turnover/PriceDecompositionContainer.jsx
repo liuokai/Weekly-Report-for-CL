@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
 import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
 import HQMetricsTrendChart from './HQMetricsTrendChart';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import useFetchData from '../../hooks/useFetchData';
+import { generatePositionReminder } from '../../services/reminderService';
 import BusinessTargets from '../../config/businessTargets';
 
 const PriceDecompositionContainer = () => {
@@ -878,6 +880,26 @@ const PriceDecompositionContainer = () => {
   }, [isModalOpen, selectedCity, modalContextCity, procMetric, modalTrendData, modalStoreData, priceGrowthData]);
 
   const [showReminder, setShowReminder] = useState(false);
+  const [reminderText, setReminderText] = useState('');
+  const [isReminderLoading, setIsReminderLoading] = useState(false);
+
+  useEffect(() => {
+    if (showReminder && !reminderText && !isReminderLoading && priceGrowthData) {
+      setIsReminderLoading(true);
+      const metricsData = {
+        hqMetrics: hqData,
+        cityMetrics: priceGrowthData,
+      };
+
+      generatePositionReminder(metricsData)
+        .then(text => {
+          setReminderText(text);
+        })
+        .finally(() => {
+          setIsReminderLoading(false);
+        });
+    }
+  }, [showReminder, reminderText, isReminderLoading, priceGrowthData, hqData]);
 
   const renderHQOverview = () => {
     const { targetGrowthRate } = BusinessTargets.turnover.priceDecomposition;
@@ -1022,11 +1044,23 @@ const PriceDecompositionContainer = () => {
         </button>
 
         <div 
-           className={`absolute top-12 right-0 h-16 flex items-center bg-white/95 backdrop-blur shadow-lg border-l-4 border-[#a40035] rounded-l-lg overflow-hidden transition-all duration-500 ease-in-out z-20 ${showReminder ? 'w-96 opacity-100' : 'w-0 opacity-0'}`}
+           className={`absolute top-12 right-0 flex flex-col bg-white/95 backdrop-blur shadow-xl border border-gray-100 rounded-lg overflow-hidden transition-all duration-300 ease-out origin-top-right z-20 ${showReminder ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
+           style={{ maxHeight: '600px', minWidth: '400px', maxWidth: '600px', width: 'max-content' }}
         >
-           <div className="whitespace-nowrap px-6 text-gray-700 font-medium">
-              客单价达标 @ 熊生兵（推拿之家总监）
+           <div className="p-6 text-gray-700 font-medium text-sm overflow-y-auto leading-relaxed">
+              {isReminderLoading ? (
+                <div className="flex items-center gap-2 text-gray-500 py-4 px-2">
+                  <div className="animate-spin h-5 w-5 border-2 border-[#a40035] border-t-transparent rounded-full"></div>
+                  <span>正在分析数据并生成岗位提醒...</span>
+                </div>
+              ) : (
+                <div className="prose prose-sm max-w-none prose-p:my-2 prose-li:my-1 [&_strong]:text-[#a40035] [&_strong]:font-bold">
+                   <ReactMarkdown>{reminderText || '暂无提醒内容'}</ReactMarkdown>
+                </div>
+              )}
            </div>
+           {/* Decorative corner accent */}
+           <div className="absolute top-0 right-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-[#a40035] border-r-[#a40035] rounded-bl-lg"></div>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ const axios = require('axios');
 const queryRegistry = require('./queryRegistry');
 const fs = require('fs');
 const OpenAI = require('openai');
+const { generateReminder } = require('./services/reminderGenerator');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -313,6 +314,23 @@ app.get('/api/cost-structure', async (req, res) => {
 
   } catch (error) {
     console.error('Cost Structure API Error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// API Route: Generate Reminder
+app.post('/api/generate-reminder', async (req, res) => {
+  const { metricsData } = req.body;
+  
+  if (!metricsData) {
+    return res.status(400).json({ status: 'error', message: 'Metrics data is required' });
+  }
+
+  try {
+    const reminder = await generateReminder(deepseek, metricsData);
+    res.json({ status: 'success', data: reminder });
+  } catch (error) {
+    console.error('Generate Reminder API Error:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 });
