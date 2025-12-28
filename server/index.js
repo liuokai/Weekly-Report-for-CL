@@ -8,6 +8,8 @@ const queryRegistry = require('./queryRegistry');
 const fs = require('fs');
 const OpenAI = require('openai');
 const { generateReminder } = require('./services/reminderGenerator');
+const variableService = require('./services/variableService');
+const difyWorkflows = require('./config/difyWorkflows');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -361,6 +363,106 @@ app.post('/api/dify/run-workflow', async (req, res) => {
     res.status(error.response ? error.response.status : 500).json({
       status: 'error',
       message: error.response ? error.response.data : 'Failed to call Dify API'
+    });
+  }
+});
+
+// --- Smart Analysis Configuration Routes ---
+
+// Get available data variables (SQL files)
+app.get('/api/analysis/variables', (req, res) => {
+  const variables = variableService.getAvailableVariables();
+  res.json({ status: 'success', data: variables });
+});
+
+// Get available Dify workflows
+app.get('/api/analysis/workflows', (req, res) => {
+  // Return list without sensitive API keys
+  const workflows = difyWorkflows.map(wf => ({
+    id: wf.id,
+    name: wf.name,
+    description: wf.description
+  }));
+  res.json({ status: 'success', data: workflows });
+});
+
+// Execute Smart Analysis (Fetch Data + Call Dify)
+app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
+  const { variableKeys, workflowId, user } = req.body;
+
+  if (!variableKeys || !Array.isArray(variableKeys) || variableKeys.length === 0) {
+    return res.status(400).json({ status: 'error', message: 'No data variables selected' });
+  }
+
+  // 1. Find Workflow
+  const workflow = difyWorkflows.find(wf => wf.id === workflowId);
+  if (!workflow) {
+    return res.status(400).json({ status: 'error', message: 'Invalid workflow ID' });
+  }
+
+  try {
+    // 2. Fetch Data for all variables
+    const dataContext = {};
+    for (const key of variableKeys) {
+      try {
+        const rows = await variableService.executeVariableQuery(key, pool);
+        // Find metadata for readable name
+        const metadata = variableService.getAvailableVariables().find(v => v.key === key);
+        dataContext[metadata ? metadata.name : key] = rows;
+      } catch (err) {
+        console.warn(`Failed to fetch data for ${key}:`, err.message);
+        dataContext[key] = { error: 'Failed to load data' };
+      }
+    }
+
+    // 3. Call Dify
+    // We pass the aggregated data as a JSON string in the 'context_data' input
+    const difyInputs = {
+      context_data: JSON.stringify(dataContext, null, 2)
+    };
+
+    const requestBody = {
+      inputs: difyInputs,
+      response_mode: 'blocking',
+      user: user || process.env.DIFY_USER || 'changle-user'
+    };
+
+    console.log('Sending request to Dify:', JSON.stringify(requestBody, null, 2));
+
+    const response = await axios.post(
+      process.env.DIFY_BASE_URL,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Bearer ${workflow.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 120000 // 120s timeout
+      }
+    );
+
+    res.json(response.data);
+
+  } catch (error) {
+    console.error('Smart Analysis Error:', error.message);
+    if (error.response) {
+      console.error('Dify Error Response:', error.response.status, error.response.data);
+    }
+    
+    // Check for specific error types
+    let errorMessage = error.message;
+    if (error.code === 'ECONNREFUSED') {
+      errorMessage = '无法连接到 Dify 服务 (Connection Refused)。请检查 Dify 是否正在运行，以及端口配置是否正确。';
+    } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
+      errorMessage = 'Dify 服务响应超时 (Timeout)。可能是模型运行时间过长，请稍后重试。';
+    } else if (error.response) {
+      // Try to extract readable message from Dify response
+      errorMessage = error.response.data.message || JSON.stringify(error.response.data);
+    }
+
+    res.status(500).json({ 
+      status: 'error', 
+      message: errorMessage
     });
   }
 });
