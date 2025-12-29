@@ -5,6 +5,7 @@ const DataContainer = ({
   title, 
   data, 
   aiAnalysis,  // AI分析结论文本
+  enableAiAnalysis = false, // 是否启用AI分析组件，默认为false
   renderFilters, 
   renderContent,
   className = "",
@@ -43,7 +44,7 @@ const DataContainer = ({
   return (
     <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
       <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
-      <AiAnalysisBox analysisText={aiAnalysis} />
+      {enableAiAnalysis && <AiAnalysisBox analysisText={aiAnalysis} />}
       {renderFilters && (
         <div className="mb-6">
           {renderFilters()}
