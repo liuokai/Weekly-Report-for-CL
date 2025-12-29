@@ -135,38 +135,11 @@ const TurnoverReport = () => {
       }
 
       // 2. Fetch AI Analysis (Slow) - only if not cached AND enabled
+      // [MODIFIED] Disable automatic AI analysis on page load.
+      // Users must now manually trigger analysis via the configuration button.
       if (!sessionCache.aiFetched && difyService.isEnabled) {
-        try {
-          // Prepare data context for AI (using the data we just fetched or cached)
-          // Ideally we should wait for newData to be available. 
-          // If this runs in parallel with fetch, we might need to await the data first or pass it if available.
-          // For simplicity, let's assume we can fetch data first then AI, or just pass simple inputs.
-          
-          // Note: In a real scenario, you might want to pass summarized data to Dify.
-          // For now, we'll just trigger the workflow.
-          
-          const aiResultText = await difyService.runWorkflow('turnoverOverview', {
-             // Pass any dynamic inputs here if your Dify workflow needs them, e.g.:
-             // analysis_date: new Date().toISOString()
-          });
-          
-          if (isMounted) {
-            setAiAnalysis(aiResultText);
-            sessionCache.aiAnalysis = aiResultText;
-            sessionCache.aiFetched = true;
-            setAiError(null);
-          }
-        } catch (err) {
-          if (isMounted) {
-            console.error("Failed to fetch AI analysis:", err);
-            setAiError("获取 AI 分析超时或失败，请稍后重试。");
-            setAiAnalysis("");
-          }
-        } finally {
-          if (isMounted) {
-            setLoading(false);
-          }
-        }
+        // Do nothing automatically. Wait for user interaction.
+        if (isMounted) setLoading(false);
       } else {
           // AI already fetched OR disabled, ensure loading is false
           if (isMounted) setLoading(false);

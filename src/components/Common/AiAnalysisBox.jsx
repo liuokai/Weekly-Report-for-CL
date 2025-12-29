@@ -18,28 +18,38 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
   // Local Analysis State (overrides props if present)
   const [localAnalysis, setLocalAnalysis] = useState(null);
   const [localError, setLocalError] = useState(null);
+  const [autoAnalyzed, setAutoAnalyzed] = useState(false);
 
-  // Fetch configuration options
+  // Initialize on mount
   useEffect(() => {
-    if (showConfig && variables.length === 0) {
-      fetchConfig();
+    // Only init if we haven't auto-analyzed and don't have external results
+    if (!analysisText && !localAnalysis && !autoAnalyzed) {
+      fetchConfigAndAutoAnalyze();
+    } else if (variables.length === 0) {
+      // Just fetch config if we already have results but need config for the modal
+      fetchConfigOnly();
     }
-  }, [showConfig]);
+  }, []);
 
-  const fetchConfig = async () => {
+  const fetchConfigOnly = async () => {
     setConfigLoading(true);
     try {
       const [varsRes, wfsRes] = await Promise.all([
         axios.get('/api/analysis/variables'),
         axios.get('/api/analysis/workflows')
       ]);
-      setVariables(varsRes.data.data || []);
-      setWorkflows(wfsRes.data.data || []);
+      const vars = varsRes.data.data || [];
+      const wfs = wfsRes.data.data || [];
       
-      // Default selections
-      if (wfsRes.data.data?.length > 0) {
-        setSelectedWorkflow(wfsRes.data.data[0].id);
-      }
+      setVariables(vars);
+      setWorkflows(wfs);
+      
+      // Set defaults for UI
+      const defaultVarKey = 'turnover_overview';
+      const hasDefaultVar = vars.some(v => v.key === defaultVarKey);
+      if (hasDefaultVar) setSelectedVariables([defaultVarKey]);
+      if (wfs.length > 0) setSelectedWorkflow(wfs[0].id);
+      
     } catch (err) {
       console.error('Failed to load analysis config:', err);
     } finally {
@@ -47,30 +57,51 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
     }
   };
 
-  const handleAnalyze = async () => {
-    if (selectedVariables.length === 0) {
-      alert('请至少选择一个数据变量');
-      return;
-    }
-    if (!selectedWorkflow) {
-      alert('请选择一个工作流');
-      return;
-    }
+  const fetchConfigAndAutoAnalyze = async () => {
+    setConfigLoading(true);
+    try {
+      const [varsRes, wfsRes] = await Promise.all([
+        axios.get('/api/analysis/variables'),
+        axios.get('/api/analysis/workflows')
+      ]);
+      const vars = varsRes.data.data || [];
+      const wfs = wfsRes.data.data || [];
+      
+      setVariables(vars);
+      setWorkflows(wfs);
 
+      // Determine defaults
+      const defaultVarKey = 'turnover_overview';
+      const hasDefaultVar = vars.some(v => v.key === defaultVarKey);
+      const defaultWorkflowId = wfs.length > 0 ? wfs[0].id : null;
+
+      // Set State
+      if (hasDefaultVar) setSelectedVariables([defaultVarKey]);
+      if (defaultWorkflowId) setSelectedWorkflow(defaultWorkflowId);
+
+      // Auto Analyze
+      if (hasDefaultVar && defaultWorkflowId) {
+        setAutoAnalyzed(true);
+        await executeAnalysis([defaultVarKey], defaultWorkflowId);
+      }
+    } catch (err) {
+      console.error('Failed to init analysis:', err);
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
+  const executeAnalysis = async (variableKeys, workflowId) => {
     setAnalyzing(true);
     setLocalError(null);
     setLocalAnalysis(null);
-    setShowConfig(false); // Close modal
 
     try {
       const response = await axios.post('/api/analysis/execute-smart-analysis', {
-        variableKeys: selectedVariables,
-        workflowId: selectedWorkflow
+        variableKeys,
+        workflowId
       });
       
-      // Dify returns { answer: "...", ... } or just the body
-      // Adjust based on your Dify response structure. 
-      // Usually response.data.answer or response.data.data.answer
       const resultText = response.data.answer || response.data.data?.answer || JSON.stringify(response.data);
       setLocalAnalysis(resultText);
     } catch (err) {
@@ -79,6 +110,20 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
       setAnalyzing(false);
     }
   };
+
+  const handleAnalyzeClick = () => {
+    if (selectedVariables.length === 0) {
+      alert('请至少选择一个数据变量');
+      return;
+    }
+    if (!selectedWorkflow) {
+      alert('请选择一个工作流');
+      return;
+    }
+    setShowConfig(false);
+    executeAnalysis(selectedVariables, selectedWorkflow);
+  };
+
 
   const toggleVariable = (key) => {
     setSelectedVariables(prev => 
@@ -243,7 +288,7 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
                 取消
               </button>
               <button 
-                onClick={handleAnalyze}
+                onClick={handleAnalyzeClick}
                 disabled={configLoading || selectedVariables.length === 0 || !selectedWorkflow}
                 className={`px-6 py-2 rounded-lg text-sm font-bold text-white shadow-sm transition-all
                   ${configLoading || selectedVariables.length === 0 || !selectedWorkflow 
