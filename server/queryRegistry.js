@@ -73,6 +73,10 @@ const queryRegistry = {
     sql: loadSql('turnover_weekly_city_per_day_yoy.sql'),
     description: 'Get city weekly average daily turnover trend data'
   },
+  getCityStoreWeeklyTurnover: {
+    sql: loadSql('turnover_weekly_store_yoy.sql'),
+    description: 'Get weekly turnover by store for a city'
+  },
   getCityModalTrend: {
     sql: loadSql('city_modal_trend.sql'),
     description: 'Get city modal trend data'

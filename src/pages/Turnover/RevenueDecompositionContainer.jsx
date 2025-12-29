@@ -22,6 +22,7 @@ const RevenueDecompositionContainer = () => {
   
   const { data: fetchedData, loading, fetchData } = useFetchData('getCityTurnover');
   const { data: storeData, fetchData: fetchStoreData } = useFetchData('getStoreList');
+  const { data: storeWeeklyData, loading: storeWeeklyLoading, fetchData: fetchStoreWeeklyData } = useFetchData('getCityStoreWeeklyTurnover', [], [], { manual: true });
   const { data: modalTrendData, loading: modalLoading, error: modalError, fetchData: fetchModalTrendData } = useFetchData('getCityWeeklyTrend', [], [], { manual: true });
   const { data: modalCumData, loading: modalCumLoading, error: modalCumError, fetchData: fetchModalCumData } = useFetchData('getCityWeeklyCumTrend', [], [], { manual: true });
   const { data: modalAvgDayData, loading: modalAvgDayLoading, error: modalAvgDayError, fetchData: fetchModalAvgDayData } = useFetchData('getCityWeeklyAvgDayTrend', [], [], { manual: true });
@@ -125,6 +126,7 @@ const RevenueDecompositionContainer = () => {
     setIsModalOpen(true);
     setSelectedMetricKey("revenue");
     fetchStoreData();
+    fetchStoreWeeklyData([cityName]);
     fetchModalTrendData([cityName]);
     fetchModalCumData([cityName]);
     fetchModalAvgDayData([cityName]);
@@ -157,88 +159,54 @@ const RevenueDecompositionContainer = () => {
   };
 
   useEffect(() => {
-    if (selectedCity && weeklyData.length > 0 && fetchedData) {
-      const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
-      const city = fetchedData.find(c => normalizeCity(c.statistics_city_name || c.city) === normalizeCity(selectedCity));
+    if (selectedCity && storeWeeklyData && Array.isArray(storeWeeklyData) && storeWeeklyData.length > 0) {
+      let maxYear = 0;
+      let maxWeek = 0;
       
-      if (!city) return;
+      // Map to store accumulated annual revenue
+      const storeAnnualRevenueMap = new Map();
 
-      let storeNames = [];
-      if (storeData && Array.isArray(storeData) && storeData.length > 0) {
-        storeNames = storeData
-          .filter(r => normalizeCity(r.city) === normalizeCity(selectedCity))
-          .map(r => r.store_name);
-      }
-      
-      if (storeNames.length === 0) {
-        storeNames = ["门店A", "门店B", "门店C", "门店D"];
-      }
-
-      const computeWeights = (names) => {
-        const raw = names.map((n) => {
-          const s = String(n);
-          let sum = 0;
-          for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i);
-          const w = 0.8 + ((sum % 41) / 100);
-          return w;
-        });
-        const total = raw.reduce((a, b) => a + b, 0) || 1;
-        return raw.map((w) => w / total);
-      };
-      
-      const perfFactor = (name, weekIdx) => {
-        const s = String(name);
-        let sum = 0;
-        for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i);
-        const r = ((sum + weekIdx * 17) % 101) / 100; // 0..1
-        const delta = (r - 0.5) * 0.1; // -0.05..0.05
-        return 1 + delta;
-      };
-      
-      const consFactor = (name, weekIdx) => {
-        const s = String(name);
-        let sum = 0;
-        for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i) * 1.3;
-        const r = ((sum + weekIdx * 23) % 101) / 100;
-        const delta = (r - 0.5) * 0.12; // -0.06..0.06
-        return 1 + delta;
-      };
-
-      const weights = computeWeights(storeNames);
-      // 先按门店权重分配收入，再按门店绩效因子微调并归一化保持总和
-      const rawRevenues = storeNames.map((name, idx) => {
-        const share = weights[idx] || 1 / (storeNames.length || 1);
-        const perf = perfFactor(name, selectedWeekIndex);
-        return weeklyData[selectedWeekIndex] * share * perf;
+      storeWeeklyData.forEach(item => {
+          if (item.year > maxYear) {
+              maxYear = item.year;
+              maxWeek = item.week;
+          } else if (item.year === maxYear && item.week > maxWeek) {
+              maxWeek = item.week;
+          }
       });
       
-      const totalRaw = rawRevenues.reduce((a, b) => a + b, 0) || 1;
-      const scale = weeklyData[selectedWeekIndex] / totalRaw;
-      
+      // Calculate annual revenue for maxYear
+      storeWeeklyData.forEach(item => {
+        if (item.year === maxYear) {
+           const currentTotal = storeAnnualRevenueMap.get(item.store_name) || 0;
+           storeAnnualRevenueMap.set(item.store_name, currentTotal + (Number(item.current_value) || 0));
+        }
+      });
+
+      const latestData = storeWeeklyData.filter(item => item.year === maxYear && item.week === maxWeek);
       const timeProgressVal = getTimeProgress();
 
-      const stores = storeNames.map((name, idx) => {
-        const share = weights[idx] || 1 / (storeNames.length || 1);
-        const sRevenue = rawRevenues[idx] * scale;
-        const sTarget = (Number(city.turnover_target) || 0) / 52 * share;
-        const sBudget = null;
-        const sSpent = null;
-        const completionRate = sTarget ? (sRevenue / sTarget) * 100 : 0;
-        
+      const stores = latestData.map(item => {
         return {
-          城市名称: name,
-          营业额: Math.round(sRevenue),
-          营业额目标: Math.round(sTarget),
+          城市名称: item.store_name,
+          本周营业额: Math.round(Number(item.current_value) || 0),
+          本周营业额同比: item.yoy_change !== null ? `${item.yoy_change}%` : '-',
+          年度营业额: Math.round(storeAnnualRevenueMap.get(item.store_name) || 0),
+          营业额目标: null,
           时间进度: `${timeProgressVal}%`,
-          营业额完成率: `${completionRate.toFixed(1)}%`,
-          预算金额: sBudget,
-          预算花费金额: sSpent,
+          营业额完成率: null,
+          预算金额: null,
+          预算花费金额: null,
           预算消耗率: null,
         };
       });
+      
+      stores.sort((a, b) => b.本周营业额 - a.本周营业额);
       setStoreRows(stores);
+    } else {
+      setStoreRows([]);
     }
-  }, [storeData, selectedCity, weeklyData, fetchedData, selectedWeekIndex]);
+  }, [storeWeeklyData, selectedCity]);
 
   const METRICS = [
     { key: "revenue", label: "周度营业额", unit: "元", format: (val) => `¥ ${Math.round(val).toLocaleString("zh-CN")}`, axisFormat: (val) => (val / 10000).toFixed(0) + "万" },
@@ -367,17 +335,17 @@ const RevenueDecompositionContainer = () => {
   ];
 
   const columnsForStore = [
-    { key: "city", title: "城市名称", dataIndex: "城市名称" },
+    { key: "city", title: "门店名称", dataIndex: "城市名称" },
     { 
       key: "revTarget", 
       title: "营业额目标", 
       dataIndex: "营业额目标",
       render: (value) => value ? Number(value).toLocaleString() : value
     },
-    { 
-      key: "rev", 
-      title: "营业额", 
-      dataIndex: "营业额",
+    {
+      key: "annualRev",
+      title: "年度营业额",
+      dataIndex: "年度营业额",
       render: (value) => value ? Number(value).toLocaleString() : value
     },
     { 
@@ -385,11 +353,29 @@ const RevenueDecompositionContainer = () => {
       title: "营业额完成率", 
       dataIndex: "营业额完成率",
       render: (value, row) => {
+        if (!value) return '-';
         const rateNum = parseFloat(value);
         const timeNum = parseFloat(row?.["时间进度"] || "0");
         const highlight = rateNum > timeNum;
         const cls = highlight ? "text-red-600 font-semibold" : "text-gray-700";
         return <span className={cls}>{value}</span>;
+      }
+    },
+    { 
+      key: "rev", 
+      title: "本周营业额", 
+      dataIndex: "本周营业额",
+      render: (value) => value ? Number(value).toLocaleString() : value
+    },
+    {
+      key: "revYoY",
+      title: "本周营业额同比",
+      dataIndex: "本周营业额同比",
+      render: (value) => {
+        if (!value || value === '-') return '-';
+        const num = parseFloat(value);
+        const color = num >= 0 ? "text-red-600" : "text-green-600";
+        return <span className={`${color} font-medium`}>{value}</span>;
       }
     },
     { key: "timeProgress", title: "时间进度", dataIndex: "时间进度" },
@@ -400,6 +386,7 @@ const RevenueDecompositionContainer = () => {
       title: "预算消耗率", 
       dataIndex: "预算消耗率",
       render: (value) => {
+        if (!value) return '-';
         const num = parseFloat(value);
         const isOver = num > 100;
         const cls = isOver ? "text-red-600 font-semibold" : "text-gray-700";

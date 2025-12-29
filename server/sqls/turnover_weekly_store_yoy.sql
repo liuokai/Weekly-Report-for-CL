@@ -1,8 +1,12 @@
+-- 按周、门店统计营业额
+
 -- 按城市、周维度统计营业额
 
 WITH weekly_city_sales AS (
     SELECT
         b.statistics_city_name,
+        a.store_code,
+        a.store_name,
         YEARWEEK(a.off_clock_time, 1)                                                                      AS year_week_key,
         YEAR(a.off_clock_time)                                                                             AS sales_year,
         WEEK(a.off_clock_time, 1)                                                                          AS sales_week,
@@ -20,6 +24,8 @@ WITH weekly_city_sales AS (
     WHERE a.off_clock_time IS NOT NULL
     GROUP BY
         b.statistics_city_name,
+      a.store_code,
+       a.store_name,
         year_week_key,
         sales_year,
         sales_week,
@@ -29,6 +35,8 @@ WITH weekly_city_sales AS (
 
 SELECT
     curr.statistics_city_name,
+    curr.store_code,
+    curr.store_name,
     curr.sales_year                                                                                 AS `year`,
     curr.sales_week                                                                                 AS `week`,
     CONCAT(
@@ -51,8 +59,9 @@ LEFT JOIN weekly_city_sales prev
     ON curr.statistics_city_name = prev.statistics_city_name
    AND curr.sales_year = prev.sales_year + 1
    AND curr.sales_week = prev.sales_week
-WHERE curr.sales_year = 2025
-  AND curr.statistics_city_name = ?
+and curr.store_code = prev.store_code
+WHERE curr.sales_year >= 2025
+    AND curr.statistics_city_name = ?
 ORDER BY
     curr.statistics_city_name,
     curr.statistics_city_name,
