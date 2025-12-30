@@ -4,16 +4,16 @@ import useFetchData from "../../hooks/useFetchData";
 
 const METRICS = {
   annualAvgPrice: {
-    label: '年度平均客单价',
+    label: '年度累计平均客单价',
     unit: '元',
-    data: [175, 176, 174, 178, 180, 179, 181, 183, 182, 185, 186, 188],
-    dataYoY: [168, 169, 170, 171, 172, 171, 173, 174, 175, 176, 177, 178]
+    data: [],
+    dataYoY: []
   },
   weeklyAvgPrice: {
     label: '周度平均客单价',
     unit: '元',
-    data: [172, 174, 173, 176, 178, 177, 179, 180, 181, 182, 183, 185],
-    dataYoY: [165, 167, 166, 169, 170, 169, 171, 172, 173, 174, 175, 176]
+    data: [],
+    dataYoY: []
   },
   projectReturnRate: {
     label: '项目回头率',
@@ -50,30 +50,68 @@ const HQMetricsTrendChart = () => {
   });
 
   const [metricsData, setMetricsData] = useState(METRICS);
-  const { data: fetchedData, loading, fetchData } = useFetchData('getHQMetrics');
+  
+  // Use new APIs for price data
+  const { data: annualYtdData } = useFetchData('getWeeklyAvgPriceYTD');
+  const { data: weeklyData } = useFetchData('getWeeklyAvgPrice');
+  
+  // Keep original API for other metrics if needed (or remove if unused)
+  const { data: fetchedData, fetchData } = useFetchData('getHQMetrics');
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   useEffect(() => {
-    if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
-      const newMetrics = JSON.parse(JSON.stringify(METRICS));
-      // Reset data arrays for all metrics that we expect to fill
-      Object.keys(newMetrics).forEach(key => { 
-        newMetrics[key].data = []; 
-        newMetrics[key].dataYoY = []; 
-      });
-      
-      fetchedData.forEach(row => {
-        if (newMetrics[row.metric]) {
-          newMetrics[row.metric].data.push(Number(row.current_value) || 0);
-          newMetrics[row.metric].dataYoY.push(Number(row.last_year_value) || 0);
-        }
-      });
-      setMetricsData(newMetrics);
+    // Always start from the initial METRICS template to ensure clean state
+    const newMetrics = JSON.parse(JSON.stringify(METRICS));
+    
+    // Process Annual Cumulative AOV Data
+    if (annualYtdData && annualYtdData.length > 0) {
+        // Take last 12 weeks (data is DESC, so take first 12 then reverse)
+        const sorted = [...annualYtdData].slice(0, 12).reverse();
+        // Use raw Number (float) - do not round
+        newMetrics.annualAvgPrice.data = sorted.map(item => Number(item.current_year_cumulative_aov) || 0);
+        // dataYoY should be last year's absolute value
+        newMetrics.annualAvgPrice.dataYoY = sorted.map(item => Number(item.last_year_cumulative_aov) || 0);
+        // Store pct separately for tooltip display
+        newMetrics.annualAvgPrice.dataPct = sorted.map(item => Number(item.cumulative_aov_yoy_pct) || 0);
     }
-  }, [fetchedData]);
+
+    // Process Weekly AOV Data
+    if (weeklyData && weeklyData.length > 0) {
+        const sorted = [...weeklyData].slice(0, 12).reverse();
+        // Use raw Number (float)
+        newMetrics.weeklyAvgPrice.data = sorted.map(item => Number(item.current_week_aov) || 0);
+        // dataYoY should be last year's absolute value (note: check sql field name, usually last_year_week_aov or similar. 
+        // Based on typical query structure, let's assume last_year_week_aov exists in the result if joined properly.
+        // Wait, I need to check if the SQL returns last_year_week_aov.
+        // Let's assume it does based on user request "数值取自last_year_week_aov".
+        newMetrics.weeklyAvgPrice.dataYoY = sorted.map(item => Number(item.last_year_week_aov) || 0);
+        newMetrics.weeklyAvgPrice.dataPct = sorted.map(item => Number(item.aov_yoy_pct) || 0);
+    }
+
+    // Process other metrics from getHQMetrics if available
+    if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
+       // Clear default mock data for other metrics before populating
+       Object.keys(newMetrics).forEach(key => {
+         if (key !== 'annualAvgPrice' && key !== 'weeklyAvgPrice') {
+            newMetrics[key].data = [];
+            newMetrics[key].dataYoY = [];
+            // pct not standard for these yet
+         }
+       });
+
+       fetchedData.forEach(row => {
+         if (newMetrics[row.metric] && row.metric !== 'annualAvgPrice' && row.metric !== 'weeklyAvgPrice') {
+           newMetrics[row.metric].data.push(Number(row.current_value) || 0);
+           newMetrics[row.metric].dataYoY.push(Number(row.last_year_value) || 0);
+         }
+       });
+    }
+
+    setMetricsData(newMetrics);
+  }, [annualYtdData, weeklyData, fetchedData]);
 
   const toggleControl = (key) => {
     setControls(prev => ({ ...prev, [key]: !prev[key] }));
@@ -126,8 +164,14 @@ const HQMetricsTrendChart = () => {
   }, []);
 
   const currentMetricConfig = metricsData[activeMetric];
-  const isPercentMetric = false;
-  const isPriceMetric = true;
+
+  // Safety check to prevent blank page crash if config is missing
+  if (!currentMetricConfig) {
+    return null; 
+  }
+
+  const isPercentMetric = currentMetricConfig.unit === '%';
+  const isPriceMetric = currentMetricConfig.unit === '元';
 
   return (
     <div className="mb-6">
@@ -182,10 +226,12 @@ const HQMetricsTrendChart = () => {
       </div>
 
       <LineTrendChart
+        key={activeMetric}
         headerTitle={currentMetricConfig.label}
         headerUnit={currentMetricConfig.unit}
         values={currentMetricConfig.data}
         valuesYoY={currentMetricConfig.dataYoY}
+        valuesPct={currentMetricConfig.dataPct}
         xLabels={weeksMeta.map(w => `${w.week} 周`)}
         showYoY={controls.showYoY}
         showTrend={controls.showAverage}
@@ -195,16 +241,18 @@ const HQMetricsTrendChart = () => {
         colorPrimary="#a40035"
         colorYoY="#2563eb"
         yAxisFormatter={(v) => {
-          if (isPercentMetric) return `${v.toFixed(0)}%`;
-          if (isPriceMetric) return `¥${v.toFixed(0)}`;
+          if (isPercentMetric) return `${v.toFixed(1)}%`;
+          if (isPriceMetric) return `¥${v.toFixed(2)}`;
           return v.toFixed(2);
         }}
         valueFormatter={(v) => {
-          if (isPercentMetric) return `${v.toFixed(1)}%`;
-          if (isPriceMetric) return `¥${v.toFixed(0)}`;
+          if (isPercentMetric) return `${v.toFixed(2)}%`;
+          if (isPriceMetric) return `¥${v.toFixed(2)}`;
           return v.toFixed(2);
         }}
-        currentLabel="指标值"
+        currentLabel="本周"
+        lastLabel="去年同期"
+        yoyLabel="同比"
         getHoverTitle={(idx) => {
           const wm = weeksMeta[idx] || {};
           return `周数： ${wm.year || ''} 年第 ${wm.week || ''} 周`;

@@ -5,6 +5,7 @@ const LineTrendChart = ({
   headerUnit,
   values = [],
   valuesYoY = [],
+  valuesPct = [],
   xLabels = [],
   showYoY = false,
   showTrend = false,
@@ -27,11 +28,17 @@ const LineTrendChart = ({
   const graphWidth = width - padding.left - padding.right;
   const graphHeight = height - padding.top - padding.bottom;
 
-  // Ensure values and valuesYoY are valid arrays
-  const safeValues = Array.isArray(values) ? values : [];
-  const safeValuesYoY = Array.isArray(valuesYoY) ? valuesYoY : [];
+  // 1. Data Processing
+  // Filter out invalid values to ensure chart stability
+  const safeValues = values.map((v) => (isNaN(Number(v)) ? 0 : Number(v)));
+  const safeValuesYoY = valuesYoY.map((v) => (isNaN(Number(v)) ? 0 : Number(v)));
+  const safeValuesPct = valuesPct ? valuesPct.map((v) => (isNaN(Number(v)) ? 0 : Number(v))) : null;
 
-  const allValues = showYoY && safeValuesYoY.length ? [...safeValues, ...safeValuesYoY] : [...safeValues];
+  // Calculate Min/Max for Y-Axis Scaling
+  const allValues = [...safeValues];
+  if (showYoY) {
+    allValues.push(...safeValuesYoY);
+  }
   
   // Handle empty data case
   if (allValues.length === 0) {
@@ -45,7 +52,9 @@ const LineTrendChart = ({
 
   const dataMax = Math.max(...allValues);
   const dataMin = Math.min(...allValues);
-  const paddingVal = (dataMax - dataMin || Math.abs(dataMax) || 1) * 0.05;
+  // Ensure we have a small buffer even for flat lines
+  const range = dataMax - dataMin;
+  const paddingVal = (range === 0 ? (Math.abs(dataMax) || 1) * 0.1 : range * 0.05);
   const maxVal = dataMax + paddingVal;
   const minVal = dataMin - paddingVal;
 
@@ -268,14 +277,22 @@ const LineTrendChart = ({
                   const idx = hoverIndex;
                   const val = values[idx];
                   const valLY = showYoY && valuesYoY && valuesYoY.length ? valuesYoY[idx] : undefined;
+                  const valPct = showYoY && valuesPct && valuesPct.length ? valuesPct[idx] : undefined;
 
                   let yoyStr = "";
                   let yoyColor = "#374151";
-                  if (showYoY && valLY && valLY !== 0) {
-                    const yoy = (val - valLY) / valLY;
-                    const sign = yoy > 0 ? "+" : "";
-                    yoyStr = `${sign}${(yoy * 100).toFixed(2)}%`;
-                    yoyColor = yoy > 0 ? "#ef4444" : "#10b981";
+                  
+                  if (showYoY) {
+                      if (valPct !== undefined) {
+                          const sign = valPct > 0 ? "+" : "";
+                          yoyStr = `${sign}${valPct.toFixed(2)}%`;
+                          yoyColor = valPct > 0 ? "#ef4444" : "#10b981";
+                      } else if (valLY && valLY !== 0) {
+                          const yoy = (val - valLY) / valLY;
+                          const sign = yoy > 0 ? "+" : "";
+                          yoyStr = `${sign}${(yoy * 100).toFixed(2)}%`;
+                          yoyColor = yoy > 0 ? "#ef4444" : "#10b981";
+                      }
                   }
 
                   const measureText = (str) => {

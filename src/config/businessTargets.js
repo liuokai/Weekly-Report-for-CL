@@ -33,7 +33,7 @@ export const BusinessTargets = {
       lastYearAveragePrice: 288.7,
       
       // 客单价增长率目标值（单位：百分比）
-      targetGrowthRate: 3.3
+      targetGrowthRate: 3
     },
 
     // 客次量拆解 (Customer Volume Decomposition)

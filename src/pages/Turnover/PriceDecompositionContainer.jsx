@@ -17,10 +17,12 @@ const PriceDecompositionContainer = () => {
     growthRate: 0
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPriceDecompositionModal, setIsPriceDecompositionModal] = useState(false);
   const [selectedCity, setSelectedCity] = useState(null);
   const [weeks, setWeeks] = useState([]);
   const [weeklyPrice, setWeeklyPrice] = useState([]);
   const [weeklyPriceLY, setWeeklyPriceLY] = useState([]);
+  const [weeklyYoYRates, setWeeklyYoYRates] = useState([]);
   const [storeRows, setStoreRows] = useState([]);
   const [showYoY, setShowYoY] = useState(false);
   const [showTrend, setShowTrend] = useState(true);
@@ -39,7 +41,13 @@ const PriceDecompositionContainer = () => {
   const { data: fetchedTrendData, loading: trendLoading } = useFetchData('getProcessMetricTrend', { metric: procMetric });
   const { data: fetchedCityData, loading: cityLoading } = useFetchData('getProcessCityData', { metric: procMetric });
   // Fetch city price growth data
-  const { data: priceGrowthData } = useFetchData('getCityPriceGrowth');
+  const { data: cityAnnualPriceData } = useFetchData('getCityAnnualAvgPrice');
+  // Fetch annual average price data
+  const { data: annualPriceData } = useFetchData('getAnnualAvgPrice');
+  // Fetch city weekly average price data
+  const { data: cityWeeklyData } = useFetchData('getCityWeeklyAvgPriceYTD');
+  // Fetch store weekly average price data
+  const { data: storeWeeklyData } = useFetchData('getStoreWeeklyAvgPriceYTD');
 
   const [modalContextCity, setModalContextCity] = useState(null);
   
@@ -133,31 +141,26 @@ const PriceDecompositionContainer = () => {
   }, []);
 
   useEffect(() => {
-    // Override HQ data with manually configured values
-    const { lastYearAveragePrice } = BusinessTargets.turnover.priceDecomposition;
-    
-    // Simulated current average price (mock value)
-    const currentAveragePrice = 298.2;
+    if (annualPriceData && annualPriceData.length > 0) {
+      // Find the record with max sales_year (latest year)
+      const sorted = [...annualPriceData].sort((a, b) => b.sales_year - a.sales_year);
+      const latest = sorted[0];
 
-    // Calculate growth rate based on Current and Last Year prices
-    // Growth Rate = ((Current - Last) / Last) * 100
-    const growthRate = lastYearAveragePrice 
-      ? ((currentAveragePrice - lastYearAveragePrice) / lastYearAveragePrice) * 100 
-      : 0;
+      if (latest) {
+         const currentPrice = Number(latest.annual_avg_order_value) || 0;
+         const lastYearPrice = Number(latest.last_year_avg_order_value) || 0;
+         
+         // Use SQL's YoY percentage directly
+         const growthRate = Number(latest.avg_order_value_yoy_pct) || 0;
 
-    setHqData({
-      currentPrice: currentAveragePrice,
-      lastYearPrice: lastYearAveragePrice,
-      growthRate
-    });
-
-    // Original data aggregation logic disabled to favor manual configuration
-    /* 
-    if (priceGrowthData && priceGrowthData.length > 0) {
-      ...
+         setHqData({
+           currentPrice,
+           lastYearPrice,
+           growthRate
+         });
+      }
     }
-    */
-  }, [priceGrowthData]);
+  }, [annualPriceData]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -172,55 +175,30 @@ const PriceDecompositionContainer = () => {
 
   const tableData = useMemo(() => {
     let source = [];
-    if (priceGrowthData && priceGrowthData.length > 0) {
-      source = priceGrowthData;
-    } else {
-      // Mock Fallback
-      const cities = ['北京', '上海', '广州', '深圳', '杭州', '南京', '成都', '武汉', '西安', '苏州'];
-      source = cities.map((city, i) => {
-         const lastYearPrice = 280 + Math.random() * 40;
-         const currentPrice = lastYearPrice * (1 + (Math.random() * 0.1 - 0.02));
-         const growthRate = ((currentPrice - lastYearPrice) / lastYearPrice * 100).toFixed(2) + '%';
-         
-         const laborCost = 30 + Math.random() * 10;
-         const recruitTrainCost = 10 + Math.random() * 5;
-         const totalCost = laborCost + recruitTrainCost;
-         const budget = 50 + Math.random() * 10;
-         const budgetUsageRate = ((totalCost / budget) * 100).toFixed(1) + '%';
-         const timeProgress = '75.0%';
-         const usageDiff = (parseFloat(budgetUsageRate) - 75).toFixed(1) + '%';
-
-         return {
-            city,
-            last_year_price: lastYearPrice,
-            current_price: currentPrice,
-            growth_rate: growthRate,
-            labor_cost: laborCost,
-            recruit_train_cost: recruitTrainCost,
-            total_cost: totalCost,
-            budget: budget,
-            budget_usage_rate: budgetUsageRate,
-            time_progress: timeProgress,
-            usage_progress_diff: usageDiff
-         };
-      });
+    if (cityAnnualPriceData && cityAnnualPriceData.length > 0) {
+      // Find the latest year
+      const years = cityAnnualPriceData.map(d => d.sales_year).filter(y => y);
+      const maxYear = Math.max(...years);
+      
+      // Filter data for the latest year
+      source = cityAnnualPriceData.filter(d => d.sales_year === maxYear);
     }
 
     return source.map((row, index) => ({
       key: index,
-      city: row.city,
-      lastYearPrice: parseFloat(row.last_year_price || 0),
-      currentPrice: parseFloat(row.current_price || 0),
-      yoyRate: row.growth_rate || '0%',
-      laborCost: parseFloat(row.labor_cost || 0),
-      recruitTrainCost: parseFloat(row.recruit_train_cost || 0),
-      totalCost: parseFloat(row.total_cost || 0),
-      budget: parseFloat(row.budget || 0),
-      budgetUsageRate: row.budget_usage_rate || '0%',
-      timeProgress: row.time_progress || '0%',
-      usageProgressDiff: row.usage_progress_diff || '0%'
+      city: row.city_name,
+      lastYearPrice: parseFloat(row.last_year_aov || 0),
+      currentPrice: parseFloat(row.current_year_aov || 0),
+      yoyRate: row.aov_yoy_pct ? `${row.aov_yoy_pct}%` : '0%',
+      laborCost: null,
+      recruitTrainCost: null,
+      totalCost: null,
+      budget: null,
+      budgetUsageRate: null,
+      timeProgress: null,
+      usageProgressDiff: null
     }));
-  }, [priceGrowthData]);
+  }, [cityAnnualPriceData]);
 
   const [modalColumns, setModalColumns] = useState([]);
 
@@ -232,7 +210,10 @@ const PriceDecompositionContainer = () => {
       render: (value, row) => (
         <button
           className="text-[#a40035] hover:underline font-medium"
-          onClick={() => openCityModal(row.city)}
+          onClick={() => {
+            setIsPriceDecompositionModal(true);
+            openCityModal(row.city);
+          }}
         >
           {value}
         </button>
@@ -269,25 +250,25 @@ const PriceDecompositionContainer = () => {
       key: 'laborCost',
       title: '人工支出（工资+社保）（万元）',
       dataIndex: 'laborCost',
-      render: (val) => `${Number(val).toFixed(2)}`
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
     },
     {
       key: 'recruitTrainCost',
       title: '招聘渠道费及培训费（万元）',
       dataIndex: 'recruitTrainCost',
-      render: (val) => `${Number(val).toFixed(2)}`
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
     },
     {
       key: 'totalCost',
       title: '费用合计金额（万元）',
       dataIndex: 'totalCost',
-      render: (val) => `${Number(val).toFixed(2)}`
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
     },
     {
       key: 'budget',
       title: '预算金额（万元）',
       dataIndex: 'budget',
-      render: (val) => `${Number(val).toFixed(2)}`
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
     },
     {
       key: 'budgetUsageRate',
@@ -304,6 +285,7 @@ const PriceDecompositionContainer = () => {
       title: '预算使用进度差',
       dataIndex: 'usageProgressDiff',
       render: (val) => {
+        if (val == null) return null;
         const isNegative = `${val}`.includes('-');
         return (
           <span className={isNegative ? 'text-green-600' : 'text-red-600'}>
@@ -316,6 +298,8 @@ const PriceDecompositionContainer = () => {
 
   const columnsForStore = [
     { key: 'city', title: '城市', dataIndex: 'city' },
+    { key: 'storeName', title: '门店名称', dataIndex: 'storeName' },
+    { key: 'storeCode', title: '门店编码', dataIndex: 'storeCode' },
     { 
       key: 'lastYearPrice', 
       title: '去年客单价', 
@@ -347,25 +331,25 @@ const PriceDecompositionContainer = () => {
       key: 'laborCost',
       title: '人工支出（工资+社保）（万元）',
       dataIndex: 'laborCost',
-      render: (val) => `${Number(val).toFixed(2)}`
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : null
     },
     {
       key: 'recruitTrainCost',
       title: '招聘渠道费及培训费（万元）',
       dataIndex: 'recruitTrainCost',
-      render: (val) => `${Number(val).toFixed(2)}`
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : null
     },
     {
       key: 'totalCost',
       title: '费用合计金额（万元）',
       dataIndex: 'totalCost',
-      render: (val) => `${Number(val).toFixed(2)}`
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : null
     },
     {
       key: 'budget',
       title: '预算金额（万元）',
       dataIndex: 'budget',
-      render: (val) => `${Number(val).toFixed(2)}`
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : null
     },
     {
       key: 'budgetUsageRate',
@@ -671,7 +655,7 @@ const PriceDecompositionContainer = () => {
     const seed = String(selectedCity || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
     const getFallbackStores = () => ['门店A', '门店B', '门店C', '门店D'];
 
-    if (procMetric === 'configRatio') {
+    if (procMetric === 'configRatio' && !isPriceDecompositionModal) {
       const weekRanges = buildLast12Weeks();
       setWeeks(weekRanges);
       
@@ -764,7 +748,7 @@ const PriceDecompositionContainer = () => {
       ];
       setModalColumns(storeCols);
 
-    } else if (procMetric === 'therapistYield' || procMetric === 'newEmpReturn') {
+    } else if ((procMetric === 'therapistYield' || procMetric === 'newEmpReturn') && !isPriceDecompositionModal) {
        const months = Array.from({length: 12}, (_, i) => i + 1);
        const monthRanges = months.map(m => ({
           weekNo: m,
@@ -820,75 +804,89 @@ const PriceDecompositionContainer = () => {
        setStoreRows(tableRows);
 
     } else {
-       const weekRanges = buildLast12Weeks();
-       setWeeks(weekRanges);
-       
-       const cityRow = priceGrowthData ? priceGrowthData.find(r => r.city === selectedCity) : null;
-       const bCurr = parseFloat(cityRow?.current_price || 0) || 300;
-       const bLast = parseFloat(cityRow?.last_year_price || 0) || 280;
-       
-       const N = weekRanges.length;
-       const currSeries = [], lastSeries = [];
-       for (let i = 0; i < N; i++) {
-          const smooth = 1 + 0.01 * Math.sin((i / N) * 2 * Math.PI);
-          const noise = ((Math.sin(i * 1.21 + seed) + Math.cos(i * 0.63 + seed)) * 0.5) * 0.015;
-          const curr = bCurr * (smooth + noise);
-          const last = bLast * (smooth + noise);
-          currSeries.push(Number(curr.toFixed(2)));
-          lastSeries.push(Number(last.toFixed(2)));
-       }
-       setWeeklyPrice(currSeries);
-       setWeeklyPriceLY(lastSeries);
-
-       const storeNames = getFallbackStores();
-       const cityLabor = Number(cityRow?.labor_cost || 0);
-       const cityRecruit = Number(cityRow?.recruit_train_cost || 0);
-       const cityBudget = Number(cityRow?.budget || 0);
-       const cityUsageRate = parseFloat(String(cityRow?.budget_usage_rate || '0%')) || 0;
-       const timeProgress = parseFloat(String(cityRow?.time_progress || '0%')) || 0;
-
-       const stores = storeNames.map((name, idx) => {
-          const share = 1 / (storeNames.length || 1);
-          const sLast = bLast * (1 + ((idx%3)-1)*0.05);
-          const sCurr = bCurr * (1 + ((idx%3)-1)*0.05);
-          const yoy = sLast ? ((sCurr - sLast) / sLast) * 100 : 0;
-          const sLabor = cityLabor * share;
-          const sRecruit = cityRecruit * share;
-          const sTotal = sLabor + sRecruit;
-          const sBudget = cityBudget * share;
-          const sUsage = Math.max(0, Math.min(100, cityUsageRate + ((seed + idx * 7) % 9 - 4)));
-          const diff = sUsage - timeProgress;
+       // Process City Trend Data (Upper Part)
+       if (cityWeeklyData && cityWeeklyData.length > 0 && selectedCity) {
+          const cityData = cityWeeklyData.filter(d => d.city_name === selectedCity);
+          // Sort by year and week
+          const sorted = [...cityData].sort((a, b) => {
+             if (a.sales_year !== b.sales_year) return a.sales_year - b.sales_year;
+             return a.sales_week - b.sales_week;
+          });
+          // Take last 12 weeks
+          const sliced = sorted.slice(-12);
           
-          return {
-            key: `${name}-${idx}`,
-            city: name,
-            lastYearPrice: Number(sLast.toFixed(2)),
-            currentPrice: Number(sCurr.toFixed(2)),
-            yoyRate: `${yoy >= 0 ? '+' : ''}${yoy.toFixed(2)}%`,
-            laborCost: Number(sLabor.toFixed(2)),
-            recruitTrainCost: Number(sRecruit.toFixed(2)),
-            totalCost: Number(sTotal.toFixed(2)),
-            budget: Number(sBudget.toFixed(2)),
-            budgetUsageRate: `${sUsage.toFixed(1)}%`,
-            timeProgress: `${timeProgress.toFixed(1)}%`,
-            usageProgressDiff: `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`
-          };
-       });
+          const processedWeeks = sliced.map(d => ({
+             label: `第${d.sales_week}周`,
+             weekNo: d.sales_week,
+             fullLabel: d.week_date_range // Optional extra info
+          }));
+          
+          setWeeks(processedWeeks);
+          setWeeklyPrice(sliced.map(d => Number(d.current_year_cumulative_aov)));
+          setWeeklyPriceLY(sliced.map(d => Number(d.last_year_cumulative_aov)));
+          setWeeklyYoYRates(sliced.map(d => d.cumulative_aov_yoy_pct));
+       } else {
+           setWeeks([]);
+           setWeeklyPrice([]);
+           setWeeklyPriceLY([]);
+           setWeeklyYoYRates([]);
+       }
+
+       // Process Store List Data (Lower Part)
+       let processedStores = [];
+       if (storeWeeklyData && storeWeeklyData.length > 0 && selectedCity) {
+          const cityStores = storeWeeklyData.filter(d => d.city_name === selectedCity);
+          
+          // Group by store_code and find max year/week
+          const storeMap = new Map();
+          cityStores.forEach(d => {
+             const currentMax = storeMap.get(d.store_code);
+             if (!currentMax) {
+                storeMap.set(d.store_code, d);
+             } else {
+                if (d.sales_year > currentMax.sales_year || 
+                   (d.sales_year === currentMax.sales_year && d.sales_week > currentMax.sales_week)) {
+                   storeMap.set(d.store_code, d);
+                }
+             }
+          });
+          
+          processedStores = Array.from(storeMap.values()).map((d, idx) => {
+             const progress = d.sales_week ? (d.sales_week / 52) * 100 : 0;
+             return {
+               key: d.store_code || idx,
+               city: d.city_name,
+               storeName: d.store_name,
+               storeCode: d.store_code,
+               lastYearPrice: parseFloat(d.last_year_cumulative_aov || 0),
+               currentPrice: parseFloat(d.current_year_cumulative_aov || 0),
+               yoyRate: d.cumulative_aov_yoy_pct ? `${d.cumulative_aov_yoy_pct}%` : '0%',
+               laborCost: null,
+               recruitTrainCost: null,
+               totalCost: null,
+               budget: null,
+               budgetUsageRate: null,
+               timeProgress: d.sales_week ? `${progress.toFixed(1)}%` : null,
+               usageProgressDiff: null
+             };
+          });
+       }
+       
        setModalColumns(columnsForStore);
-       setStoreRows(stores);
+       setStoreRows(processedStores);
     }
-  }, [isModalOpen, selectedCity, modalContextCity, procMetric, modalTrendData, modalStoreData, priceGrowthData]);
+  }, [isModalOpen, selectedCity, modalContextCity, procMetric, modalTrendData, modalStoreData, tableData, cityWeeklyData, storeWeeklyData, isPriceDecompositionModal]);
 
   const [showReminder, setShowReminder] = useState(false);
   const [reminderText, setReminderText] = useState('');
   const [isReminderLoading, setIsReminderLoading] = useState(false);
 
   useEffect(() => {
-    if (showReminder && !reminderText && !isReminderLoading && priceGrowthData) {
+    if (showReminder && !reminderText && !isReminderLoading && tableData) {
       setIsReminderLoading(true);
       const metricsData = {
         hqMetrics: hqData,
-        cityMetrics: priceGrowthData,
+        cityMetrics: tableData,
       };
 
       generatePositionReminder(metricsData)
@@ -899,21 +897,19 @@ const PriceDecompositionContainer = () => {
           setIsReminderLoading(false);
         });
     }
-  }, [showReminder, reminderText, isReminderLoading, priceGrowthData, hqData]);
+  }, [showReminder, reminderText, isReminderLoading, tableData, hqData]);
 
   const renderHQOverview = () => {
     const { targetGrowthRate } = BusinessTargets.turnover.priceDecomposition;
     const targetRate = targetGrowthRate !== undefined ? targetGrowthRate : 3.0;
     const isAchieved = hqData.growthRate >= targetRate;
-    const diff = hqData.growthRate - targetRate;
     
     // Calculate progress for the circular indicator (max 100% visual if exceeded)
-    // If growth is negative, progress is 0. If growth is 1.5% and target is 3%, progress is 50%.
     const progressPercent = Math.max(0, Math.min(100, (hqData.growthRate / targetRate) * 100));
     
     // Circle configuration
-    const size = 100;
-    const strokeWidth = 8;
+    const size = 80;
+    const strokeWidth = 6;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
@@ -922,39 +918,41 @@ const PriceDecompositionContainer = () => {
       <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 mb-6 relative overflow-hidden">
         <div className="absolute right-0 top-0 w-32 h-32 bg-[#a40035]/5 rounded-bl-full pointer-events-none"></div>
         
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
           {/* Left: Price Compliance */}
-          <div className="flex-1 z-10 flex flex-col justify-center">
+          <div className="flex-1 z-10">
             <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">截止本周年度平均客单价</div>
-                  <div className="text-4xl font-bold text-[#a40035] flex items-baseline gap-2">
-                    ¥{hqData.currentPrice.toFixed(2)}
+                <div className="flex flex-col gap-1 min-w-0">
+                  <div className="text-sm text-gray-500 truncate">截止本周年度平均客单价</div>
+                  <div className="flex items-baseline gap-2 whitespace-nowrap">
+                    <span className="text-3xl xl:text-4xl font-bold text-[#a40035]">
+                      ¥{hqData.currentPrice.toFixed(2)}
+                    </span>
                     <span className="text-sm font-normal text-gray-400">元/人次</span>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-400">去年</span>
+                      <span className="font-semibold text-gray-700">¥{hqData.lastYearPrice.toFixed(2)}</span>
+                    </div>
+                    <div className="w-px h-3 bg-gray-300 hidden sm:block"></div>
+                    <div className="flex items-center gap-2 text-sm">
+                       <span className="text-gray-400">同比</span>
+                       <span className={`font-bold ${hqData.growthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                         {hqData.growthRate > 0 ? '+' : ''}{hqData.growthRate.toFixed(2)}%
+                       </span>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="hidden md:block border-l border-gray-200 pl-4">
-                  <div className="text-sm text-gray-500 mb-1">去年平均客单价</div>
-                  <div className="text-2xl font-semibold text-gray-700">
-                    ¥{hqData.lastYearPrice.toFixed(2)}
-                  </div>
-                </div>
-
-                <div className="hidden md:block border-l border-gray-200 pl-4 text-right">
-                    <div className="text-sm text-gray-500 mb-1">增长率</div>
-                    <div className={`text-2xl font-bold ${hqData.growthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {hqData.growthRate > 0 ? '+' : ''}{hqData.growthRate.toFixed(2)}%
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                   <div className="text-right">
-                      <div className="text-xs text-gray-400 mb-1">目标: <span className="font-medium text-gray-600">{targetRate.toFixed(1)}%</span></div>
+                <div className="flex-shrink-0 flex items-center gap-4">
+                   <div className="text-right hidden sm:block">
+                      <div className="text-xs text-gray-400 mb-1">目标 <span className="font-medium text-gray-600">{targetRate.toFixed(1)}%</span></div>
                       {isAchieved ? (
-                        <div className="text-sm text-red-600 font-medium">已达标 (+{diff.toFixed(2)}%)</div>
+                        <div className="text-xs text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded-full">已达标</div>
                       ) : (
-                        <div className="text-sm text-gray-500 font-medium">未达标 ({diff.toFixed(2)}%)</div>
+                        <div className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full">未达标</div>
                       )}
                    </div>
                    <div className="relative flex items-center justify-center">
@@ -982,7 +980,7 @@ const PriceDecompositionContainer = () => {
                       </svg>
                       <div className="absolute flex flex-col items-center">
                         <span className="text-[10px] text-gray-400">达成率</span>
-                        <span className="text-xs font-bold text-[#a40035]">
+                        <span className="text-sm font-bold text-[#a40035]">
                           {progressPercent.toFixed(0)}%
                         </span>
                       </div>
@@ -996,38 +994,45 @@ const PriceDecompositionContainer = () => {
 
           {/* Right: Budget Execution */}
           <div className="flex-1 z-10 flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="text-sm text-gray-600">预算使用（2025年1-9月）</div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2.5 py-1 rounded-full bg-[#a40035]/10 text-[#a40035]">费用占比 1.8%</span>
-              </div>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#a40035]/10 text-[#a40035] font-medium">费用占比 1.8%</span>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="flex-none">
-                <div className="text-xs text-gray-500 mb-1">合计</div>
-                <div className="text-3xl md:text-4xl font-bold text-[#a40035]">¥545.8万</div>
-              </div>
-              <div className="flex-1 grid grid-cols-1 gap-1">
-                <div className="text-sm text-gray-600 flex items-center justify-between">
-                  <span>人工支出：</span>
-                  <span className="text-base font-semibold text-gray-800">¥379.8万</span>
-                </div>
-                <div className="text-sm text-gray-600 flex flex-col">
-                  <div className="flex items-center justify-between">
-                    <span>招聘培训：</span>
-                    <span className="text-base font-semibold text-gray-800">¥166万</span>
-                  </div>
-                  <span className="text-[10px] text-gray-400 mt-0.5">（含介绍费、推拿师导师、外聘导师）</span>
+            
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex flex-col min-w-0">
+                <div className="text-3xl xl:text-4xl font-bold text-[#a40035] whitespace-nowrap">¥545.8万</div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+                   <div className="flex items-center gap-1 whitespace-nowrap">
+                     <span>人工:</span>
+                     <span className="font-semibold text-gray-700">¥379.8万</span>
+                   </div>
+                   <div className="flex items-center gap-1 whitespace-nowrap">
+                     <span>招培:</span>
+                     <span className="font-semibold text-gray-700">¥166万</span>
+                   </div>
                 </div>
               </div>
-            </div>
-            <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-2 bg-[#a40035]" style={{ width: '1.8%' }}></div>
+
+              <div className="flex-1 max-w-[120px] flex flex-col justify-end">
+                 <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>进度</span>
+                    <span>1.8%</span>
+                 </div>
+                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full">
+                    <div className="h-2 bg-[#a40035]" style={{ width: '1.8%' }}></div>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     );
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setIsPriceDecompositionModal(false);
   };
 
   const renderContent = () => (
@@ -1363,7 +1368,7 @@ const PriceDecompositionContainer = () => {
       </div>
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsModalOpen(false)}></div>
+          <div className="absolute inset-0 bg-black/50" onClick={closeModal}></div>
           <div className="relative bg-white rounded-lg shadow-lg w-[90vw] max-w-4xl p-6 space-y-6 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -1372,7 +1377,7 @@ const PriceDecompositionContainer = () => {
               </h3>
               <button
                 className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200"
-                onClick={() => setIsModalOpen(false)}
+                onClick={closeModal}
                 title="关闭"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1418,7 +1423,10 @@ const PriceDecompositionContainer = () => {
                 colorPrimary="#a40035"
                 colorYoY="#2563eb"
                 getHoverTitle={(idx) => weeks[idx]?.label || ''}
-                getHoverSubtitle={() => ''}
+                getHoverSubtitle={(idx) => {
+                  const rate = weeklyYoYRates[idx];
+                  return rate ? `同比: ${rate}%` : '';
+                }}
               />
               <div>
                 <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">

@@ -13,6 +13,18 @@ const loadSql = (filename) => {
 
 // Central mapping table
 const queryRegistry = {
+  getAnnualAvgPrice: {
+    sql: loadSql('avg_order_value_annual_yoy.sql'),
+    description: '获取年度平均客单价及同比'
+  },
+  getWeeklyAvgPriceYTD: {
+    sql: loadSql('avg_order_value_weekly_ytd_yoy.sql'),
+    description: '获取年度累计平均客单价及同比（周度粒度）'
+  },
+  getWeeklyAvgPrice: {
+    sql: loadSql('avg_order_value_weekly_yoy.sql'),
+    description: '获取周度平均客单价及同比'
+  },
   getTurnoverOverview: {
     sql: loadSql('turnover_overview.sql'),
     description: '营业额概览中的年度累计营业额'
@@ -32,6 +44,14 @@ const queryRegistry = {
   getWeeklyTurnoverAvgDay: {
     sql: loadSql('turnover_weekly_avg_per_day_yoy.sql'),
     description: '获取周度营业额日均数据'
+  },
+  getCityWeeklyAvgPriceYTD: {
+    sql: loadSql('avg_order_value_city_weekly_ytd_yoy.sql'),
+    description: '获取城市累计平均客单价及同比（周度粒度）'
+  },
+  getStoreWeeklyAvgPriceYTD: {
+    sql: loadSql('avg_order_value_store_weekly_ytd_yoy.sql'),
+    description: '获取门店累计平均客单价及同比（周度粒度）'
   },
   getCityTurnover: {
     sql: loadSql('turnover_city_actual_target.sql'),
@@ -60,6 +80,10 @@ const queryRegistry = {
   getCityPriceGrowth: {
     sql: loadSql('city_price_growth.sql'),
     description: 'Get city price growth and cost data'
+  },
+  getCityAnnualAvgPrice: {
+    sql: loadSql('avg_order_value_city_annual_yoy.sql'),
+    description: '获取城市年度客单价及同比'
   },
   getCityWeeklyTrend: {
     sql: loadSql('turnover_weekly_city_yoy.sql'),
