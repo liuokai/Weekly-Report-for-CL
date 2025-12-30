@@ -16,7 +16,7 @@ WITH weekly_city_sales AS (
     LEFT JOIN dm_city b
         ON a.city_code = b.city_code
     WHERE a.off_clock_time IS NOT NULL
-      AND DATE(a.off_clock_time) >= '2025-01-01'
+      AND a.off_clock_time >= '2025-01-01'
       AND b.statistics_city_name = ?
     GROUP BY
         b.statistics_city_name,

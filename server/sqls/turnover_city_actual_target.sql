@@ -20,7 +20,7 @@ LEFT JOIN dm_city AS b
     ON a.city_code = b.city_code
 LEFT JOIN city_turnover_target AS t
     ON b.statistics_city_name = t.statistics_city_name
-WHERE DATE(a.off_clock_time) >= '2025-01-01'
+WHERE a.off_clock_time >= '2025-01-01'
 GROUP BY
     b.statistics_city_name,
     t.turnover_target;

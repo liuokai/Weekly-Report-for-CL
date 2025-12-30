@@ -21,6 +21,7 @@ WITH weekly_metrics AS (
         COUNT(DISTINCT order_uid)                                                                         AS weekly_order_count
     FROM data_warehouse.dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
+      AND off_clock_time >= '2024-01-01'
       AND service_duration >= 40
     GROUP BY 1, 2, 3, 4
 ),

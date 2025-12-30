@@ -9,7 +9,7 @@ WITH annual_stats AS (
            ROUND(SUM(order_actual_payment) / COUNT(DISTINCT order_uid), 2) AS avg_order_value
     FROM data_warehouse.dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
-      AND DATE(off_clock_time) >= '2023-01-01'
+      AND off_clock_time >= '2023-01-01'
       AND service_duration >= 40
     GROUP BY 1
 )

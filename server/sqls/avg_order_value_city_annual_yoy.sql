@@ -12,7 +12,7 @@ WITH city_annual_stats AS (
     LEFT JOIN dm_city AS b
            ON a.city_code = b.city_code
     WHERE off_clock_time IS NOT NULL
-      and  date(off_clock_time) >= '2023-01-01'
+      and off_clock_time >= '2023-01-01'
       AND service_duration >= 40
     GROUP BY b.statistics_city_name, s_year
 ),

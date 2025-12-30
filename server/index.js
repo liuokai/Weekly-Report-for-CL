@@ -10,6 +10,7 @@ const OpenAI = require('openai');
 const { generateReminder } = require('./services/reminderGenerator');
 const variableService = require('./services/variableService');
 const difyWorkflows = require('./config/difyWorkflows');
+const cacheService = require('./services/cacheService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -36,9 +37,18 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT || 9030, // Default Doris FE query port
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  connectionLimit: 50, // Increased to handle concurrent frontend requests
+  queueLimit: 0,
+  connectTimeout: 60000, // 60s connection timeout
+  acquireTimeout: 60000 // 60s acquire timeout
 });
+
+// Set global server timeout
+const server = app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
+server.timeout = 300000; // 5 minutes global timeout
+server.keepAliveTimeout = 300000; // 5 minutes keep-alive timeout
 
 // API Route: Fetch Data
 app.post('/api/fetch-data', async (req, res) => {
@@ -50,13 +60,32 @@ app.post('/api/fetch-data', async (req, res) => {
     return res.status(400).json({ status: 'error', message: 'Invalid query key' });
   }
 
+  // 1.5 Check Cache
+  const cachedData = cacheService.get(queryKey, params);
+  if (cachedData) {
+    console.log(`[Cache Hit] ${queryKey}`);
+    return res.json({
+      status: 'success',
+      data: cachedData,
+      analysis: null,
+      fromCache: true
+    });
+  }
+
   let connection;
   try {
     // 2. Execute SQL Query
+    console.log(`[Query Start] ${queryKey}`);
+    const startTime = Date.now();
     connection = await pool.getConnection();
     // Use .query() instead of .execute() because Doris might not support prepared statements
     const [rows] = await connection.query(queryConfig.sql, params);
     connection.release();
+    const duration = Date.now() - startTime;
+    console.log(`[Query End] ${queryKey} - ${duration}ms`);
+
+    // Save to Cache
+    cacheService.set(queryKey, params, rows);
 
     const result = {
       status: 'success',
@@ -480,6 +509,3 @@ app.get('/health', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});

@@ -16,6 +16,7 @@ WITH store_weekly_stats AS (
     LEFT JOIN dm_city AS b
            ON a.city_code = b.city_code
     WHERE a.off_clock_time IS NOT NULL
+      AND a.off_clock_time >= '2024-01-01'
       AND a.service_duration >= 40
     GROUP BY
         a.store_code,

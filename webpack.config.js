@@ -27,7 +27,9 @@ module.exports = {
     new (require('html-webpack-plugin'))({
       template: './public/index.html',
     }),
-    new (require('dotenv-webpack'))()
+    new (require('dotenv-webpack'))({
+      path: './server/.env' // Fix: Point to the .env file in server directory
+    })
   ],
   devServer: {
     static: [
@@ -42,7 +44,13 @@ module.exports = {
     compress: true,
     port: 8000,
     proxy: {
-      '/api': 'http://localhost:3001',
+      '/api': {
+        target: 'http://localhost:3001',
+        secure: false,
+        changeOrigin: true,
+        timeout: 300000, // 5 minutes timeout
+        proxyTimeout: 300000,
+      },
     },
   },
   resolve: {

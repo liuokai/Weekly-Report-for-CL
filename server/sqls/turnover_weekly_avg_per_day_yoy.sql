@@ -14,6 +14,7 @@ WITH weekly_base AS (
            COUNT(DISTINCT DATE(off_clock_time))                                                             AS active_days
     FROM data_warehouse.dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
+      AND off_clock_time >= '2024-01-01'
     GROUP BY 1, 2, 3, 4, 5),
      weekly_avg AS (
          -- 第二步：计算天均营业额

@@ -13,6 +13,7 @@ WITH weekly_sales AS (
            sum(order_actual_payment)                                                                        AS weekly_revenue
     FROM data_warehouse.dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
+      AND off_clock_time >= '2024-01-01'
     GROUP BY 1, 2, 3, 4, 5),
      cumulative_sales AS (
          -- 第二步：使用窗口函數計算年內周累計

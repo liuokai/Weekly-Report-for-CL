@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import cacheManager from '../utils/cacheManager';
+import dataLoader from '../utils/dataLoader';
 
 const useFetchData = (queryKey, params = [], initialData = null, options = {}) => {
   const [data, setData] = useState(initialData);
@@ -17,40 +17,15 @@ const useFetchData = (queryKey, params = [], initialData = null, options = {}) =
   
   const fetchData = useCallback(async (overrideParams) => {
     const activeParams = overrideParams || params;
-    const activeParamsString = JSON.stringify(activeParams);
     
-    // Generate a unique cache key based on queryKey and params
-    // If params are empty, it's just the queryKey.
-    // If params exist, append them.
-    let uniqueCacheKey = queryKey;
-    if (activeParams && activeParams.length > 0) {
-       uniqueCacheKey += `_${activeParamsString}`;
-    }
-
-    // 1. Check Global Cache Manager
-    const cachedData = cacheManager.get(uniqueCacheKey);
-    if (cachedData) {
-      setData(cachedData);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/fetch-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          queryKey, 
-          params: activeParams 
-        }),
-      });
-      const result = await response.json();
+      // Delegate to global DataLoader which handles queuing, caching, and batching
+      const result = await dataLoader.fetchData(queryKey, activeParams);
+      
       if (result.status === 'success') {
         setData(result.data);
-        // 2. Save to Global Cache Manager
-        cacheManager.set(uniqueCacheKey, result.data);
       } else {
         setError(result.message || 'Failed to fetch data');
       }

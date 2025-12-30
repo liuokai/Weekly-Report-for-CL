@@ -2,7 +2,33 @@ import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 
-const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentError }) => {
+// Global cache for configuration to prevent redundant fetches
+let globalConfigCache = null;
+let globalConfigPromise = null;
+
+const fetchConfigGlobal = async () => {
+  if (globalConfigCache) return globalConfigCache;
+  if (globalConfigPromise) return globalConfigPromise;
+
+  globalConfigPromise = Promise.all([
+    axios.get('/api/analysis/variables'),
+    axios.get('/api/analysis/workflows')
+  ]).then(([varsRes, wfsRes]) => {
+    globalConfigCache = {
+      vars: varsRes.data.data || [],
+      wfs: wfsRes.data.data || []
+    };
+    globalConfigPromise = null;
+    return globalConfigCache;
+  }).catch(err => {
+    globalConfigPromise = null;
+    throw err;
+  });
+
+  return globalConfigPromise;
+};
+
+const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentError, shouldAnalyze = false }) => {
   const [showConfig, setShowConfig] = useState(false);
   const [configLoading, setConfigLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -20,26 +46,23 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
   const [localError, setLocalError] = useState(null);
   const [autoAnalyzed, setAutoAnalyzed] = useState(false);
 
-  // Initialize on mount
+  // Initialize on mount or when trigger changes
   useEffect(() => {
-    // Only init if we haven't auto-analyzed and don't have external results
-    if (!analysisText && !localAnalysis && !autoAnalyzed) {
-      fetchConfigAndAutoAnalyze();
-    } else if (variables.length === 0) {
-      // Just fetch config if we already have results but need config for the modal
-      fetchConfigOnly();
+    // 1. Auto Analysis Trigger
+    if (shouldAnalyze && !analysisText && !localAnalysis && !autoAnalyzed && !analyzing) {
+       fetchConfigAndAutoAnalyze();
+    } 
+    // 2. Just fetch config if we need it for UI (e.g. modal is open), but don't analyze yet
+    // We remove the automatic fetch on mount to save bandwidth/resources during initial page load
+    else if (showConfig && variables.length === 0) {
+       fetchConfigOnly();
     }
-  }, []);
+  }, [shouldAnalyze, showConfig]); // Add showConfig dependency
 
   const fetchConfigOnly = async () => {
     setConfigLoading(true);
     try {
-      const [varsRes, wfsRes] = await Promise.all([
-        axios.get('/api/analysis/variables'),
-        axios.get('/api/analysis/workflows')
-      ]);
-      const vars = varsRes.data.data || [];
-      const wfs = wfsRes.data.data || [];
+      const { vars, wfs } = await fetchConfigGlobal();
       
       setVariables(vars);
       setWorkflows(wfs);
@@ -60,12 +83,7 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
   const fetchConfigAndAutoAnalyze = async () => {
     setConfigLoading(true);
     try {
-      const [varsRes, wfsRes] = await Promise.all([
-        axios.get('/api/analysis/variables'),
-        axios.get('/api/analysis/workflows')
-      ]);
-      const vars = varsRes.data.data || [];
-      const wfs = wfsRes.data.data || [];
+      const { vars, wfs } = await fetchConfigGlobal();
       
       setVariables(vars);
       setWorkflows(wfs);

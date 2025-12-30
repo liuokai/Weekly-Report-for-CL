@@ -9,11 +9,6 @@ const WeeklyReport = () => {
   // Tab导航状态管理
   const [activeTab, setActiveTab] = useState(0);
 
-  // Prefetch data on mount
-  useEffect(() => {
-    dataLoader.prefetchAll();
-  }, []);
-  
   // Tab列表
   const tabs = [
     "营业额",
