@@ -12,6 +12,7 @@ const LineTrendChart = ({
   showAverage = false,
   showExtremes = true,
   yAxisFormatter = (v) => v,
+  xAxisFormatter,
   valueFormatter = (v) => v,
   currentLabel = "当前",
   lastLabel = "去年同期",
@@ -172,7 +173,7 @@ const LineTrendChart = ({
                 fill="#6b7280"
                 transform={`rotate(0, ${getX(i)}, ${height - padding.bottom + 25})`}
               >
-                {xLabels && xLabels[i] !== undefined ? xLabels[i] : i + 1}
+                {xAxisFormatter ? xAxisFormatter(xLabels[i], i) : (xLabels && xLabels[i] !== undefined ? xLabels[i] : i + 1)}
               </text>
             ))}
 
@@ -285,7 +286,7 @@ const LineTrendChart = ({
                   if (showYoY) {
                       if (valPct !== undefined) {
                           const sign = valPct > 0 ? "+" : "";
-                          yoyStr = `${sign}${valPct.toFixed(2)}%`;
+                          yoyStr = `${sign}${Number(valPct).toFixed(2)}%`;
                           yoyColor = valPct > 0 ? "#ef4444" : "#10b981";
                       } else if (valLY && valLY !== 0) {
                           const yoy = (val - valLY) / valLY;

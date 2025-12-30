@@ -46,7 +46,7 @@ export const BusinessTargets = {
     impactAnalysis: {
       // 项目回头率
       projectRetention: {
-        target: 34.0, // 目标值（%）
+        target: 30.0, // 目标值（%）
         budget: {
           wage: 138, // 人力预算（万元）
           other: 77  // 其他预算（万元）

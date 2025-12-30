@@ -6,6 +6,7 @@ import HQMetricsTrendChart from './HQMetricsTrendChart';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import useFetchData from '../../hooks/useFetchData';
 import { generatePositionReminder } from '../../services/reminderService';
+import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 import BusinessTargets from '../../config/businessTargets';
 
 const PriceDecompositionContainer = () => {
@@ -184,6 +185,8 @@ const PriceDecompositionContainer = () => {
       source = cityAnnualPriceData.filter(d => d.sales_year === maxYear);
     }
 
+    const timeProgressVal = getTimeProgress();
+
     return source.map((row, index) => ({
       key: index,
       city: row.city_name,
@@ -195,7 +198,7 @@ const PriceDecompositionContainer = () => {
       totalCost: null,
       budget: null,
       budgetUsageRate: null,
-      timeProgress: null,
+      timeProgress: `${timeProgressVal}%`,
       usageProgressDiff: null
     }));
   }, [cityAnnualPriceData]);
@@ -818,13 +821,14 @@ const PriceDecompositionContainer = () => {
           const processedWeeks = sliced.map(d => ({
              label: `第${d.sales_week}周`,
              weekNo: d.sales_week,
+             year: d.sales_year,
              fullLabel: d.week_date_range // Optional extra info
           }));
           
           setWeeks(processedWeeks);
           setWeeklyPrice(sliced.map(d => Number(d.current_year_cumulative_aov)));
           setWeeklyPriceLY(sliced.map(d => Number(d.last_year_cumulative_aov)));
-          setWeeklyYoYRates(sliced.map(d => d.cumulative_aov_yoy_pct));
+          setWeeklyYoYRates(sliced.map(d => Number(d.cumulative_aov_yoy_pct)));
        } else {
            setWeeks([]);
            setWeeklyPrice([]);
@@ -852,7 +856,7 @@ const PriceDecompositionContainer = () => {
           });
           
           processedStores = Array.from(storeMap.values()).map((d, idx) => {
-             const progress = d.sales_week ? (d.sales_week / 52) * 100 : 0;
+             const timeProgressVal = getTimeProgress();
              return {
                key: d.store_code || idx,
                city: d.city_name,
@@ -866,7 +870,7 @@ const PriceDecompositionContainer = () => {
                totalCost: null,
                budget: null,
                budgetUsageRate: null,
-               timeProgress: d.sales_week ? `${progress.toFixed(1)}%` : null,
+               timeProgress: `${timeProgressVal}%`,
                usageProgressDiff: null
              };
           });
@@ -1418,15 +1422,13 @@ const PriceDecompositionContainer = () => {
                 showYoY={showYoY}
                 showTrend={showTrend}
                 showExtremes={showExtremes}
-                yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : Math.round(v)}
+                yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : (procMetric === 'therapistYield' ? Math.round(v) : Number(v).toFixed(1))}
                 valueFormatter={(v) => procMetric === 'configRatio' ? `${Number(v).toFixed(2)}` : (procMetric === 'newEmpReturn' || procMetric === 'therapistYield') ? `${Number(v).toFixed(1)}%` : `¥ ${Number(v).toFixed(2)}`}
                 colorPrimary="#a40035"
                 colorYoY="#2563eb"
-                getHoverTitle={(idx) => weeks[idx]?.label || ''}
-                getHoverSubtitle={(idx) => {
-                  const rate = weeklyYoYRates[idx];
-                  return rate ? `同比: ${rate}%` : '';
-                }}
+                valuesPct={weeklyYoYRates}
+                getHoverTitle={(idx) => weeks[idx] ? `${weeks[idx].year}年第${weeks[idx].weekNo}周` : ''}
+                getHoverSubtitle={(idx) => weeks[idx]?.fullLabel ? `日期范围：${weeks[idx].fullLabel.replace(/-/g, '/').replace(' ~ ', ' ～ ')}` : ''}
               />
               <div>
                 <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">
