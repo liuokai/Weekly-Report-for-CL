@@ -11,7 +11,8 @@ const LineTrendChart = ({
   showTrend = false,
   showAverage = false,
   showExtremes = true,
-  yAxisFormatter = (v) => v,
+  yAxisFormatter,
+
   xAxisFormatter,
   valueFormatter = (v) => v,
   currentLabel = "当前",
@@ -26,6 +27,14 @@ const LineTrendChart = ({
   getHoverTitle,
   getHoverSubtitle
 }) => {
+  // Default Y-Axis Formatter if not provided
+  const formatYAxis = yAxisFormatter || ((v) => {
+    if (typeof v === 'number') {
+      return v.toFixed(2);
+    }
+    return v;
+  });
+
   const graphWidth = width - padding.left - padding.right;
   const graphHeight = height - padding.top - padding.bottom;
 
@@ -157,7 +166,7 @@ const LineTrendChart = ({
                 <g key={ratio}>
                   <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#f3f4f6" strokeDasharray="4 4" />
                   <text x={padding.left - 10} y={y} dy="4" textAnchor="end" fontSize="12" fill="#9ca3af">
-                    {yAxisFormatter(val)}
+                    {formatYAxis(val)}
                   </text>
                 </g>
               );

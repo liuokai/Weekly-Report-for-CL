@@ -50,6 +50,12 @@ const PriceDecompositionContainer = () => {
   // Fetch store weekly average price data
   const { data: storeWeeklyData } = useFetchData('getStoreWeeklyAvgPriceYTD');
 
+  // New hooks for Repurchase Rate
+  const { data: repurchaseAnnual } = useFetchData('getRepurchaseRateAnnual');
+  const { data: repurchaseWeekly } = useFetchData('getRepurchaseRateWeekly');
+  const { data: repurchaseCityWeekly } = useFetchData('getRepurchaseRateCityWeekly');
+  const { data: repurchaseStoreWeekly } = useFetchData('getRepurchaseRateStoreWeekly');
+
   const [modalContextCity, setModalContextCity] = useState(null);
   
   // Fetch modal data
@@ -68,13 +74,32 @@ const PriceDecompositionContainer = () => {
     const config = BusinessTargets.turnover.impactAnalysis;
     const formatBudget = (val) => val > 0 ? `¥${val}万` : '';
 
+    // Process Repurchase Rate Data
+    // Default values
+    let returnRateActual = null;
+    let returnRateLast = null;
+    let returnRateYoY = null;
+    
+    // Override with API data if available
+    if (repurchaseAnnual && repurchaseAnnual.length > 0) {
+      // Find max year
+      const maxYear = Math.max(...repurchaseAnnual.map(d => d.s_year));
+      const latest = repurchaseAnnual.find(d => d.s_year === maxYear);
+      if (latest) {
+        returnRateActual = Number(latest.repurchase_rate);
+        returnRateLast = Number(latest.prev_year_rate);
+        returnRateYoY = Number(latest.yoy_change_pct);
+      }
+    }
+
     return {
       returnRate: {
         name: '项目回头率',
         unit: '%',
         target: config.projectRetention.target,
-        actual: 29.8,
-        last: 32.1,
+        actual: returnRateActual,
+        last: returnRateLast,
+        yoy: returnRateYoY, // Store calculated YoY
         budget: {
           wageBudget: formatBudget(config.projectRetention.budget.wage),
           otherBudget: formatBudget(config.projectRetention.budget.other),
@@ -139,7 +164,17 @@ const PriceDecompositionContainer = () => {
         salaryShare: '46.5%'
       }
     };
-  }, []);
+  }, [cityAnnualPriceData, repurchaseAnnual]);
+
+  useEffect(() => {
+    // 强制刷新 impactInfos 数据，以确保 repurchaseAnnual 变化时组件感知到
+    if (repurchaseAnnual && repurchaseAnnual.length > 0) {
+       // 这是一个触发重渲染的 hack，如果 useMemo 没生效的话。
+       // 但根据代码，只要依赖项变了就会更新。
+       // 检查是否是因为初始值的问题。
+       // 其实不需要这个 effect，只要 useMemo 依赖正确即可。
+    }
+  }, [repurchaseAnnual]);
 
   useEffect(() => {
     if (annualPriceData && annualPriceData.length > 0) {
@@ -429,101 +464,111 @@ const PriceDecompositionContainer = () => {
     setProcWeeks(w);
   }, []);
 
-  const buildProcWeeklySeries = (metricKey, weeksCount) => {
-    const N = weeksCount;
-    const values = [];
-    const valuesLY = [];
-    for (let i = 0; i < N; i++) {
-      const t = i / N;
-      if (metricKey === 'returnRate') {
-        const target = 30;
-        const base = target + 2.0 * Math.sin(t * Math.PI * 2);
-        const ly = (target - 1.5) + 1.8 * Math.cos(t * Math.PI * 2);
-        const noise = (((i * 13) % 7) - 3) * 0.3;
-        const curr = Math.max(24, Math.min(36, base + noise));
-        const last = Math.max(24, Math.min(36, ly + noise * 0.5));
-        values.push(Number(curr.toFixed(1)));
-        valuesLY.push(Number(last.toFixed(1)));
-      } else if (metricKey === 'configRatio') {
-        const target = 0.5;
-        const base = target + 0.04 * Math.sin(t * Math.PI * 2);
-        const ly = (target - 0.03) + 0.03 * Math.cos(t * Math.PI * 2);
-        const noise = (((i * 17) % 11) - 5) / 1000;
-        const curr = Math.max(0.4, Math.min(0.6, base + noise));
-        const last = Math.max(0.4, Math.min(0.6, ly + noise * 0.6));
-        values.push(Number(curr.toFixed(2)));
-        valuesLY.push(Number(last.toFixed(2)));
-      } else if (metricKey === 'newEmpReturn') {
-        const base = 80 + 2.5 * Math.sin(t * Math.PI * 2);
-        const ly = 78 + 2.0 * Math.cos(t * Math.PI * 2);
-        const noise = (((i * 19) % 9) - 4) * 0.4;
-        const curr = Math.max(70, Math.min(90, base + noise));
-        const last = Math.max(68, Math.min(88, ly + noise * 0.6));
-        values.push(Number(curr.toFixed(1)));
-        valuesLY.push(Number(last.toFixed(1)));
-      } else if (metricKey === 'therapistYield') {
-        const target = 80;
-        const base = target + 3.0 * Math.sin(t * Math.PI * 2);
-        const ly = (target - 2.0) + 2.5 * Math.cos(t * Math.PI * 2);
-        const noise = (((i * 23) % 9) - 4) * 0.5;
-        const curr = Math.max(70, Math.min(90, base + noise));
-        const last = Math.max(68, Math.min(88, ly + noise * 0.5));
-        values.push(Number(curr.toFixed(1)));
-        valuesLY.push(Number(last.toFixed(1)));
-      }
-    }
-    return { values, valuesLY };
-  };
+  // buildProcWeeklySeries and buildProcCityRows removed
 
-  const buildProcCityRows = (metricKey) => {
-    const rows = tableData.map((r) => {
-      const seed = String(r.city).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-      if (metricKey === 'returnRate') {
-        const target = 30;
-        const val = target - 2 + ((seed % 9) - 4); // around 28–32
-        const status = val >= target ? '达标' : '未达标';
-        return { key: r.city, city: r.city, value: `${val.toFixed(1)}%`, target: `${target}%`, status };
-      } else if (metricKey === 'configRatio') {
-        const target = 0.5;
-        const val = target - 0.03 + (((seed % 11) - 5) / 100); // ~0.47–0.53
-        const minT = target;
-        const maxT = target; // 单一目标
-        const status = Math.abs(val - target) <= 0.05 ? '达标' : '未达标';
-        return { key: r.city, city: r.city, value: Number(val.toFixed(2)), target: `${target}`, status };
-      } else if (metricKey === 'newEmpReturn') {
-        const target = 80;
-        const val = target - 3 + (seed % 7); // ~77–83
-        const status = val >= target ? '达标' : '未达标';
-        return { key: r.city, city: r.city, value: `${val.toFixed(1)}%`, target: `${target}%`, status };
-      } else if (metricKey === 'therapistYield') {
-        const target = 80;
-        const val = target - 4 + (seed % 9); // ~76–85
-        const status = val >= target ? '达标' : '未达标';
-        return { key: r.city, city: r.city, value: `${val.toFixed(1)}%`, target: `${target}%`, status };
-      }
-      return { key: r.city, city: r.city, value: '-', target: '-', status: '-' };
-    });
-    return rows;
-  };
 
   useEffect(() => {
     // 1. Handle Trend Data
-    if (fetchedTrendData && fetchedTrendData.length > 0) {
+    if (procMetric === 'returnRate' && repurchaseWeekly && repurchaseWeekly.length > 0) {
+      // Sort by year and week
+      const sorted = [...repurchaseWeekly].sort((a, b) => {
+        if (a.s_year !== b.s_year) return a.s_year - b.s_year;
+        return a.s_week - b.s_week;
+      });
+      // Take last 12
+      const last12 = sorted.slice(-12);
+      setProcValues(last12.map(d => Number(d.repurchase_rate)));
+      setProcValuesLY(last12.map(d => Number(d.prev_year_rate)));
+      
+      // Update weeks labels based on actual data
+      const dynamicWeeks = last12.map(d => ({
+        label: `第${String(d.s_week).padStart(2, '0')}周`,
+        weekNo: d.s_week,
+        year: d.s_year
+      }));
+      setProcWeeks(dynamicWeeks);
+      
+    } else if (fetchedTrendData && fetchedTrendData.length > 0) {
       // Expecting [{ week_num, current_value, last_year_value }, ...]
       // Sort by week_num to ensure correct order
       const sorted = [...fetchedTrendData].sort((a, b) => a.week_num - b.week_num);
       setProcValues(sorted.map(d => Number(d.current_value)));
       setProcValuesLY(sorted.map(d => Number(d.last_year_value)));
+      // Note: fetchedTrendData might not have full date info to rebuild procWeeks perfectly
+      // so we keep the default procWeeks or leave it as is.
     } else {
-      // Fallback to mock if SQL returns no data
-      const N = (procWeeks || []).length || 12;
-      const series = buildProcWeeklySeries(procMetric, N);
-      setProcValues(series.values);
-      setProcValuesLY(series.valuesLY);
+      // No data - clear charts
+      setProcValues([]);
+      setProcValuesLY([]);
     }
 
     // 2. Handle City Data
-    if (fetchedCityData && fetchedCityData.length > 0) {
+    if (procMetric === 'returnRate' && repurchaseCityWeekly && repurchaseCityWeekly.length > 0) {
+       // Find latest week
+       let maxYear = 0;
+       let maxWeek = 0;
+       repurchaseCityWeekly.forEach(d => {
+         if (d.s_year > maxYear) { maxYear = d.s_year; maxWeek = d.s_week; }
+         else if (d.s_year === maxYear && d.s_week > maxWeek) { maxWeek = d.s_week; }
+       });
+       
+       const latestData = repurchaseCityWeekly.filter(d => d.s_year === maxYear && d.s_week === maxWeek);
+       
+       const rows = latestData.map((d, idx) => ({
+         key: d.city_name || idx,
+         city: d.city_name,
+         totalOrders: d.total_orders,
+         repurchaseOrders: d.repurchase_orders,
+         value: `${d.repurchase_rate}%`,
+         prevValue: `${d.prev_year_rate}%`,
+         yoy: d.yoy_change_pct,
+         target: '30%',
+         status: Number(d.repurchase_rate) >= 30 ? '达标' : '未达标'
+       }));
+       setProcCityRows(rows);
+
+       // Define Columns
+       const cityCol = { 
+        key: 'city', 
+        title: '城市', 
+        dataIndex: 'city',
+        render: (val) => (
+          <span 
+            className="text-[#a40035] cursor-pointer hover:underline"
+            onClick={() => openCityModal(val)}
+          >
+            {val}
+          </span>
+        )
+      };
+
+      setProcColumnsDyn([
+        cityCol,
+        { key: 'totalOrders', title: '订单数量', dataIndex: 'totalOrders' },
+        { key: 'repurchaseOrders', title: '回头客订单数量', dataIndex: 'repurchaseOrders' },
+        { key: 'value', title: '项目回头率', dataIndex: 'value', 
+          render: (val) => {
+             const num = parseFloat(String(val).replace('%','')) || 0;
+             const target = 30;
+             const isHigh = num >= target;
+             return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+          }
+        },
+        { key: 'prevValue', title: '去年项目回头率', dataIndex: 'prevValue' },
+        { key: 'yoy', title: '同比', dataIndex: 'yoy',
+          render: (val) => {
+             const num = Number(val);
+             const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+             const sign = num > 0 ? '+' : '';
+             return <span className={cls}>{sign}{num}%</span>;
+          }
+        },
+        { key: 'status', title: '是否达标', dataIndex: 'status',
+          render: (val) => <span className={val === '达标' ? 'text-red-600 font-medium' : 'text-gray-500'}>{val}</span>
+        }
+      ]);
+
+    } else if (fetchedCityData && fetchedCityData.length > 0) {
       const cityCol = { 
         key: 'city', 
         title: '城市', 
@@ -633,12 +678,11 @@ const PriceDecompositionContainer = () => {
       setProcColumnsDyn(cols);
       setProcCityRows(fetchedCityData.map((r, i) => ({ key: i, ...r })));
     } else {
-      // Fallback to mock
-      const rows = buildProcCityRows(procMetric);
-      setProcCityRows(rows);
+      // No data - clear
+      setProcCityRows([]);
       setProcColumnsDyn(procColumnsDefault);
     }
-  }, [fetchedTrendData, fetchedCityData, procMetric, procWeeks]);
+  }, [fetchedTrendData, fetchedCityData, procMetric, repurchaseWeekly, repurchaseCityWeekly]);
 
   const openCityModal = (cityName) => {
     setSelectedCity(cityName);
@@ -806,7 +850,101 @@ const PriceDecompositionContainer = () => {
        });
        setStoreRows(tableRows);
 
-    } else {
+    } else if (procMetric === 'returnRate' && selectedCity) {
+         // --- Upper Part: Trend (City Level, Last 12 Weeks) ---
+         if (repurchaseCityWeekly && repurchaseCityWeekly.length > 0) {
+             const cityData = repurchaseCityWeekly.filter(d => d.city_name === selectedCity);
+             
+             // Sort by year and week
+             const sorted = [...cityData].sort((a, b) => {
+               if (a.s_year !== b.s_year) return a.s_year - b.s_year;
+               return a.s_week - b.s_week;
+             });
+             
+             // Take last 12 weeks
+             const sliced = sorted.slice(-12);
+             
+             const processedWeeks = sliced.map(d => ({
+                label: `第${String(d.s_week).padStart(2, '0')}周`,
+                weekNo: d.s_week,
+                year: d.s_year,
+                fullLabel: d.week_date_range ? `日期范围：${d.week_date_range}` : null
+              }));
+             
+             setWeeks(processedWeeks);
+              setWeeklyPrice(sliced.map(d => Number(d.repurchase_rate)));
+              setWeeklyPriceLY(sliced.map(d => Number(d.prev_year_rate)));
+              setWeeklyYoYRates(sliced.map(d => Number(d.yoy_change_pct)));
+         } else {
+             setWeeks([]);
+             setWeeklyPrice([]);
+             setWeeklyPriceLY([]);
+             setWeeklyYoYRates([]);
+         }
+         
+         // --- Lower Part: Store List (Store Level, Latest Week) ---
+         if (repurchaseStoreWeekly && repurchaseStoreWeekly.length > 0) {
+             const cityStores = repurchaseStoreWeekly.filter(d => d.city_name === selectedCity);
+             
+             // Find latest year/week for this city's stores
+             let maxYear = 0;
+             let maxWeek = 0;
+             cityStores.forEach(d => {
+               if (d.s_year > maxYear) { maxYear = d.s_year; maxWeek = d.as_of_week; } // Note: SQL returns 'as_of_week'
+             });
+
+             // The SQL actually returns only the latest week per store, so we might just use all rows for this city
+             // But to be safe, we can filter if needed. The SQL logic says "WHERE s_year = target_year" and only latest week is used for config.
+             // Let's just map all rows for the city.
+             
+             const processedStores = cityStores.map((d, idx) => {
+               // We don't have cost/budget data in this SQL, so set to null or calculate if available
+               const timeProgressVal = getTimeProgress(); 
+               return {
+                 key: d.store_code || idx,
+                 city: d.city_name,
+                 storeName: d.store_name,
+                 storeCode: d.store_code,
+                 lastYearPrice: parseFloat(d.prev_year_rate_ytd || 0), // Mapping to prev_year_rate_ytd
+                 currentPrice: parseFloat(d.repurchase_rate_ytd || 0), // Mapping to repurchase_rate_ytd
+                 yoyRate: d.yoy_change_pct ? `${d.yoy_change_pct}%` : '0%',
+                 laborCost: null,
+                 recruitTrainCost: null,
+                 totalCost: null,
+                 budget: null,
+                 budgetUsageRate: null,
+                 timeProgress: `${timeProgressVal}%`,
+                 usageProgressDiff: null
+               };
+             });
+             
+             // Define Columns for Repurchase Rate Store Table
+              const storeCols = [
+                { key: 'storeCode', title: '门店编码', dataIndex: 'storeCode' },
+                { key: 'storeName', title: '门店名称', dataIndex: 'storeName' },
+                { key: 'currentPrice', title: '项目回头率', dataIndex: 'currentPrice', 
+                  render: (val) => <span className="font-medium">{Number(val).toFixed(2)}%</span> 
+                },
+               { key: 'lastYearPrice', title: '去年同期', dataIndex: 'lastYearPrice',
+                 render: (val) => <span className="text-gray-500">{Number(val).toFixed(2)}%</span>
+               },
+               { key: 'yoyRate', title: '同比', dataIndex: 'yoyRate',
+                 render: (val) => {
+                   const num = parseFloat(val);
+                   const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+                   const sign = num > 0 ? '+' : '';
+                   return <span className={cls}>{sign}{val}</span>;
+                 }
+               }
+             ];
+             
+             setModalColumns(storeCols);
+             setStoreRows(processedStores);
+         } else {
+             setStoreRows([]);
+         }
+
+      } else {
        // Process City Trend Data (Upper Part)
        if (cityWeeklyData && cityWeeklyData.length > 0 && selectedCity) {
           const cityData = cityWeeklyData.filter(d => d.city_name === selectedCity);
@@ -1411,8 +1549,8 @@ const PriceDecompositionContainer = () => {
                 </button>
               </div>
               <LineTrendChart
-                headerTitle={procMetric === 'configRatio' ? '城市床位人员配置比变化趋势' : procMetric === 'therapistYield' ? '城市推拿师产值达标率趋势' : '城市平均客单价变化趋势'}
-                headerUnit={procMetric === 'configRatio' ? '人/床' : procMetric === 'therapistYield' ? '%' : '元/人次'}
+                headerTitle={procMetric === 'configRatio' ? '城市床位人员配置比变化趋势' : procMetric === 'therapistYield' ? '城市推拿师产值达标率趋势' : procMetric === 'returnRate' ? '城市项目回头率变化趋势' : '城市平均客单价变化趋势'}
+                headerUnit={procMetric === 'configRatio' ? '人/床' : procMetric === 'therapistYield' ? '%' : procMetric === 'returnRate' ? '%' : '元/人次'}
                 values={weeklyPrice}
                 valuesYoY={weeklyPriceLY}
                 xLabels={procMetric === 'newEmpReturn' || procMetric === 'therapistYield'
@@ -1422,8 +1560,8 @@ const PriceDecompositionContainer = () => {
                 showYoY={showYoY}
                 showTrend={showTrend}
                 showExtremes={showExtremes}
-                yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : (procMetric === 'therapistYield' ? Math.round(v) : Number(v).toFixed(1))}
-                valueFormatter={(v) => procMetric === 'configRatio' ? `${Number(v).toFixed(2)}` : (procMetric === 'newEmpReturn' || procMetric === 'therapistYield') ? `${Number(v).toFixed(1)}%` : `¥ ${Number(v).toFixed(2)}`}
+                yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : (procMetric === 'therapistYield' || procMetric === 'returnRate' ? Math.round(v) : Number(v).toFixed(1))}
+                valueFormatter={(v) => procMetric === 'configRatio' ? `${Number(v).toFixed(2)}` : (procMetric === 'newEmpReturn' || procMetric === 'therapistYield' || procMetric === 'returnRate') ? `${Number(v).toFixed(1)}%` : `¥ ${Number(v).toFixed(2)}`}
                 colorPrimary="#a40035"
                 colorYoY="#2563eb"
                 valuesPct={weeklyYoYRates}

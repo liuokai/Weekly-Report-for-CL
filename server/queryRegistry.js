@@ -128,6 +128,22 @@ const queryRegistry = {
   getVolumeCityModalStoreData: {
     sql: loadSql('volume_city_modal_store_data.sql'),
     description: 'Get volume city modal store data'
+  },
+  getRepurchaseRateAnnual: {
+    sql: loadSql('repurchase_rate_annual_yoy.sql'),
+    description: '年度项目回头率统计'
+  },
+  getRepurchaseRateWeekly: {
+    sql: loadSql('repurchase_rate_weekly_yoy.sql'),
+    description: '周维度项目回头率统计'
+  },
+  getRepurchaseRateCityWeekly: {
+    sql: loadSql('repurchase_reate_city_weekly_yoy.sql'),
+    description: '城市维度项目回头率统计'
+  },
+  getRepurchaseRateStoreWeekly: {
+    sql: loadSql('repurchase_reate_store_weekly_yoy.sql'),
+    description: '门店维度项目回头率统计'
   }
 };
 

@@ -5,6 +5,8 @@ WITH weekly_city_metrics AS (
     SELECT
         YEAR(t1.off_clock_time)                                 AS s_year,
         WEEK(t1.off_clock_time, 1)                              AS s_week,
+        MIN(DATE(t1.off_clock_time))                            AS week_start_date,
+        MAX(DATE(t1.off_clock_time))                            AS week_end_date,
         t2.statistics_city_name,
         COUNT(DISTINCT t1.order_uid)                            AS total_orders,
         SUM(IF(t1.is_project_repurchase_customer = '是', 1, 0)) AS repurchase_orders
@@ -25,6 +27,7 @@ rate_calculation AS (
 SELECT
     curr.s_year,
     curr.s_week,
+    CONCAT(DATE_FORMAT(curr.week_start_date, '%Y/%m/%d'), ' ~ ', DATE_FORMAT(curr.week_end_date, '%Y/%m/%d')) AS week_date_range,
     curr.statistics_city_name                               AS city_name,
     curr.total_orders,
     curr.repurchase_orders,
