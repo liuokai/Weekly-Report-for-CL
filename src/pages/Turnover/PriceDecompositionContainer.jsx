@@ -55,6 +55,12 @@ const PriceDecompositionContainer = () => {
   const { data: repurchaseWeekly } = useFetchData('getRepurchaseRateWeekly');
   const { data: repurchaseCityWeekly } = useFetchData('getRepurchaseRateCityWeekly');
   const { data: repurchaseStoreWeekly } = useFetchData('getRepurchaseRateStoreWeekly');
+  // 新增：新员工回头率达标率数据源
+  const { data: newEmpAnnual } = useFetchData('getNewEmpReturnComplianceAnnual');
+  const { data: newEmpMonthly } = useFetchData('getNewEmpReturnComplianceMonthly');
+  const { data: newEmpCityAnnual } = useFetchData('getNewEmpReturnComplianceCityAnnual');
+  const { data: newEmpCityMonthly } = useFetchData('getNewEmpReturnComplianceCityMonthly');
+  const { data: newEmpStoreAnnual } = useFetchData('getNewEmpReturnComplianceStoreAnnual');
 
   const [modalContextCity, setModalContextCity] = useState(null);
   
@@ -76,9 +82,9 @@ const PriceDecompositionContainer = () => {
 
     // Process Repurchase Rate Data
     // Default values
-    let returnRateActual = null;
-    let returnRateLast = null;
-    let returnRateYoY = null;
+    let returnRateActual = "";
+    let returnRateLast = "";
+    let returnRateYoY = "";
     
     // Override with API data if available
     if (repurchaseAnnual && repurchaseAnnual.length > 0) {
@@ -133,8 +139,22 @@ const PriceDecompositionContainer = () => {
         name: '新员工回头率达标率',
         unit: '%',
         target: config.newEmployeeRetention.target,
-        actual: 88.0,
-        last: null,
+        actual: (() => {
+          if (newEmpAnnual && newEmpAnnual.length > 0) {
+            const latest = [...newEmpAnnual].sort((a, b) => b.report_year - a.report_year)[0];
+            const val = latest?.compliance_rate;
+            return val != null ? Number(val) : null;
+          }
+          return null;
+        })(),
+        last: (() => {
+          if (newEmpAnnual && newEmpAnnual.length > 0) {
+            const latest = [...newEmpAnnual].sort((a, b) => b.report_year - a.report_year)[0];
+            const val = latest?.compliance_rate_ly;
+            return val != null ? Number(val) : null;
+          }
+          return null;
+        })(),
         budget: {
           wageBudget: formatBudget(config.newEmployeeRetention.budget.wage),
           otherBudget: formatBudget(config.newEmployeeRetention.budget.other),
@@ -164,7 +184,7 @@ const PriceDecompositionContainer = () => {
         salaryShare: '46.5%'
       }
     };
-  }, [cityAnnualPriceData, repurchaseAnnual]);
+  }, [cityAnnualPriceData, repurchaseAnnual, newEmpAnnual]);
 
   useEffect(() => {
     // 强制刷新 impactInfos 数据，以确保 repurchaseAnnual 变化时组件感知到
@@ -469,25 +489,46 @@ const PriceDecompositionContainer = () => {
 
   useEffect(() => {
     // 1. Handle Trend Data
-    if (procMetric === 'returnRate' && repurchaseWeekly && repurchaseWeekly.length > 0) {
-      // Sort by year and week
-      const sorted = [...repurchaseWeekly].sort((a, b) => {
-        if (a.s_year !== b.s_year) return a.s_year - b.s_year;
-        return a.s_week - b.s_week;
-      });
-      // Take last 12
-      const last12 = sorted.slice(-12);
-      setProcValues(last12.map(d => Number(d.repurchase_rate)));
-      setProcValuesLY(last12.map(d => Number(d.prev_year_rate)));
-      
-      // Update weeks labels based on actual data
-      const dynamicWeeks = last12.map(d => ({
-        label: `第${String(d.s_week).padStart(2, '0')}周`,
-        weekNo: d.s_week,
-        year: d.s_year
-      }));
-      setProcWeeks(dynamicWeeks);
-      
+    if (procMetric === 'returnRate') {
+      if (repurchaseWeekly && repurchaseWeekly.length > 0) {
+        // Sort by year and week
+        const sorted = [...repurchaseWeekly].sort((a, b) => {
+          if (a.s_year !== b.s_year) return a.s_year - b.s_year;
+          return a.s_week - b.s_week;
+        });
+        // Take last 12
+        const last12 = sorted.slice(-12);
+        setProcValues(last12.map(d => Number(d.repurchase_rate)));
+        setProcValuesLY(last12.map(d => Number(d.prev_year_rate)));
+        
+        // Update weeks labels based on actual data
+        const dynamicWeeks = last12.map(d => ({
+          label: `第${String(d.s_week).padStart(2, '0')}周`,
+          weekNo: d.s_week,
+          year: d.s_year
+        }));
+        setProcWeeks(dynamicWeeks);
+      } else {
+        // Data loading or empty - show empty state, DO NOT fall back to mock
+        setProcValues([]);
+        setProcValuesLY([]);
+      }
+    } else if (procMetric === 'newEmpReturn') {
+      if (newEmpMonthly && newEmpMonthly.length > 0) {
+        const sorted = [...newEmpMonthly].sort((a, b) => (a.report_month > b.report_month ? 1 : -1));
+        const last12 = sorted.slice(-12);
+        setProcValues(last12.map(d => Number(d.compliance_rate)));
+        setProcValuesLY(last12.map(d => (d.compliance_rate_ly != null ? Number(d.compliance_rate_ly) : null)));
+        const dynamicMonths = last12.map(d => ({
+          label: d.report_month,
+          weekNo: Number(String(d.report_month).slice(5)), // use month as weekNo for label consistency
+          year: Number(String(d.report_month).slice(0, 4))
+        }));
+        setProcWeeks(dynamicMonths);
+      } else {
+        setProcValues([]);
+        setProcValuesLY([]);
+      }
     } else if (fetchedTrendData && fetchedTrendData.length > 0) {
       // Expecting [{ week_num, current_value, last_year_value }, ...]
       // Sort by week_num to ensure correct order
@@ -503,32 +544,9 @@ const PriceDecompositionContainer = () => {
     }
 
     // 2. Handle City Data
-    if (procMetric === 'returnRate' && repurchaseCityWeekly && repurchaseCityWeekly.length > 0) {
-       // Find latest week
-       let maxYear = 0;
-       let maxWeek = 0;
-       repurchaseCityWeekly.forEach(d => {
-         if (d.s_year > maxYear) { maxYear = d.s_year; maxWeek = d.s_week; }
-         else if (d.s_year === maxYear && d.s_week > maxWeek) { maxWeek = d.s_week; }
-       });
-       
-       const latestData = repurchaseCityWeekly.filter(d => d.s_year === maxYear && d.s_week === maxWeek);
-       
-       const rows = latestData.map((d, idx) => ({
-         key: d.city_name || idx,
-         city: d.city_name,
-         totalOrders: d.total_orders,
-         repurchaseOrders: d.repurchase_orders,
-         value: `${d.repurchase_rate}%`,
-         prevValue: `${d.prev_year_rate}%`,
-         yoy: d.yoy_change_pct,
-         target: '30%',
-         status: Number(d.repurchase_rate) >= 30 ? '达标' : '未达标'
-       }));
-       setProcCityRows(rows);
-
-       // Define Columns
-       const cityCol = { 
+    if (procMetric === 'returnRate') {
+      // Define Columns for Repurchase Rate (Always visible)
+      const cityCol = { 
         key: 'city', 
         title: '城市', 
         dataIndex: 'city',
@@ -542,7 +560,7 @@ const PriceDecompositionContainer = () => {
         )
       };
 
-      setProcColumnsDyn([
+      const repurchaseCols = [
         cityCol,
         { key: 'totalOrders', title: '订单数量', dataIndex: 'totalOrders' },
         { key: 'repurchaseOrders', title: '回头客订单数量', dataIndex: 'repurchaseOrders' },
@@ -566,8 +584,93 @@ const PriceDecompositionContainer = () => {
         { key: 'status', title: '是否达标', dataIndex: 'status',
           render: (val) => <span className={val === '达标' ? 'text-red-600 font-medium' : 'text-gray-500'}>{val}</span>
         }
-      ]);
+      ];
 
+      setProcColumnsDyn(repurchaseCols);
+
+      if (repurchaseCityWeekly && repurchaseCityWeekly.length > 0) {
+        // Find latest week
+        let maxYear = 0;
+        let maxWeek = 0;
+        repurchaseCityWeekly.forEach(d => {
+          const y = Number(d.s_year);
+          const w = Number(d.s_week);
+          if (y > maxYear) { maxYear = y; maxWeek = w; }
+          else if (y === maxYear && w > maxWeek) { maxWeek = w; }
+        });
+        
+        const latestData = repurchaseCityWeekly.filter(d => Number(d.s_year) === maxYear && Number(d.s_week) === maxWeek);
+        
+        const rows = latestData.map((d, idx) => ({
+          key: d.city_name || idx,
+          city: d.city_name,
+          totalOrders: d.total_orders,
+          repurchaseOrders: d.repurchase_orders,
+          value: `${d.repurchase_rate}%`,
+          prevValue: `${d.prev_year_rate}%`,
+          yoy: d.yoy_change_pct,
+          target: '30%',
+          status: Number(d.repurchase_rate) >= 30 ? '达标' : '未达标'
+        }));
+        setProcCityRows(rows);
+      } else {
+         // No data for returnRate - clear rows only
+         setProcCityRows([]);
+      }
+    } else if (procMetric === 'newEmpReturn') {
+      const cityCol = { 
+        key: 'city', 
+        title: '城市', 
+        dataIndex: 'city',
+        render: (val) => (
+          <span 
+            className="text-[#a40035] cursor-pointer hover:underline"
+            onClick={() => openCityModal(val)}
+          >
+            {val}
+          </span>
+        )
+      };
+      const cols = [
+        cityCol,
+        { key: 'yearly_new_staff_count', title: '当年新员工数量', dataIndex: 'yearly_new_staff_count' },
+        { key: 'yearly_standard_count', title: '新员工回头率达标人数', dataIndex: 'yearly_standard_count' },
+        { key: 'compliance_rate', title: '新员工回头率达标率', dataIndex: 'compliance_rate',
+          render: (val) => val != null ? `${Number(val).toFixed(2)}%` : ''
+        },
+        { key: 'compliance_rate_ly', title: '去年的新员工回头率达标率', dataIndex: 'compliance_rate_ly',
+          render: (val) => val != null ? `${Number(val).toFixed(2)}%` : ''
+        },
+        { key: 'yoy_change_pct', title: '同比', dataIndex: 'yoy_change_pct',
+          render: (val) => {
+            if (val == null) return '';
+            const num = Number(val);
+            const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+            const sign = num > 0 ? '+' : '';
+            return <span className={cls}>{sign}{num}%</span>;
+          }
+        },
+        { key: 'budget_amount', title: '预算金额', dataIndex: 'budget_amount', render: () => '' },
+        { key: 'budget_used_amount', title: '预算消耗金额', dataIndex: 'budget_used_amount', render: () => '' },
+        { key: 'budget_usage_rate', title: '预算消耗率', dataIndex: 'budget_usage_rate', render: () => '' }
+      ];
+      setProcColumnsDyn(cols);
+      if (newEmpCityAnnual && newEmpCityAnnual.length > 0) {
+        const maxYear = Math.max(...newEmpCityAnnual.map(d => Number(d.report_year)));
+        const latestRows = newEmpCityAnnual.filter(d => Number(d.report_year) === maxYear);
+        const rows = latestRows.map((d, idx) => ({
+          key: d.city_name || idx,
+          city: d.city_name,
+          yearly_new_staff_count: d.yearly_new_staff_count,
+          yearly_standard_count: d.yearly_standard_count,
+          compliance_rate: d.compliance_rate,
+          compliance_rate_ly: d.compliance_rate_ly,
+          yoy_change_pct: d.yoy_change_pct
+        }));
+        setProcCityRows(rows);
+      } else {
+        setProcCityRows([]);
+      }
     } else if (fetchedCityData && fetchedCityData.length > 0) {
       const cityCol = { 
         key: 'city', 
@@ -613,37 +716,8 @@ const PriceDecompositionContainer = () => {
            { key: 'status', title: '状态', dataIndex: 'status' }
          ];
       } else if (procMetric === 'newEmpReturn') {
-         cols = [
-           { 
-              key: 'city', 
-              title: '城市', 
-              dataIndex: 'city' 
-           },
-           { 
-              key: 'name', 
-              title: '技术副总姓名', 
-              dataIndex: 'name', // SQL should return 'name'
-              render: (val, record) => (
-                <span 
-                  className="text-[#a40035] cursor-pointer hover:underline"
-                  onClick={() => openVPModal(val, record.city)}
-                >
-                  {val}
-                </span>
-              )
-           },
-           { 
-              key: 'value', 
-              title: '新员工回头率达标率', 
-              dataIndex: 'value',
-              render: (val) => {
-                const num = parseFloat(String(val).replace('%', '')) || 0;
-                const target = BusinessTargets.turnover.impactAnalysis.newEmployeeRetention.target || 80;
-                const isHigh = num >= target;
-                return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
-              }
-           }
-         ];
+         // 已在上方专用分支处理
+         cols = [];
       } else if (procMetric === 'therapistYield') {
          cols = [
             cityCol,
@@ -795,7 +869,7 @@ const PriceDecompositionContainer = () => {
       ];
       setModalColumns(storeCols);
 
-    } else if ((procMetric === 'therapistYield' || procMetric === 'newEmpReturn') && !isPriceDecompositionModal) {
+    } else if (procMetric === 'therapistYield' && !isPriceDecompositionModal) {
        const months = Array.from({length: 12}, (_, i) => i + 1);
        const monthRanges = months.map(m => ({
           weekNo: m,
@@ -849,6 +923,59 @@ const PriceDecompositionContainer = () => {
           return row;
        });
        setStoreRows(tableRows);
+    } else if (procMetric === 'newEmpReturn' && !isPriceDecompositionModal) {
+       // 上半部分：城市维度近12个月趋势
+       if (newEmpCityMonthly && newEmpCityMonthly.length > 0) {
+          const city = modalContextCity || selectedCity;
+          const cityData = newEmpCityMonthly.filter(d => d.city_name === city);
+          const sorted = cityData.sort((a, b) => (a.report_month > b.report_month ? 1 : -1));
+          const last12 = sorted.slice(-12);
+          const monthLabels = last12.map(d => ({
+            label: String(d.report_month),
+            weekNo: Number(String(d.report_month).slice(5)),
+            year: Number(String(d.report_month).slice(0,4))
+          }));
+          setWeeks(monthLabels);
+          setWeeklyPrice(last12.map(d => Number(d.compliance_rate)));
+          setWeeklyPriceLY(last12.map(d => (d.compliance_rate_ly != null ? Number(d.compliance_rate_ly) : null)));
+          setWeeklyYoYRates(last12.map(d => (d.yoy_change_pct != null ? Number(d.yoy_change_pct) : null)));
+       } else {
+           setWeeks([]);
+           setWeeklyPrice([]);
+           setWeeklyPriceLY([]);
+           setWeeklyYoYRates([]);
+       }
+
+       // 下半部分：门店维度年度统计（按中文字段名展示）
+       if (newEmpStoreAnnual && newEmpStoreAnnual.length > 0) {
+          const maxYear = Math.max(...newEmpStoreAnnual.map(d => Number(d.report_year)));
+          const filtered = newEmpStoreAnnual.filter(d => Number(d.report_year) === maxYear && d.city_name === selectedCity);
+          const rows = filtered.map((d, idx) => ({
+            key: d.store_code || idx,
+            '城市': d.city_name,
+            '门店编码': d.store_code,
+            '门店名称': d.store_name,
+            '年度新员工人数': d.yearly_new_staff_count,
+            '新员工回头率达标人数': d.yearly_standard_count,
+            '新员工回头率达标率': d.compliance_rate != null ? `${Number(d.compliance_rate).toFixed(2)}%` : '',
+            '去年新员工回头率达标率': d.compliance_rate_ly != null ? `${Number(d.compliance_rate_ly).toFixed(2)}%` : '',
+            '同比': d.yoy_change_pct != null ? `${Number(d.yoy_change_pct)}%` : ''
+          }));
+          const storeCols = [
+            { key: '城市', title: '城市', dataIndex: '城市' },
+            { key: '门店编码', title: '门店编码', dataIndex: '门店编码' },
+            { key: '门店名称', title: '门店名称', dataIndex: '门店名称' },
+            { key: '年度新员工人数', title: '年度新员工人数', dataIndex: '年度新员工人数' },
+            { key: '新员工回头率达标人数', title: '新员工回头率达标人数', dataIndex: '新员工回头率达标人数' },
+            { key: '新员工回头率达标率', title: '新员工回头率达标率', dataIndex: '新员工回头率达标率' },
+            { key: '去年新员工回头率达标率', title: '去年新员工回头率达标率', dataIndex: '去年新员工回头率达标率' },
+            { key: '同比', title: '同比', dataIndex: '同比' }
+          ];
+          setModalColumns(storeCols);
+          setStoreRows(rows);
+       } else {
+          setStoreRows([]);
+       }
 
     } else if (procMetric === 'returnRate' && selectedCity) {
          // --- Upper Part: Trend (City Level, Last 12 Weeks) ---
@@ -905,9 +1032,9 @@ const PriceDecompositionContainer = () => {
                  city: d.city_name,
                  storeName: d.store_name,
                  storeCode: d.store_code,
-                 lastYearPrice: parseFloat(d.prev_year_rate_ytd || 0), // Mapping to prev_year_rate_ytd
-                 currentPrice: parseFloat(d.repurchase_rate_ytd || 0), // Mapping to repurchase_rate_ytd
-                 yoyRate: d.yoy_change_pct ? `${d.yoy_change_pct}%` : '0%',
+                 lastYearPrice: d.prev_year_rate_ytd != null ? parseFloat(d.prev_year_rate_ytd) : null,
+                 currentPrice: parseFloat(d.repurchase_rate_ytd || 0),
+                 yoyRate: d.yoy_change_pct != null ? `${d.yoy_change_pct}%` : null,
                  laborCost: null,
                  recruitTrainCost: null,
                  totalCost: null,
@@ -926,10 +1053,11 @@ const PriceDecompositionContainer = () => {
                   render: (val) => <span className="font-medium">{Number(val).toFixed(2)}%</span> 
                 },
                { key: 'lastYearPrice', title: '去年同期', dataIndex: 'lastYearPrice',
-                 render: (val) => <span className="text-gray-500">{Number(val).toFixed(2)}%</span>
+                 render: (val) => val != null ? <span className="text-gray-500">{Number(val).toFixed(2)}%</span> : ''
                },
                { key: 'yoyRate', title: '同比', dataIndex: 'yoyRate',
                  render: (val) => {
+                   if (val == null) return '';
                    const num = parseFloat(val);
                    const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
                    const sign = num > 0 ? '+' : '';
@@ -1017,7 +1145,7 @@ const PriceDecompositionContainer = () => {
        setModalColumns(columnsForStore);
        setStoreRows(processedStores);
     }
-  }, [isModalOpen, selectedCity, modalContextCity, procMetric, modalTrendData, modalStoreData, tableData, cityWeeklyData, storeWeeklyData, isPriceDecompositionModal]);
+  }, [isModalOpen, selectedCity, modalContextCity, procMetric, modalTrendData, modalStoreData, tableData, cityWeeklyData, storeWeeklyData, isPriceDecompositionModal, repurchaseCityWeekly, repurchaseStoreWeekly]);
 
   const [showReminder, setShowReminder] = useState(false);
   const [reminderText, setReminderText] = useState('');
@@ -1256,7 +1384,12 @@ const PriceDecompositionContainer = () => {
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="text-xs text-gray-500 mb-1">当前值</div>
               <div className="text-xl font-bold text-[#a40035]">
-                {impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.actual}%` : `${impactInfos[procMetric]?.actual}`}
+                {(() => {
+                  const actual = impactInfos[procMetric]?.actual;
+                  const unit = impactInfos[procMetric]?.unit;
+                  if (actual === null || actual === undefined) return '—';
+                  return unit === '%' ? `${Number(actual).toFixed(procMetric === 'newEmpReturn' ? 2 : 0)}%` : `${actual}`;
+                })()}
               </div>
               <div className="mt-2 text-xs text-gray-500">
                 <div className="mb-1">
@@ -1456,7 +1589,13 @@ const PriceDecompositionContainer = () => {
             </div>
           </div>
         </div>
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-col mb-4">
+          <div className="flex items-center justify-between mb-2">
+             <h4 className="text-base font-semibold text-gray-700 pl-2 border-l-4 border-[#a40035]">
+                {procMetric === 'returnRate' ? '项目回头率趋势表现' : procMetric === 'newEmpReturn' ? '新员工回头率达标率趋势表现' : '指标趋势（近12周）'}
+             </h4>
+          </div>
+          <div className="flex gap-2">
           <button
             onClick={() => setProcShowYoY(!procShowYoY)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${procShowYoY ? 'bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
@@ -1476,26 +1615,23 @@ const PriceDecompositionContainer = () => {
             显示极值
           </button>
         </div>
+        </div>
         {procValues.length >= 2 ? (
           <LineTrendChart
-            headerTitle={
-              procMetric === 'returnRate'
-                ? '项目回头率（近12周）'
-                : procMetric === 'configRatio'
-                ? '床位人员配置比（近12周）'
-                : procMetric === 'newEmpReturn'
-                ? '新员工回头率达标率（近12周）'
-                : '推拿师产值达标率（近12周）'
-            }
-            headerUnit={procMetric === 'configRatio' ? '人/床' : '%'}
+            headerTitle="" 
+            headerUnit={procMetric === 'returnRate' ? '' : (procMetric === 'configRatio' ? '人/床' : '%')}
             values={procValues}
             valuesYoY={procValuesLY}
-            xLabels={procWeeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)}
+            xLabels={procMetric === 'newEmpReturn' ? procWeeks.map(w => w.label) : procWeeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)}
             showYoY={procShowYoY}
             showTrend={procShowTrend}
             showExtremes={procShowExtremes}
             yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : `${Math.round(v)}%`}
-            valueFormatter={(v) => procMetric === 'configRatio' ? `${Number(v).toFixed(2)}` : `${Number(v).toFixed(1)}%`}
+            valueFormatter={(v) => {
+              if (procMetric === 'configRatio') return `${Number(v).toFixed(2)}`;
+              if (procMetric === 'newEmpReturn') return `${Number(v).toFixed(2)}%`;
+              return `${Number(v).toFixed(1)}%`;
+            }}
             colorPrimary="#a40035"
             colorYoY="#2563eb"
             getHoverTitle={(idx) => procWeeks[idx]?.label || ''}
@@ -1504,7 +1640,10 @@ const PriceDecompositionContainer = () => {
         ) : (
           <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">暂无数据</div>
         )}
-        <div className="mt-4">
+        <div className="mt-4 bg-white rounded-lg border border-gray-100 shadow-sm p-4">
+          <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">
+              {procMetric === 'returnRate' ? '城市维度项目回头率统计' : '城市维度数据统计'}
+          </h4>
           <DataTable data={procCityRows} columns={procColumnsDyn.length ? procColumnsDyn : procColumnsDefault} />
         </div>
       </div>
@@ -1549,7 +1688,7 @@ const PriceDecompositionContainer = () => {
                 </button>
               </div>
               <LineTrendChart
-                headerTitle={procMetric === 'configRatio' ? '城市床位人员配置比变化趋势' : procMetric === 'therapistYield' ? '城市推拿师产值达标率趋势' : procMetric === 'returnRate' ? '城市项目回头率变化趋势' : '城市平均客单价变化趋势'}
+                headerTitle={procMetric === 'configRatio' ? '城市床位人员配置比变化趋势' : procMetric === 'therapistYield' ? '城市推拿师产值达标率趋势' : procMetric === 'returnRate' ? '城市项目回头率变化趋势' : procMetric === 'newEmpReturn' ? '城市新员工回头率达标率趋势' : '城市平均客单价变化趋势'}
                 headerUnit={procMetric === 'configRatio' ? '人/床' : procMetric === 'therapistYield' ? '%' : procMetric === 'returnRate' ? '%' : '元/人次'}
                 values={weeklyPrice}
                 valuesYoY={weeklyPriceLY}
@@ -1560,8 +1699,13 @@ const PriceDecompositionContainer = () => {
                 showYoY={showYoY}
                 showTrend={showTrend}
                 showExtremes={showExtremes}
-                yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : (procMetric === 'therapistYield' || procMetric === 'returnRate' ? Math.round(v) : Number(v).toFixed(1))}
-                valueFormatter={(v) => procMetric === 'configRatio' ? `${Number(v).toFixed(2)}` : (procMetric === 'newEmpReturn' || procMetric === 'therapistYield' || procMetric === 'returnRate') ? `${Number(v).toFixed(1)}%` : `¥ ${Number(v).toFixed(2)}`}
+                yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : (procMetric === 'therapistYield' || procMetric === 'returnRate' || procMetric === 'newEmpReturn' ? Math.round(v) : Number(v).toFixed(1))}
+                valueFormatter={(v) => {
+                  if (procMetric === 'configRatio') return `${Number(v).toFixed(2)}`;
+                  if (procMetric === 'newEmpReturn') return `${Number(v).toFixed(2)}%`;
+                  if (procMetric === 'therapistYield' || procMetric === 'returnRate') return `${Number(v).toFixed(1)}%`;
+                  return `¥ ${Number(v).toFixed(2)}`;
+                }}
                 colorPrimary="#a40035"
                 colorYoY="#2563eb"
                 valuesPct={weeklyYoYRates}

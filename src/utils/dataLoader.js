@@ -21,7 +21,12 @@ export const PRELOAD_QUERIES = [
   'getVolumeHQOverview',
   'getVolumeInfluenceTrend',
   'getVolumeCityModalTrend',
-  'getVolumeCityModalStoreData'
+  'getVolumeCityModalStoreData',
+  // 新增：新员工回头率达标率相关
+  'getNewEmpReturnComplianceAnnual',
+  'getNewEmpReturnComplianceMonthly',
+  'getNewEmpReturnComplianceCityAnnual',
+  'getNewEmpReturnComplianceStoreAnnual'
 ];
 
 class DataLoader {

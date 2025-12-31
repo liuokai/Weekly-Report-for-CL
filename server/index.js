@@ -78,6 +78,8 @@ app.post('/api/fetch-data', async (req, res) => {
     console.log(`[Query Start] ${queryKey}`);
     const startTime = Date.now();
     connection = await pool.getConnection();
+    await connection.query('SET enable_fallback_to_original_planner = true');
+    await connection.query('SET enable_nereids_planner = false');
     // Use .query() instead of .execute() because Doris might not support prepared statements
     const [rows] = await connection.query(queryConfig.sql, params);
     connection.release();
@@ -508,4 +510,3 @@ app.get('/health', async (req, res) => {
     res.status(500).json({ status: 'error', message: error.message });
   }
 });
-

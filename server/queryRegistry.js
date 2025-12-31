@@ -144,6 +144,27 @@ const queryRegistry = {
   getRepurchaseRateStoreWeekly: {
     sql: loadSql('repurchase_reate_store_weekly_yoy.sql'),
     description: '门店维度项目回头率统计'
+  },
+  // 新员工回头率达标率相关
+  getNewEmpReturnComplianceAnnual: {
+    sql: loadSql('staff_return_compliance_annual.sql'),
+    description: '新员工回头率达标率年度统计（全公司）'
+  },
+  getNewEmpReturnComplianceMonthly: {
+    sql: loadSql('staff_return_compliance_monthly.sql'),
+    description: '新员工回头率达标率月度统计（全公司，近12个月）'
+  },
+  getNewEmpReturnComplianceCityAnnual: {
+    sql: loadSql('staff_return_compliance_city_annual.sql'),
+    description: '新员工回头率达标率年度统计（城市维度）'
+  },
+  getNewEmpReturnComplianceCityMonthly: {
+    sql: loadSql('staff_return_compliance_city_monthly.sql'),
+    description: '新员工回头率达标率月度统计（城市维度，近12个月，需城市参数）'
+  },
+  getNewEmpReturnComplianceStoreAnnual: {
+    sql: loadSql('staff_return_compliance_store_annual.sql'),
+    description: '新员工回头率达标率年度统计（门店维度）'
   }
 };
 
