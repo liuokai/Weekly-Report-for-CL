@@ -228,6 +228,15 @@ const queryRegistry = {
     sql: loadSql('staff_avg_daily_service_duration_store_monthly_yoy.sql'),
     description: '按月、城市、门店维度统计推拿师天均服务时长（含去年同期与同比），近12个月'
   },
+  // 推拿师天均服务时长不达标占比（月度/城市月度）
+  getStaffServiceDurationBelowStandardMonthly: {
+    sql: loadSql('staff_service_duration_below_standard_monthly.sql'),
+    description: '按月统计推拿师天均服务时长不达标占比（含去年同期与同比），近12个月'
+  },
+  getStaffServiceDurationBelowStandardCityMonthly: {
+    sql: loadSql('staff_service_duration_below_standard_city_monthly.sql'),
+    description: '按月、城市维度统计推拿师天均服务时长不达标占比（含去年同期与同比），近12个月'
+  },
 };
 
 module.exports = queryRegistry;

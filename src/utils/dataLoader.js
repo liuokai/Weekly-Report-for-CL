@@ -36,6 +36,10 @@ export const PRELOAD_QUERIES = [
   'getStaffServiceDurationMonthly',
   'getStaffServiceDurationCityMonthly',
   'getStaffServiceDurationStoreMonthly'
+  ,
+  // 新增：推拿师天均服务时长不达标占比（月度/城市月度）
+  'getStaffServiceDurationBelowStandardMonthly',
+  'getStaffServiceDurationBelowStandardCityMonthly'
 ];
 
 class DataLoader {

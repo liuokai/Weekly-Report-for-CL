@@ -100,6 +100,12 @@ app.post('/api/fetch-data', async (req, res) => {
           return cityName === params.city;
         });
       }
+      if (queryKey === 'getStaffServiceDurationBelowStandardCityMonthly' && params && params.city) {
+        rows = rows.filter(r => {
+          const cityName = r.city_name || r.statistics_city_name || r.city || r.statistics_city;
+          return cityName === params.city;
+        });
+      }
     } catch (e) {
       console.warn(`[PostProcess Warn] ${queryKey} filter failed:`, e?.message);
     }

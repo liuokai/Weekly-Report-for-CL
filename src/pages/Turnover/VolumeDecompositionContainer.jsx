@@ -35,6 +35,9 @@ const VolumeDecompositionContainer = () => {
   const { data: staffDurationMonthly } = useFetchData('getStaffServiceDurationMonthly', []);
   const { data: staffDurationCityMonthly } = useFetchData('getStaffServiceDurationCityMonthly', []);
   const { data: staffDurationStoreMonthly } = useFetchData('getStaffServiceDurationStoreMonthly', { city: selectedCity });
+  // 推拿师天均服务时长不达标占比（真实数据源）
+  const { data: staffDurationBelowStandardMonthly } = useFetchData('getStaffServiceDurationBelowStandardMonthly', []);
+  const { data: staffDurationBelowStandardCityMonthly } = useFetchData('getStaffServiceDurationBelowStandardCityMonthly', []);
   const { data: cityBreakdownData } = useFetchData('getVolumeCityBreakdown');
 
   const tableData = useMemo(() => {
@@ -365,26 +368,48 @@ const VolumeDecompositionContainer = () => {
     const monthKeysDesc = [...monthKeysAsc].reverse();
     const monthsDesc = monthKeysDesc.map(formatMonthLabel);
 
-    // 上半部分趋势：选定城市近12月的推拿师天均服务时长
+    // 上半部分趋势：选定城市近12月的指标趋势
     let trendValues = [];
     let trendValuesYoY = [];
-    if (staffDurationCityMonthly && staffDurationCityMonthly.length > 0) {
-      const filtered = staffDurationCityMonthly.filter(d => d.statistics_city_name === selectedCity);
-      const byMonth = {};
-      filtered.forEach(d => { 
-        byMonth[d.month] = {
-          curr: Number(d.avg_staff_daily_duration),
-          prev: Number(d.avg_staff_daily_duration_yoy)
-        };
-      });
-      trendValues = monthKeysAsc.map(k => {
-        const v = byMonth[k]?.curr;
-        return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
-      });
-      trendValuesYoY = monthKeysAsc.map(k => {
-        const v = byMonth[k]?.prev;
-        return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
-      });
+    if (influenceMetric === 'duration') {
+      if (staffDurationCityMonthly && staffDurationCityMonthly.length > 0) {
+        const filtered = staffDurationCityMonthly.filter(d => d.statistics_city_name === selectedCity);
+        const byMonth = {};
+        filtered.forEach(d => { 
+          byMonth[d.month] = {
+            curr: Number(d.avg_staff_daily_duration),
+            prev: Number(d.avg_staff_daily_duration_yoy)
+          };
+        });
+        trendValues = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.curr;
+          return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+        });
+        trendValuesYoY = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.prev;
+          return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+        });
+      }
+    } else if (influenceMetric === 'compliance') {
+      if (staffDurationBelowStandardCityMonthly && staffDurationBelowStandardCityMonthly.length > 0) {
+        const filtered = staffDurationBelowStandardCityMonthly.filter(d => (d.city_name === selectedCity || d.statistics_city_name === selectedCity));
+        const byMonth = {};
+        filtered.forEach(d => { 
+          const ym = `${d.stat_year}-${String(d.stat_month).padStart(2, '0')}`;
+          byMonth[ym] = {
+            curr: Number(d.below_standard_ratio),
+            prev: Number(d.below_standard_ratio_yoy)
+          };
+        });
+        trendValues = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.curr;
+          return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+        });
+        trendValuesYoY = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.prev;
+          return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+        });
+      }
     }
 
     // 下半部分表格：该城市下各门店近12月推拿师天均服务时长
@@ -429,7 +454,7 @@ const VolumeDecompositionContainer = () => {
            const num = Number(val);
            let displayVal = '—';
            if (Number.isFinite(num)) {
-             if (influenceMetric === 'duration') {
+             if (influenceMetric === 'duration' || influenceMetric === 'compliance') {
                displayVal = Number(num).toFixed(2);
              } else if (influenceMetric === 'active_members') {
                displayVal = Math.round(num).toLocaleString();
@@ -442,8 +467,9 @@ const VolumeDecompositionContainer = () => {
 
            let colorClass = 'text-gray-700';
            if (influenceMetric !== 'active_members') {
-              colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-red-600 font-bold' : 'text-gray-700';
+               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-red-600 font-bold' : 'text-gray-700';
            }
+ 
            return <span className={colorClass}>{displayVal}</span>;
         }
       }))
@@ -558,6 +584,23 @@ const VolumeDecompositionContainer = () => {
           const idx = monthKeysDesc.indexOf(month);
           if (idx !== -1) {
             const num = Number(item.avg_staff_daily_duration);
+            map[city][`m${idx + 1}`] = Number.isFinite(num) ? Number(num.toFixed(2)) : null;
+          }
+        });
+        cityData = Object.values(map);
+      }
+    } else if (influenceMetric === 'compliance') {
+      if (staffDurationBelowStandardCityMonthly && staffDurationBelowStandardCityMonthly.length > 0) {
+        const map = {};
+        staffDurationBelowStandardCityMonthly.forEach(item => {
+          const city = item.city_name;
+          const ym = `${item.stat_year}-${String(item.stat_month).padStart(2, '0')}`;
+          if (!map[city]) {
+            map[city] = { key: city, city };
+          }
+          const idx = monthKeysDesc.indexOf(ym);
+          if (idx !== -1) {
+            const num = Number(item.below_standard_ratio);
             map[city][`m${idx + 1}`] = Number.isFinite(num) ? Number(num.toFixed(2)) : null;
           }
         });
@@ -750,6 +793,25 @@ const VolumeDecompositionContainer = () => {
           return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
         });
       }
+    } else if (influenceMetric === 'compliance') {
+      if (staffDurationBelowStandardMonthly && staffDurationBelowStandardMonthly.length > 0) {
+        const byMonth = {};
+        staffDurationBelowStandardMonthly.forEach(d => {
+          const ym = `${d.stat_year}-${String(d.stat_month).padStart(2, '0')}`;
+          byMonth[ym] = {
+            curr: Number(d.below_standard_ratio),
+            prev: Number(d.below_standard_ratio_yoy)
+          };
+        });
+        values = monthKeys.map(k => {
+          const v = byMonth[k]?.curr;
+          return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+        });
+        valuesYoY = monthKeys.map(k => {
+          const v = byMonth[k]?.prev;
+          return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+        });
+      }
     } else {
       if (influenceTrendData && influenceTrendData.length > 0) {
         const sorted = [...influenceTrendData].sort((a, b) => a.month - b.month);
@@ -864,7 +926,7 @@ const VolumeDecompositionContainer = () => {
       {renderHQOverview()}
       {renderTrendChart()}
       {renderInfluenceAnalysisChart()}
-      <DataTable data={tableData} columns={columns} />
+      <DataTable data={tableData} columns={columns} hideNoDataMessage={true} />
     </div>
   );
 
