@@ -41,5 +41,5 @@ LEFT JOIN weekly_city_avg prev
     ON curr.s_year = prev.s_year + 1
     AND curr.s_week = prev.s_week
     AND curr.statistics_city_name = prev.statistics_city_name
-WHERE curr.s_year = 2025
+WHERE curr.s_year >= 2025
 ORDER BY curr.s_week DESC, curr.daily_avg_revenue DESC;

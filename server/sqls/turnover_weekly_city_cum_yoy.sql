@@ -52,7 +52,7 @@ SELECT
     weekly_revenue                            AS `weekly_revenue`,
     running_total_revenue                     AS `running_total_revenue`
 FROM cumulative_city_sales
-WHERE sales_year = 2025
+WHERE sales_year >= 2025
 ORDER BY
     statistics_city_name,
     sales_year,

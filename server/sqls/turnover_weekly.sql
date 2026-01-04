@@ -29,5 +29,5 @@ FROM weekly_sales curr
          LEFT JOIN weekly_sales prev
                    ON curr.sales_year = prev.sales_year + 1 -- 年份差1
                        AND curr.sales_week = prev.sales_week -- 周数相同
-where curr.sales_year = 2025
+where curr.sales_year >= 2025
 ORDER BY curr.sales_year DESC, curr.sales_week DESC;

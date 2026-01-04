@@ -1,4 +1,4 @@
---按周计算累计营业额（同比）
+-- 按周计算累计营业额（同比）
 
 WITH weekly_sales AS (
     -- 第一步：按周聚合基礎數據
@@ -39,5 +39,5 @@ FROM cumulative_sales curr
          LEFT JOIN cumulative_sales prev
                    ON curr.sales_year = prev.sales_year + 1
                        AND curr.sales_week = prev.sales_week
-where curr.sales_year = 2025
+where curr.sales_year >= 2025
 ORDER BY curr.sales_year DESC, curr.sales_week DESC;

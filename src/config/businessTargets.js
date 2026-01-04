@@ -54,7 +54,7 @@ export const BusinessTargets = {
       },
       // 床位人员配置比
       bedStaffRatio: {
-        target: 0.7, // 目标值
+        target: 0.5, // 目标值
         budget: {
           wage: 100,   // 人力预算（万元）- 暂无数据，预留填空
           other: 0   // 其他预算（万元）- 暂无数据，预留填空

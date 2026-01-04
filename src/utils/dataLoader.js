@@ -26,7 +26,11 @@ export const PRELOAD_QUERIES = [
   'getNewEmpReturnComplianceAnnual',
   'getNewEmpReturnComplianceMonthly',
   'getNewEmpReturnComplianceCityAnnual',
-  'getNewEmpReturnComplianceStoreAnnual'
+  'getNewEmpReturnComplianceStoreAnnual',
+  // 新增：推拿师产值达标率相关（月度/城市/月度门店）
+  'getEmployeeOutputStandardRateMonthly',
+  'getEmployeeOutputStandardRateCityMonthly',
+  'getEmployeeOutputStandardRateStoreMonthly'
 ];
 
 class DataLoader {

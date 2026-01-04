@@ -117,6 +117,21 @@ const queryRegistry = {
     sql: loadSql('volume_hq_overview.sql'),
     description: 'Get volume HQ overview data'
   },
+  // 客次量：年度累计（取最新年份）
+  getUserVisitCountAnnual: {
+    sql: loadSql('user_visit_count_annual.sql'),
+    description: '按年度统计客次量（含去年值与同比），前端取最新年份'
+  },
+  // 客次量：天均（月度，近12个月）
+  getUserVisitCountDailyAvgMonthly: {
+    sql: loadSql('user_visit_count_daily_avg_visit_monthly.sql'),
+    description: '按月统计天均客次量（含去年同期与同比），取最近12个月'
+  },
+  // 客次量：年度累计（月度，近12个月）
+  getUserVisitCountCumMonthly: {
+    sql: loadSql('user_visit_count_cum_monthly.sql'),
+    description: '按月统计年度累计客次量（含去年同期与同比），取最近12个月'
+  },
   getVolumeInfluenceTrend: {
     sql: loadSql('volume_influence_trend.sql'),
     description: 'Get volume influence trend data'
@@ -165,6 +180,40 @@ const queryRegistry = {
   getNewEmpReturnComplianceStoreAnnual: {
     sql: loadSql('staff_return_compliance_store_annual.sql'),
     description: '新员工回头率达标率年度统计（门店维度）'
+  },
+  // Bed-to-Staff Ratio
+  getBedStaffRatioAnnual: {
+    sql: loadSql('bed_to_staff_ratio_annual.sql'),
+    description: '年度床位人员配置比统计'
+  },
+  getBedStaffRatioWeekly: {
+    sql: loadSql('bed_to_staff_ratio_weekly.sql'),
+    description: '周度床位人员配置比统计'
+  },
+  getBedStaffRatioCityAnnual: {
+    sql: loadSql('bed_to_staff_ratio_city_annual.sql'),
+    description: '城市年度床位人员配置比统计'
+  },
+  getBedStaffRatioCityWeekly: {
+    sql: loadSql('bed_to_staff_ratio_city_weekly.sql'),
+    description: '城市周度床位人员配置比统计'
+  },
+  getBedStaffRatioStoreAnnual: {
+    sql: loadSql('bed_to_staff_ratio_store_annual.sql'),
+    description: '门店年度床位人员配置比统计'
+  },
+  // 推拿师产值达标率（月度/城市月度/门店月度）
+  getEmployeeOutputStandardRateMonthly: {
+    sql: loadSql('employee_output_standard_rate_monthly.sql'),
+    description: '推拿师产值达标率月度统计（含同比）'
+  },
+  getEmployeeOutputStandardRateCityMonthly: {
+    sql: loadSql('employee_output_standard_rate_city_monthly.sql'),
+    description: '推拿师产值达标率城市月度统计（含同比）'
+  },
+  getEmployeeOutputStandardRateStoreMonthly: {
+    sql: loadSql('employee_output_standard_rate_store_monthly.sql'),
+    description: '推拿师产值达标率门店月度统计（含同比）'
   }
 };
 

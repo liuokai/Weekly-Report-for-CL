@@ -24,33 +24,17 @@ const VolumeDecompositionContainer = () => {
   const [selectedCity, setSelectedCity] = useState(null);
 
   // Fetch Data
-  const { data: volumeTrendData } = useFetchData('getVolumeTrend', { metric: trendMetric });
+  const { data: annualVisitData } = useFetchData('getUserVisitCountAnnual', []);
+  const { data: dailyAvgVisitMonthlyData } = useFetchData('getUserVisitCountDailyAvgMonthly', []);
+  const { data: cumVisitMonthlyData } = useFetchData('getUserVisitCountCumMonthly', []);
   const { data: influenceCityData } = useFetchData('getVolumeInfluenceCity', { metric: influenceMetric });
   const { data: influenceTrendData } = useFetchData('getVolumeInfluenceTrend', { metric: influenceMetric });
-  const { data: hqOverviewData } = useFetchData('getVolumeHQOverview');
   const { data: modalTrendData } = useFetchData('getVolumeCityModalTrend', { city: selectedCity, metric: influenceMetric });
   const { data: modalStoreData } = useFetchData('getVolumeCityModalStoreData', { city: selectedCity, metric: influenceMetric });
   const { data: cityBreakdownData } = useFetchData('getVolumeCityBreakdown');
 
   const tableData = useMemo(() => {
-    let source = [];
-    if (cityBreakdownData && cityBreakdownData.length > 0) {
-      source = cityBreakdownData;
-    } else {
-      // Mock Fallback
-      // Use original mock logic if needed or empty
-      // We don't have the original mock data array here, but we can generate some or leave empty if preferred.
-      // The original code had: const [data] = useState([]); and mapped it.
-      // So if no data, we probably just return empty or generate some mock for demo.
-      // Let's generate some mock data to keep the UI populated as requested.
-      const cities = Object.keys(cityStoreMap);
-      source = cities.map(city => ({
-        city,
-        current_volume: Math.floor(150000 + Math.random() * 50000),
-        last_year_volume: Math.floor(140000 + Math.random() * 40000)
-      }));
-    }
-
+    const source = cityBreakdownData && cityBreakdownData.length > 0 ? cityBreakdownData : [];
     return source.map((row, index) => {
       const currentVol = parseInt(row.current_volume || 0, 10);
       const lastYearVol = parseInt(row.last_year_volume || 0, 10);
@@ -100,162 +84,150 @@ const VolumeDecompositionContainer = () => {
   ];
 
   const renderHQOverview = () => {
-    let currentVolume, lastYearVolume, totalExpense, laborCostTotal, laborCity, laborOps, marketingDiscount;
-
-    if (hqOverviewData && hqOverviewData.length > 0) {
-      const d = hqOverviewData[0];
-      currentVolume = parseInt(d.current_volume || 0, 10);
-      lastYearVolume = parseInt(d.last_year_volume || 0, 10);
-      totalExpense = parseFloat(d.total_expense || 0);
-      laborCostTotal = parseFloat(d.labor_cost_total || 0);
-      laborCity = parseFloat(d.labor_city || 0);
-      laborOps = parseFloat(d.labor_ops || 0);
-      marketingDiscount = parseFloat(d.marketing_discount || 0);
-    } else {
-      // Data hardcoded as per requirement (fallback)
-      currentVolume = 2184710;
-      lastYearVolume = 2200000;
-      totalExpense = 3011; // 万
-      laborCostTotal = 372; // 万
-      laborCity = 309; // 万
-      laborOps = 62.3; // 万
-      marketingDiscount = 2640; // 万
+    let currentVolume = null, lastYearVolume = null, yoyRate = null;
+    if (annualVisitData && annualVisitData.length > 0) {
+      const latest = annualVisitData[0];
+      currentVolume = latest.annual_total_visits != null ? Number(latest.annual_total_visits) : null;
+      lastYearVolume = latest.last_year_same_period_visits != null ? Number(latest.last_year_same_period_visits) : null;
+      yoyRate = latest.visits_yoy_pct != null ? Number(latest.visits_yoy_pct) : null;
     }
 
-    const growthRate = lastYearVolume ? ((currentVolume - lastYearVolume) / lastYearVolume) * 100 : 0;
-     
-     // Use fetched or fallback ratio. For fallback it is 9.9.
-     const expenseRatio = (hqOverviewData && hqOverviewData.length > 0) 
-        ? 9.9 // Placeholder if real calc needed
-        : 9.9;
+    const growthRate = yoyRate != null 
+      ? yoyRate 
+      : (lastYearVolume && currentVolume ? ((currentVolume - lastYearVolume) / lastYearVolume) * 100 : null);
 
-    // Target from Config
     const targetVolume = BusinessTargets.turnover.volumeDecomposition.annualCumulativeTarget || 0;
-    const completionRate = targetVolume ? (currentVolume / targetVolume) * 100 : 0;
+    const completionRate = targetVolume && currentVolume ? (currentVolume / targetVolume) * 100 : 0;
 
-    // Circle configuration for "No Target"
-    const size = 100;
-    const strokeWidth = 8;
+    const size = 80;
+    const strokeWidth = 6;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
-    
-    const progressPercent = Math.min(completionRate, 100); 
+    const progressPercent = Math.max(0, Math.min(100, completionRate)); 
     const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
     return (
-      <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 mb-6 space-y-6 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 mb-6 relative overflow-hidden">
         <div className="absolute right-0 top-0 w-32 h-32 bg-[#a40035]/5 rounded-bl-full pointer-events-none"></div>
-        
-        {/* Part 1: Volume Stats */}
-        <div className="flex flex-wrap items-center justify-between z-10 gap-10">
-          <div className="flex items-center gap-12">
-            <div>
-              <div className="text-sm text-gray-500 mb-1">截止本周年度累计客次量</div>
-              <div className="text-4xl font-bold text-[#a40035] flex items-baseline gap-2">
-                {currentVolume.toLocaleString()}
-                <span className="text-sm font-normal text-gray-400">人次</span>
-              </div>
-            </div>
-            <div className="hidden md:block border-l border-gray-200 pl-8">
-              <div className="text-sm text-gray-500 mb-1">去年累计客次量</div>
-              <div className="text-2xl font-semibold text-gray-700">
-                {lastYearVolume.toLocaleString()}
-                <span className="text-sm font-normal text-gray-400 ml-1">人次</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-6">
-             <div className="text-right">
-                <div className="text-sm text-gray-500 mb-1">增长率</div>
-                <div className={`text-2xl font-bold ${growthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                  {growthRate > 0 ? '+' : ''}{growthRate.toFixed(2)}%
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  目标: <span className="font-medium text-gray-600">{targetVolume ? (targetVolume / 10000).toFixed(0) + '万' : '暂无'}</span>
-                </div>
-             </div>
-             <div className="relative flex items-center justify-center">
-                <svg width={size} height={size} className="transform -rotate-90">
-                  <circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    stroke="#f3f4f6"
-                    strokeWidth={strokeWidth}
-                    fill="none"
-                  />
-                  <circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    stroke="#a40035"
-                    strokeWidth={strokeWidth}
-                    fill="none"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
-                <div className="absolute flex flex-col items-center">
-                  <span className="text-xs text-gray-400">达成率</span>
-                  <span className={`text-sm font-bold ${completionRate >= 100 ? 'text-[#a40035]' : 'text-gray-600'}`}>
-                    {completionRate ? completionRate.toFixed(1) + '%' : '—'}
-                  </span>
-                </div>
-             </div>
-          </div>
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
+            客次量达成情况概览
+          </h3>
         </div>
-
-        <div className="h-px bg-gray-100/70"></div>
-
-        {/* Part 2: Budget Stats */}
-        <div className="z-10">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm text-gray-600 font-bold">预算使用（2025年1-9月）</div>
-            <div className="flex items-center">
-               <span className="px-3 py-1 rounded-full bg-[#a40035]/10 text-[#a40035] text-sm font-bold">
-                 费用占比 {expenseRatio}%
-               </span>
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+          <div className="flex-1 z-10">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-1 min-w-0">
+                <div className="text-sm text-gray-500 truncate">截止本周年度累计客次量</div>
+                <div className="flex items-baseline gap-2 whitespace-nowrap">
+                  <span className="text-3xl xl:text-4xl font-bold text-[#a40035]">
+                    {currentVolume != null ? Number(currentVolume).toLocaleString() : '—'}
+                  </span>
+                  <span className="text-sm font-normal text-gray-400">人次</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-400">去年</span>
+                    <span className="font-semibold text-gray-700">
+                      {lastYearVolume != null ? Number(lastYearVolume).toLocaleString() : '—'}
+                    </span>
+                  </div>
+                  <div className="w-px h-3 bg-gray-300 hidden sm:block"></div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-400">同比</span>
+                    <span className={`font-bold ${
+                      growthRate != null ? (growthRate >= 0 ? 'text-red-600' : 'text-green-600') : 'text-gray-400'
+                    }`}>
+                      {growthRate != null ? `${growthRate > 0 ? '+' : ''}${Number(growthRate).toFixed(2)}%` : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-shrink-0 flex items-center gap-4">
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs text-gray-400 mb-1">
+                    目标 <span className="font-medium text-gray-600">
+                      {targetVolume ? (targetVolume / 10000).toFixed(0) + '万' : '暂无'}
+                    </span>
+                  </div>
+                </div>
+                <div className="relative flex items-center justify-center">
+                  <svg width={size} height={size} className="transform -rotate-90">
+                    <circle cx={size / 2} cy={size / 2} r={radius} stroke="#f3f4f6" strokeWidth={strokeWidth} fill="none" />
+                    <circle
+                      cx={size / 2}
+                      cy={size / 2}
+                      r={radius}
+                      stroke="#a40035"
+                      strokeWidth={strokeWidth}
+                      fill="none"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeDashoffset}
+                      strokeLinecap="round"
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  </svg>
+                  <div className="absolute flex flex-col items-center">
+                    <span className="text-[10px] text-gray-400">达成率</span>
+                    <span className="text-sm font-bold text-[#a40035]">
+                      {completionRate ? completionRate.toFixed(0) + '%' : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-12">
-              {/* Total Expense */}
-              <div className="flex-none">
-                <div className="text-xs text-gray-500 mb-1">支出合计</div>
-                <div className="text-3xl font-bold text-[#a40035]">¥{totalExpense}万</div>
-              </div>
-              
-              {/* Vertical List of Items */}
-              <div className="flex flex-col gap-3 flex-1 border-l border-gray-200 pl-8">
-                {/* Marketing */}
-                <div className="flex items-center justify-between">
-                   <span className="text-sm text-gray-600">营销折扣</span>
-                   <span className="text-lg font-bold text-gray-800">¥{marketingDiscount}万</span>
-                </div>
-                
-                {/* Labor */}
-                <div>
-                   <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">用户中心人工支出</span>
-                      <span className="text-lg font-bold text-gray-800">¥{laborCostTotal}万</span>
-                   </div>
-                   <div className="text-xs text-gray-400 mt-1 text-right space-x-3">
-                      <span>城市总: ¥{laborCity}万</span>
-                      <span>会员运营/品控: ¥{laborOps}万</span>
-                   </div>
-                </div>
-              </div>
+          <div className="hidden lg:block w-px bg-gray-200 self-stretch"></div>
+          <div className="flex-1 z-10 flex flex-col justify-center">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-gray-600">预算使用（2025年1-9月）</div>
+              {(() => {
+                const total = BusinessTargets.turnover.budget?.total || 0;
+                const used = BusinessTargets.turnover.budget?.used || 0;
+                const ratio = total > 0 ? (used / total) * 100 : 0;
+                return <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#a40035]/10 text-[#a40035] font-medium">费用占比 {ratio.toFixed(1)}%</span>;
+              })()}
             </div>
-
-            {/* Single Progress Bar */}
-            <div>
-               <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                  <div className="bg-[#a40035] h-2 rounded-full" style={{ width: `${expenseRatio}%` }}></div>
-               </div>
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex flex-col min-w-0">
+                <div className="text-3xl xl:text-4xl font-bold text-[#a40035] whitespace-nowrap">
+                  {(() => {
+                    const used = BusinessTargets.turnover.budget?.used || 0;
+                    return `¥${Number(used).toFixed(1)}万`;
+                  })()}
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-1 whitespace-nowrap">
+                    <span>总预算:</span>
+                    <span className="font-semibold text-gray-700">
+                      {(() => {
+                        const total = BusinessTargets.turnover.budget?.total || 0;
+                        return `¥${Number(total).toFixed(1)}万`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 max-w-[120px] flex flex-col justify-end">
+                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <span>进度</span>
+                  {(() => {
+                    const total = BusinessTargets.turnover.budget?.total || 0;
+                    const used = BusinessTargets.turnover.budget?.used || 0;
+                    const p = total > 0 ? (used / total) * 100 : 0;
+                    return <span>{p.toFixed(1)}%</span>;
+                  })()}
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full">
+                  {(() => {
+                    const total = BusinessTargets.turnover.budget?.total || 0;
+                    const used = BusinessTargets.turnover.budget?.used || 0;
+                    const p = total > 0 ? Math.max(0, Math.min(100, (used / total) * 100)) : 0;
+                    return <div className="h-2 bg-[#a40035]" style={{ width: `${p}%` }}></div>;
+                  })()}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -264,47 +236,34 @@ const VolumeDecompositionContainer = () => {
   };
 
   const renderTrendChart = () => {
-    // Data Generation
-    const months = Array.from({length: 12}, (_, i) => `25年${i+1}月`);
-    
-    let values, valuesYoY, title, unit, yAxisFormatter;
-
-    if (volumeTrendData && volumeTrendData.length > 0) {
-      const sorted = [...volumeTrendData].sort((a, b) => a.month - b.month);
-      values = sorted.map(d => parseFloat(d.current_value));
-      valuesYoY = sorted.map(d => parseFloat(d.last_year_value));
-    } else {
-      // Mock Fallback
-      // Daily Avg Base Data (Mean ~6000)
-      const base2025 = [5842, 5920, 6105, 6050, 6310, 6200, 5900, 5850, 6150, 6400, 6100, 5950];
-      const base2024 = base2025.map(v => Math.round(v * 0.95 + (Math.random() * 200 - 100)));
-
-      if (trendMetric === 'daily') {
-        values = base2025;
-        valuesYoY = base2024;
-      } else {
-        // Cumulative Sum based on varying monthly days
-        const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        const calculateCumulative = (dailyAvgs) => {
-          let cum = 0;
-          return dailyAvgs.map((avg, i) => {
-            cum += avg * daysInMonth[i];
-            return cum;
-          });
-        };
-        values = calculateCumulative(base2025);
-        valuesYoY = calculateCumulative(base2024);
-      }
-    }
+    let values = [], valuesYoY = [], months = [], title, unit, yAxisFormatter;
 
     if (trendMetric === 'daily') {
       title = "天均客次量趋势";
       unit = "人次";
       yAxisFormatter = (v) => Math.round(v).toLocaleString();
+      if (dailyAvgVisitMonthlyData && dailyAvgVisitMonthlyData.length > 0) {
+        const sorted = [...dailyAvgVisitMonthlyData].slice(0, 12).sort((a, b) => a.month.localeCompare(b.month));
+        months = sorted.map(d => {
+          const [y, m] = String(d.month).split('-');
+          return `${String(y).slice(-2)}年${Number(m)}月`;
+        });
+        values = sorted.map(d => Number(d.daily_avg_visits));
+        valuesYoY = sorted.map(d => Number(d.last_year_daily_avg_visits));
+      }
     } else {
       title = "年度累计客次量趋势";
       unit = "人次";
       yAxisFormatter = (v) => Math.round(v).toLocaleString();
+      if (cumVisitMonthlyData && cumVisitMonthlyData.length > 0) {
+        const sorted = [...cumVisitMonthlyData].slice(0, 12).sort((a, b) => a.month.localeCompare(b.month));
+        months = sorted.map(d => {
+          const [y, m] = String(d.month).split('-');
+          return `${String(y).slice(-2)}年${Number(m)}月`;
+        });
+        values = sorted.map(d => Number(d.ytd_cumulative_visits));
+        valuesYoY = sorted.map(d => Number(d.last_year_ytd_cumulative_visits));
+      }
     }
 
     return (
@@ -380,28 +339,13 @@ const VolumeDecompositionContainer = () => {
       review_rate: "主动评价率"
     };
 
-    // Mock Trend Data for City
     const months = Array.from({length: 12}, (_, i) => `25年${i+1}月`);
     let trendValues = [];
-    
     if (modalTrendData && modalTrendData.length > 0) {
-      // Assuming modalTrendData returns [{month: 1, value: 123}, ...]
-      // We need to map it to 12 months
-      trendValues = months.map((_, i) => {
-        const match = modalTrendData.find(d => d.month === (i + 1));
-        return match ? parseFloat(match.value) : 0;
-      });
-    } else {
-      // Mock Fallback
-      if (influenceMetric === 'duration') trendValues = months.map(() => Math.floor(280 + Math.random() * 40));
-      else if (influenceMetric === 'compliance') trendValues = months.map(() => parseFloat((15 + Math.random() * 20).toFixed(2)));
-      else if (influenceMetric === 'utilization') trendValues = months.map(() => parseFloat((2.5 + Math.random()).toFixed(2)));
-      else if (influenceMetric === 'active_members') trendValues = months.map(() => Math.floor(8000 + Math.random() * 4000));
-      else if (influenceMetric === 'churn_rate') trendValues = months.map(() => parseFloat((2 + Math.random() * 4).toFixed(2)));
-      else trendValues = months.map(() => parseFloat((60 + Math.random() * 20).toFixed(2)));
+      const normalized = [...modalTrendData].sort((a, b) => a.month - b.month).slice(0, 12);
+      trendValues = normalized.map(d => Number(d.value));
     }
 
-    // Mock Store Data
     let storeData = [];
     if (modalStoreData && modalStoreData.length > 0) {
       // Pivot fetched data
@@ -414,31 +358,6 @@ const VolumeDecompositionContainer = () => {
         storeMap[d.store_name][`m${d.month}`] = d.value;
       });
       storeData = Object.values(storeMap);
-    } else {
-      // Mock Fallback
-      const storeList = cityStoreMap[selectedCity] || [];
-      storeData = storeList.map((storeName, i) => {
-        // Generate 12 months of data for each store
-        let rowData = {
-          key: i,
-          store: storeName,
-        };
-        
-        months.forEach((month, idx) => {
-           // Simulate data based on metric
-           let val;
-           if (influenceMetric === 'duration') val = 280 + Math.random() * 40;
-           else if (influenceMetric === 'compliance') val = 15 + Math.random() * 20;
-           else if (influenceMetric === 'utilization') val = 2.5 + Math.random();
-           else if (influenceMetric === 'active_members') val = 800 + Math.random() * 400; // Store level is smaller
-           else if (influenceMetric === 'churn_rate') val = 2 + Math.random() * 4;
-           else val = 60 + Math.random() * 20; // review_rate
-           
-           rowData[`m${idx+1}`] = val;
-        });
-        
-        return rowData;
-      });
     }
 
     const getMetricConfig = () => {
@@ -461,18 +380,21 @@ const VolumeDecompositionContainer = () => {
         title: month,
         dataIndex: `m${idx+1}`,
         render: (val) => {
-           let displayVal = val;
-           if (influenceMetric === 'duration' || influenceMetric === 'active_members') {
-              displayVal = Math.round(val).toLocaleString();
-           } else if (influenceMetric === 'utilization') {
-              displayVal = val.toFixed(2);
-           } else {
-              displayVal = `${val.toFixed(2)}%`;
+           const num = Number(val);
+           let displayVal = '—';
+           if (Number.isFinite(num)) {
+             if (influenceMetric === 'duration' || influenceMetric === 'active_members') {
+               displayVal = Math.round(num).toLocaleString();
+             } else if (influenceMetric === 'utilization') {
+               displayVal = num.toFixed(2);
+             } else {
+               displayVal = `${num.toFixed(2)}%`;
+             }
            }
 
            let colorClass = 'text-gray-700';
            if (influenceMetric !== 'active_members') {
-              colorClass = config.isGood(val) ? 'text-red-600 font-bold' : 'text-gray-700';
+              colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-red-600 font-bold' : 'text-gray-700';
            }
            return <span className={colorClass}>{displayVal}</span>;
         }
@@ -499,8 +421,10 @@ const VolumeDecompositionContainer = () => {
                 xLabels={months}
                 height={300}
                 valueFormatter={(v) => {
-                   if (influenceMetric === 'duration' || influenceMetric === 'active_members') return Math.round(v).toLocaleString();
-                   return influenceMetric === 'utilization' ? v.toFixed(2) : `${v.toFixed(2)}%`;
+                   const num = Number(v);
+                   if (!Number.isFinite(num)) return '—';
+                   if (influenceMetric === 'duration' || influenceMetric === 'active_members') return Math.round(num).toLocaleString();
+                   return influenceMetric === 'utilization' ? num.toFixed(2) : `${num.toFixed(2)}%`;
                 }}
               />
             </div>
@@ -534,25 +458,6 @@ const VolumeDecompositionContainer = () => {
          map[item.city][`m${item.month}`] = item.value;
       });
       cityData = Object.values(map);
-    } else {
-      // Mock Data Generation
-      cityData = cities.map((city, index) => {
-        let rowData = { key: index, city };
-        
-        months.forEach((_, idx) => {
-           let val;
-           if (influenceMetric === 'duration') val = 280 + Math.random() * 40;
-           else if (influenceMetric === 'compliance') val = 15 + Math.random() * 20;
-           else if (influenceMetric === 'utilization') val = 2.5 + Math.random();
-           else if (influenceMetric === 'active_members') val = 5000 + Math.random() * 10000;
-           else if (influenceMetric === 'churn_rate') val = 2 + Math.random() * 4;
-           else val = 60 + Math.random() * 20; // review_rate
-           
-           rowData[`m${idx+1}`] = val;
-        });
-
-        return rowData;
-      });
     }
 
     const getMetricConfig = () => {
@@ -590,22 +495,24 @@ const VolumeDecompositionContainer = () => {
         title: month,
         dataIndex: `m${idx+1}`,
         render: (val) => {
-           let displayVal = val;
-           if (influenceMetric === 'duration' || influenceMetric === 'active_members') {
-              displayVal = Math.round(val).toLocaleString();
-              // Remove unit for dense table, or keep if preferred. User didn't specify, but dense is better for 12 cols.
-           } else if (influenceMetric === 'utilization') {
-              displayVal = val.toFixed(2);
-           } else {
-              displayVal = `${val.toFixed(2)}%`;
+           const num = Number(val);
+           let displayVal = '—';
+           if (Number.isFinite(num)) {
+             if (influenceMetric === 'duration' || influenceMetric === 'active_members') {
+               displayVal = Math.round(num).toLocaleString();
+             } else if (influenceMetric === 'utilization') {
+               displayVal = num.toFixed(2);
+             } else {
+               displayVal = `${num.toFixed(2)}%`;
+             }
            }
 
            let colorClass = 'text-gray-700';
             if (influenceMetric !== 'active_members') {
-               colorClass = config.isGood(val) ? 'text-red-600 font-bold' : 'text-gray-700';
+               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-red-600 font-bold' : 'text-gray-700';
             }
  
-            return <span className={colorClass}>{displayVal}</span>;
+           return <span className={colorClass}>{displayVal}</span>;
         }
       }))
     ];
@@ -620,96 +527,81 @@ const VolumeDecompositionContainer = () => {
 
   const renderInfluenceAnalysisChart = () => {
     const months = Array.from({length: 12}, (_, i) => `25年${i+1}月`);
-    let values, valuesYoY, title, unit, yAxisFormatter, valueFormatter;
+    let values = [], valuesYoY = [], title, unit, yAxisFormatter, valueFormatter;
+
+    // Set titles and formatters based on metric
+    if (influenceMetric === 'duration') {
+      title = "推拿师天均服务时长";
+      unit = "分钟";
+      yAxisFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? Math.round(num) : '—';
+      };
+      valueFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? `${Math.round(num)}分钟` : '—';
+      };
+    } else if (influenceMetric === 'compliance') {
+      title = "推拿师天均服务时长不达标占比";
+      unit = "%";
+      yAxisFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—';
+      };
+      valueFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—';
+      };
+    } else if (influenceMetric === 'utilization') {
+      title = "床位利用率";
+      unit = "";
+      yAxisFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? Number(num.toFixed(2)) : '—';
+      };
+      valueFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? Number(num.toFixed(2)) : '—';
+      };
+    } else if (influenceMetric === 'active_members') {
+      title = "活跃会员数";
+      unit = "人";
+      yAxisFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? (num / 10000).toFixed(1) + '万' : '—';
+      };
+      valueFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? num.toLocaleString() : '—';
+      };
+    } else if (influenceMetric === 'churn_rate') {
+      title = "会员流失率";
+      unit = "%";
+      yAxisFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—';
+      };
+      valueFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—';
+      };
+    } else { // review_rate
+      title = "主动评价率";
+      unit = "%";
+      yAxisFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—';
+      };
+      valueFormatter = (v) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—';
+      };
+    }
 
     if (influenceTrendData && influenceTrendData.length > 0) {
       const sorted = [...influenceTrendData].sort((a, b) => a.month - b.month);
       values = sorted.map(d => parseFloat(d.current_value));
       valuesYoY = sorted.map(d => parseFloat(d.last_year_value));
-      
-      // Basic formatting based on metric
-      if (influenceMetric === 'duration') {
-        title = "推拿师天均服务时长";
-        unit = "分钟";
-        yAxisFormatter = (v) => Math.round(v);
-        valueFormatter = (v) => `${Math.round(v)}分钟`;
-      } else if (influenceMetric === 'compliance') {
-        title = "推拿师天均服务时长不达标占比";
-        unit = "%";
-        yAxisFormatter = (v) => `${Number(v.toFixed(2))}%`;
-        valueFormatter = (v) => `${Number(v.toFixed(2))}%`;
-      } else if (influenceMetric === 'utilization') {
-        title = "床位利用率";
-        unit = "";
-        yAxisFormatter = (v) => Number(v.toFixed(2));
-        valueFormatter = (v) => Number(v.toFixed(2));
-      } else if (influenceMetric === 'active_members') {
-        title = "活跃会员数";
-        unit = "人";
-        yAxisFormatter = (v) => (v / 10000).toFixed(1) + '万';
-        valueFormatter = (v) => v.toLocaleString();
-      } else if (influenceMetric === 'churn_rate') {
-        title = "会员流失率";
-        unit = "%";
-        yAxisFormatter = (v) => `${Number(v.toFixed(2))}%`;
-        valueFormatter = (v) => `${Number(v.toFixed(2))}%`;
-      } else { // review_rate
-        title = "主动评价率";
-        unit = "%";
-        yAxisFormatter = (v) => `${Number(v.toFixed(2))}%`;
-        valueFormatter = (v) => `${Number(v.toFixed(2))}%`;
-      }
-    } else {
-      // Mock Fallback
-      if (influenceMetric === 'duration') {
-        title = "推拿师天均服务时长";
-        unit = "分钟";
-        // Target 300, fluctuate around it
-        values = [292, 305, 310, 288, 302, 308, 296, 304, 312, 298, 300, 306];
-        valuesYoY = values.map(v => Math.round(v * 0.98 + (Math.random() * 10 - 5)));
-        yAxisFormatter = (v) => Math.round(v);
-        valueFormatter = (v) => `${Math.round(v)}分钟`;
-      } else if (influenceMetric === 'compliance') {
-        title = "推拿师天均服务时长不达标占比";
-        unit = "%";
-        // Target 25% (<= 25% is good). Simulate around 20-30%
-        values = [22.5, 24.0, 26.5, 25.0, 28.2, 23.5, 21.0, 25.5, 27.0, 24.5, 22.0, 23.5];
-        valuesYoY = values.map(v => parseFloat((v + (Math.random() * 4 - 2)).toFixed(1)));
-        yAxisFormatter = (v) => `${Number(v.toFixed(2))}%`;
-        valueFormatter = (v) => `${Number(v.toFixed(2))}%`;
-      } else if (influenceMetric === 'utilization') { // utilization
-        title = "床位利用率";
-        unit = "";
-        // Target 3 (>3 is good). Simulate around 2.5 - 3.5
-        values = [2.8, 2.9, 3.1, 3.2, 3.0, 3.3, 3.1, 2.9, 3.0, 3.2, 3.1, 3.0];
-        valuesYoY = values.map(v => parseFloat((v - 0.1 + (Math.random() * 0.2 - 0.1)).toFixed(2)));
-        yAxisFormatter = (v) => Number(v.toFixed(2));
-        valueFormatter = (v) => Number(v.toFixed(2));
-      } else if (influenceMetric === 'active_members') {
-        title = "活跃会员数";
-        unit = "人";
-        // Target ~110,000. Simulate around 108k - 115k
-        values = [108500, 109200, 110500, 111000, 112500, 111800, 110200, 109800, 111200, 113500, 112000, 111500];
-        valuesYoY = values.map(v => Math.round(v * 0.9 + (Math.random() * 2000 - 1000)));
-        yAxisFormatter = (v) => (v / 10000).toFixed(1) + '万';
-        valueFormatter = (v) => v.toLocaleString();
-      } else if (influenceMetric === 'churn_rate') {
-        title = "会员流失率";
-        unit = "%";
-        // Target < 5%. Simulate around 2% - 4.8%
-        values = [3.2, 3.5, 2.8, 3.0, 4.2, 3.8, 3.1, 2.9, 3.5, 4.5, 3.6, 3.3];
-        valuesYoY = values.map(v => parseFloat((v + (Math.random() * 1 - 0.5)).toFixed(1)));
-        yAxisFormatter = (v) => `${Number(v.toFixed(2))}%`;
-        valueFormatter = (v) => `${Number(v.toFixed(2))}%`;
-      } else { // review_rate
-        title = "主动评价率";
-        unit = "%";
-        // Target ~70%. Simulate around 65% - 75%
-        values = [68.5, 69.2, 70.5, 71.0, 69.8, 72.5, 71.2, 70.8, 69.5, 71.8, 70.2, 69.9];
-        valuesYoY = values.map(v => parseFloat((v - 2 + (Math.random() * 3 - 1.5)).toFixed(1)));
-        yAxisFormatter = (v) => `${Number(v.toFixed(2))}%`;
-        valueFormatter = (v) => `${Number(v.toFixed(2))}%`;
-      }
     }
 
     return (

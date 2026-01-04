@@ -62,19 +62,21 @@ const PriceDecompositionContainer = () => {
   const { data: newEmpCityMonthly } = useFetchData('getNewEmpReturnComplianceCityMonthly');
   const { data: newEmpStoreAnnual } = useFetchData('getNewEmpReturnComplianceStoreAnnual');
 
+  // Bed Staff Ratio Data (Added for configRatio metric)
+  const { data: bedStaffRatioAnnual } = useFetchData('getBedStaffRatioAnnual');
+  const { data: bedStaffRatioWeekly } = useFetchData('getBedStaffRatioWeekly');
+  const { data: bedStaffRatioCityAnnual } = useFetchData('getBedStaffRatioCityAnnual');
+  const { data: bedStaffRatioCityWeekly } = useFetchData('getBedStaffRatioCityWeekly');
+  const { data: bedStaffRatioStoreAnnual } = useFetchData('getBedStaffRatioStoreAnnual');
+  // 推拿师产值达标率（月度/城市月度/门店月度）
+  const { data: empOutputMonthly } = useFetchData('getEmployeeOutputStandardRateMonthly');
+  const { data: empOutputCityMonthly } = useFetchData('getEmployeeOutputStandardRateCityMonthly');
+  const { data: empOutputStoreMonthly } = useFetchData('getEmployeeOutputStandardRateStoreMonthly');
+
   const [modalContextCity, setModalContextCity] = useState(null);
   
   // Fetch modal data
-  const { data: modalTrendData } = useFetchData('getCityModalTrend', { 
-    entity: selectedCity, 
-    city: modalContextCity, 
-    metric: procMetric 
-  });
-  const { data: modalStoreData } = useFetchData('getCityModalStoreData', { 
-    entity: selectedCity, 
-    city: modalContextCity, 
-    metric: procMetric 
-  });
+  
 
   const impactInfos = useMemo(() => {
     const config = BusinessTargets.turnover.impactAnalysis;
@@ -122,8 +124,20 @@ const PriceDecompositionContainer = () => {
         name: '床位人员配置比',
         unit: '',
         target: config.bedStaffRatio.target,
-        actual: 0.57,
-        last: 0.52,
+        actual: (() => {
+          if (bedStaffRatioAnnual && bedStaffRatioAnnual.length > 0) {
+            const latest = bedStaffRatioAnnual[0]; // Already sorted DESC by year
+            return latest.current_year_ratio != null ? Number(latest.current_year_ratio) : '';
+          }
+          return '';
+        })(),
+        last: (() => {
+          if (bedStaffRatioAnnual && bedStaffRatioAnnual.length > 0) {
+            const latest = bedStaffRatioAnnual[0];
+            return latest.last_year_ratio != null ? Number(latest.last_year_ratio) : '';
+          }
+          return '';
+        })(),
         budget: {
           wageBudget: formatBudget(config.bedStaffRatio.budget.wage),
           otherBudget: formatBudget(config.bedStaffRatio.budget.other),
@@ -170,8 +184,24 @@ const PriceDecompositionContainer = () => {
         name: '推拿师产值达标率',
         unit: '%',
         target: config.therapistOutput.target,
-        actual: 79.0,
-        last: null,
+        actual: (() => {
+          if (empOutputMonthly && empOutputMonthly.length > 0) {
+            const sorted = [...empOutputMonthly].sort((a, b) => (a.stat_month > b.stat_month ? 1 : -1));
+            const latest = sorted[sorted.length - 1];
+            const val = latest?.output_standard_rate_pct;
+            return val != null ? Number(val) : null;
+          }
+          return null;
+        })(),
+        last: (() => {
+          if (empOutputMonthly && empOutputMonthly.length > 0) {
+            const sorted = [...empOutputMonthly].sort((a, b) => (a.stat_month > b.stat_month ? 1 : -1));
+            const latest = sorted[sorted.length - 1];
+            const val = latest?.prev_year_output_standard_rate_pct;
+            return val != null ? Number(val) : null;
+          }
+          return null;
+        })(),
         budget: {
           wageBudget: formatBudget(config.therapistOutput.budget.wage),
           otherBudget: formatBudget(config.therapistOutput.budget.other),
@@ -184,7 +214,7 @@ const PriceDecompositionContainer = () => {
         salaryShare: '46.5%'
       }
     };
-  }, [cityAnnualPriceData, repurchaseAnnual, newEmpAnnual]);
+  }, [cityAnnualPriceData, repurchaseAnnual, newEmpAnnual, bedStaffRatioAnnual, empOutputMonthly]);
 
   useEffect(() => {
     // 强制刷新 impactInfos 数据，以确保 repurchaseAnnual 变化时组件感知到
@@ -513,6 +543,28 @@ const PriceDecompositionContainer = () => {
         setProcValues([]);
         setProcValuesLY([]);
       }
+    } else if (procMetric === 'configRatio') {
+      if (bedStaffRatioWeekly && bedStaffRatioWeekly.length > 0) {
+        // Sort by year and week
+        const sorted = [...bedStaffRatioWeekly].sort((a, b) => {
+          if (a.stat_year !== b.stat_year) return a.stat_year - b.stat_year;
+          return a.stat_week - b.stat_week;
+        });
+        // Take last 12
+        const last12 = sorted.slice(-12);
+        setProcValues(last12.map(d => Number(d.current_week_ratio)));
+        setProcValuesLY(last12.map(d => Number(d.last_year_same_week_ratio)));
+        
+        const dynamicWeeks = last12.map(d => ({
+          label: `第${String(d.stat_week).padStart(2, '0')}周`,
+          weekNo: d.stat_week,
+          year: d.stat_year
+        }));
+        setProcWeeks(dynamicWeeks);
+      } else {
+        setProcValues([]);
+        setProcValuesLY([]);
+      }
     } else if (procMetric === 'newEmpReturn') {
       if (newEmpMonthly && newEmpMonthly.length > 0) {
         const sorted = [...newEmpMonthly].sort((a, b) => (a.report_month > b.report_month ? 1 : -1));
@@ -523,6 +575,22 @@ const PriceDecompositionContainer = () => {
           label: d.report_month,
           weekNo: Number(String(d.report_month).slice(5)), // use month as weekNo for label consistency
           year: Number(String(d.report_month).slice(0, 4))
+        }));
+        setProcWeeks(dynamicMonths);
+      } else {
+        setProcValues([]);
+        setProcValuesLY([]);
+      }
+    } else if (procMetric === 'therapistYield') {
+      if (empOutputMonthly && empOutputMonthly.length > 0) {
+        const sorted = [...empOutputMonthly].sort((a, b) => (a.stat_month > b.stat_month ? 1 : -1));
+        const last12 = sorted.slice(-12);
+        setProcValues(last12.map(d => Number(d.output_standard_rate_pct)));
+        setProcValuesLY(last12.map(d => Number(d.prev_year_output_standard_rate_pct)));
+        const dynamicMonths = last12.map(d => ({
+          label: d.stat_month,
+          weekNo: Number(String(d.stat_month).slice(5)),
+          year: Number(String(d.stat_month).slice(0, 4))
         }));
         setProcWeeks(dynamicMonths);
       } else {
@@ -671,6 +739,114 @@ const PriceDecompositionContainer = () => {
       } else {
         setProcCityRows([]);
       }
+    } else if (procMetric === 'configRatio') {
+      const cityCol = { 
+        key: 'city', 
+        title: '城市', 
+        dataIndex: 'city',
+        render: (val) => (
+          <span 
+            className="text-[#a40035] cursor-pointer hover:underline"
+            onClick={() => openCityModal(val)}
+          >
+            {val}
+          </span>
+        )
+      };
+      
+      const cols = [
+        cityCol,
+        { key: 'current_year_ratio', title: '今年床位人员配置比', dataIndex: 'current_year_ratio',
+          render: (val, record) => {
+             if (val == null) return '-';
+             const num = parseFloat(String(val)) || 0;
+             const target = (BusinessTargets && BusinessTargets.turnover && BusinessTargets.turnover.impactAnalysis.bedStaffRatio.target) || 0.7;
+             const isHigh = num >= target;
+             return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+          }
+        },
+        { key: 'target', title: '目标', dataIndex: 'target', render: () => (BusinessTargets && BusinessTargets.turnover && BusinessTargets.turnover.impactAnalysis.bedStaffRatio.target) || 0.7 },
+        { key: 'last_year_ratio', title: '去年床位人员配置比', dataIndex: 'last_year_ratio' },
+        { key: 'yoy_difference', title: '同比', dataIndex: 'yoy_difference',
+           render: (val) => {
+              if (val == null) return '-';
+              const num = parseFloat(val);
+              if (isNaN(num)) return val;
+              const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+              const sign = num > 0 ? '+' : '';
+              return <span className={cls}>{sign}{val}</span>;
+           }
+        },
+        { key: 'budget_value', title: '预算值', dataIndex: 'budget_value', render: () => '' },
+        { key: 'budget_used', title: '预算消耗金额', dataIndex: 'budget_used', render: () => '' },
+        { key: 'budget_usage_rate', title: '预算消耗率', dataIndex: 'budget_usage_rate', render: () => '' }
+      ];
+      
+      setProcColumnsDyn(cols);
+
+      if (bedStaffRatioCityAnnual && Array.isArray(bedStaffRatioCityAnnual) && bedStaffRatioCityAnnual.length > 0) {
+         const validData = bedStaffRatioCityAnnual.filter(d => d && d.stat_year != null);
+         if (validData.length > 0) {
+             const maxYear = Math.max(...validData.map(d => Number(d.stat_year)));
+             const latestData = validData.filter(d => Number(d.stat_year) === maxYear);
+             setProcCityRows(latestData.map((r, i) => ({ 
+                key: i, 
+                city: r.city_name,
+                ...r 
+             })));
+         } else {
+             setProcCityRows([]);
+         }
+      } else {
+         setProcCityRows([]);
+      }
+
+    } else if (procMetric === 'therapistYield') {
+      const cityCol = { 
+        key: 'city', 
+        title: '城市', 
+        dataIndex: 'city',
+        render: (val) => (
+          <span 
+            className="text-[#a40035] cursor-pointer hover:underline"
+            onClick={() => openCityModal(val)}
+          >
+            {val}
+          </span>
+        )
+      };
+      const cols = [
+        cityCol,
+        { key: 'total_massagists', title: '推拿师人数', dataIndex: 'total_massagists' },
+        { key: 'standard_count', title: '产值达标人数', dataIndex: 'standard_count' },
+        { key: 'output_standard_rate_pct', title: '推拿师产值达标率', dataIndex: 'output_standard_rate_pct',
+          render: (val) => val != null ? `${Number(val).toFixed(2)}%` : ''
+        },
+        { key: 'prev_year_output_standard_rate_pct', title: '上月产值达标率', dataIndex: 'prev_year_output_standard_rate_pct',
+          render: (val) => val != null ? `${Number(val).toFixed(2)}%` : ''
+        },
+        { key: 'yoy_change_pct_point', title: '同比值', dataIndex: 'yoy_change_pct_point',
+          render: (val) => val != null ? `${Number(val).toFixed(2)}%` : ''
+        }
+      ];
+      setProcColumnsDyn(cols);
+      if (empOutputCityMonthly && empOutputCityMonthly.length > 0) {
+        const sorted = [...empOutputCityMonthly].sort((a, b) => (a.stat_month > b.stat_month ? 1 : -1));
+        const latestMonth = sorted[sorted.length - 1].stat_month;
+        const latestRows = empOutputCityMonthly.filter(d => d.stat_month === latestMonth);
+        const rows = latestRows.map((d, idx) => ({
+          key: d.statistic_city_name || idx,
+          city: d.statistic_city_name,
+          total_massagists: d.total_massagists,
+          standard_count: d.standard_count,
+          output_standard_rate_pct: d.output_standard_rate_pct,
+          prev_year_output_standard_rate_pct: d.prev_year_output_standard_rate_pct,
+          yoy_change_pct_point: d.yoy_change_pct_point
+        }));
+        setProcCityRows(rows);
+      } else {
+        setProcCityRows([]);
+      }
     } else if (fetchedCityData && fetchedCityData.length > 0) {
       const cityCol = { 
         key: 'city', 
@@ -701,40 +877,11 @@ const PriceDecompositionContainer = () => {
            { key: 'target', title: '目标', dataIndex: 'target' },
            { key: 'status', title: '状态', dataIndex: 'status' }
         ];
-      } else if (procMetric === 'configRatio') {
-         cols = [
-           cityCol,
-           { key: 'value', title: '今年床位人员配置比', dataIndex: 'value',
-             render: (val, record) => {
-                const num = parseFloat(String(val)) || 0;
-                const target = parseFloat(String(record.target)) || 0.5;
-                const isHigh = num >= target;
-                return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
-             }
-           },
-           { key: 'target', title: '目标', dataIndex: 'target' },
-           { key: 'status', title: '状态', dataIndex: 'status' }
-         ];
       } else if (procMetric === 'newEmpReturn') {
          // 已在上方专用分支处理
          cols = [];
       } else if (procMetric === 'therapistYield') {
-         cols = [
-            cityCol,
-            { key: 'total_therapists', title: '在职推拿师人数', dataIndex: 'total_therapists' },
-            { key: 'qualified_therapists', title: '产值达标推拿师人数', dataIndex: 'qualified_therapists' },
-            { 
-              key: 'value', 
-              title: '推拿师产值达标率', 
-              dataIndex: 'value',
-              render: (val) => {
-                const num = parseFloat(String(val).replace('%', '')) || 0;
-                const target = BusinessTargets.turnover.impactAnalysis.therapistOutput.target || 80;
-                const isHigh = num >= target;
-                return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
-              }
-            }
-         ];
+         cols = [];
       } else {
         cols = [
           cityCol,
@@ -756,7 +903,7 @@ const PriceDecompositionContainer = () => {
       setProcCityRows([]);
       setProcColumnsDyn(procColumnsDefault);
     }
-  }, [fetchedTrendData, fetchedCityData, procMetric, repurchaseWeekly, repurchaseCityWeekly]);
+  }, [fetchedTrendData, fetchedCityData, procMetric, repurchaseWeekly, repurchaseCityWeekly, bedStaffRatioWeekly, bedStaffRatioCityAnnual, newEmpMonthly, newEmpCityAnnual, empOutputMonthly, empOutputCityMonthly]);
 
   const openCityModal = (cityName) => {
     setSelectedCity(cityName);
@@ -773,75 +920,62 @@ const PriceDecompositionContainer = () => {
   useEffect(() => {
     if (!isModalOpen || !selectedCity) return;
 
-    const seed = String(selectedCity || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-    const getFallbackStores = () => ['门店A', '门店B', '门店C', '门店D'];
-
     if (procMetric === 'configRatio' && !isPriceDecompositionModal) {
-      const weekRanges = buildLast12Weeks();
-      setWeeks(weekRanges);
-      
-      if (modalTrendData && modalTrendData.length > 0) {
-        const sorted = [...modalTrendData].sort((a,b) => a.week_num - b.week_num);
-        setWeeklyPrice(sorted.map(d => d.current_value));
-        setWeeklyPriceLY(sorted.map(d => d.last_year_value));
+      // 1. City Trend (Weekly)
+      if (bedStaffRatioCityWeekly && bedStaffRatioCityWeekly.length > 0) {
+         const cityTrend = bedStaffRatioCityWeekly.filter(d => d.city_name === selectedCity);
+         const sorted = [...cityTrend].sort((a, b) => {
+            if (a.stat_year !== b.stat_year) return a.stat_year - b.stat_year;
+            return a.stat_week - b.stat_week;
+         });
+         const last12 = sorted.slice(-12);
+         
+         setWeeklyPrice(last12.map(d => Number(d.current_week_ratio)));
+         setWeeklyPriceLY(last12.map(d => Number(d.last_year_same_week_ratio)));
+         
+         const dynamicWeeks = last12.map(d => ({
+            label: `第${String(d.stat_week).padStart(2, '0')}周`,
+            weekNo: d.stat_week,
+            year: d.stat_year
+         }));
+         setWeeks(dynamicWeeks);
       } else {
-        const N = weekRanges.length;
-        const currSeries = [], lastSeries = [];
-        for (let i = 0; i < N; i++) {
-          const t = i / N;
-          const target = 0.5;
-          const base = target + 0.04 * Math.sin(t * Math.PI * 2);
-          const ly = (target - 0.03) + 0.03 * Math.cos(t * Math.PI * 2);
-          const noise = (((i * 17) % 11) - 5) / 1000 + ((seed % 100) / 5000);
-          currSeries.push(Number(Math.max(0.4, Math.min(0.6, base + noise)).toFixed(2)));
-          lastSeries.push(Number(Math.max(0.4, Math.min(0.6, ly + noise * 0.6)).toFixed(2)));
-        }
-        setWeeklyPrice(currSeries);
-        setWeeklyPriceLY(lastSeries);
+         setWeeklyPrice([]);
+         setWeeklyPriceLY([]);
+         setWeeks([]);
       }
 
-      if (modalStoreData && modalStoreData.length > 0) {
-         const configRows = modalStoreData.map((row, idx) => ({
-           key: idx,
-           '门店名称': row.store_name,
-           '去年推拿师人数': row.last_therapists,
-           '去年床位数量': row.last_beds,
-           '去年床位人员配置比': row.last_ratio,
-           '今年推拿师人数': row.curr_therapists,
-           '今年床位数量': row.curr_beds,
-           '今年床位人员配置比': row.curr_ratio,
-           '同比': row.yoy
-        }));
-        setStoreRows(configRows);
+      // 2. Store Table (Annual)
+      if (bedStaffRatioStoreAnnual && bedStaffRatioStoreAnnual.length > 0) {
+         // Filter by city and find latest year
+         const cityStores = bedStaffRatioStoreAnnual.filter(d => d.city_name === selectedCity);
+         if (cityStores.length > 0) {
+             const maxYear = Math.max(...cityStores.map(d => d.stat_year));
+             const latestStores = cityStores.filter(d => d.stat_year === maxYear);
+             
+             const configRows = latestStores.map((row, idx) => ({
+               key: idx,
+               '门店名称': row.store_name,
+               '去年推拿师人数': '', // Not in SQL
+               '去年床位数量': '', // Not in SQL
+               '去年床位人员配置比': row.last_year_ratio,
+               '今年推拿师人数': row.staff_on_duty,
+               '今年床位数量': row.bed_count,
+               '今年床位人员配置比': row.current_year_ratio,
+               '同比': row.yoy_difference
+            }));
+            setStoreRows(configRows);
+         } else {
+             setStoreRows([]);
+         }
       } else {
-        const storeNames = getFallbackStores();
-        const configRows = storeNames.map((name, idx) => {
-          const sLast = 5 + (seed + idx * 7) % 10; 
-          const bLast = Math.floor(sLast * (0.5 + ((idx % 3) * 0.1)));
-          const rLast = bLast / sLast;
-          const sCurr = 5 + (seed + idx * 13) % 12; 
-          const bCurr = Math.floor(sCurr * (0.45 + ((idx % 5) * 0.05)));
-          const rCurr = bCurr / sCurr;
-          const yoy = rLast ? ((rCurr - rLast) / rLast) * 100 : 0;
-          return {
-            key: `${name}-${idx}`,
-            '门店名称': name,
-            '去年推拿师人数': sLast,
-            '去年床位数量': bLast,
-            '去年床位人员配置比': rLast.toFixed(2),
-            '今年推拿师人数': sCurr,
-            '今年床位数量': bCurr,
-            '今年床位人员配置比': rCurr.toFixed(2),
-            '同比': `${yoy > 0 ? '+' : ''}${yoy.toFixed(1)}%`
-          };
-        });
-        setStoreRows(configRows);
+        setStoreRows([]);
       }
       
       const storeCols = [
         { key: '门店名称', title: '门店名称', dataIndex: '门店名称' },
-        { key: '去年推拿师人数', title: '去年推拿师人数', dataIndex: '去年推拿师人数' },
-        { key: '去年床位数量', title: '去年床位数量', dataIndex: '去年床位数量' },
+        // { key: '去年推拿师人数', title: '去年推拿师人数', dataIndex: '去年推拿师人数' }, // Removed as not available in SQL easily without another join
+        // { key: '去年床位数量', title: '去年床位数量', dataIndex: '去年床位数量' }, // Removed as not available in SQL easily
         { key: '去年床位人员配置比', title: '去年床位人员配置比', dataIndex: '去年床位人员配置比' },
         { key: '今年推拿师人数', title: '今年推拿师人数', dataIndex: '今年推拿师人数' },
         { key: '今年床位数量', title: '今年床位数量', dataIndex: '今年床位数量' },
@@ -863,66 +997,66 @@ const PriceDecompositionContainer = () => {
           render: (val) => {
             const num = parseFloat(String(val).replace('%','')) || 0;
             const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
-            return <span className={cls}>{val}</span>;
+            const sign = num > 0 ? '+' : '';
+            return <span className={cls}>{sign}{val}</span>;
           }
         }
       ];
       setModalColumns(storeCols);
 
     } else if (procMetric === 'therapistYield' && !isPriceDecompositionModal) {
-       const months = Array.from({length: 12}, (_, i) => i + 1);
-       const monthRanges = months.map(m => ({
-          weekNo: m,
-          label: `2025年${m}月`,
-          start: `2025-${String(m).padStart(2,'0')}-01`,
-          end: `2025-${String(m).padStart(2,'0')}-28`
-       }));
-       setWeeks(monthRanges);
-
-       if (modalTrendData && modalTrendData.length > 0) {
-          const sorted = [...modalTrendData].sort((a,b) => a.week_num - b.week_num);
-          setWeeklyPrice(sorted.map(d => d.current_value));
-          setWeeklyPriceLY(sorted.map(d => d.last_year_value));
+       if (empOutputCityMonthly && empOutputCityMonthly.length > 0) {
+          const city = modalContextCity || selectedCity;
+          const cityData = empOutputCityMonthly.filter(d => d.statistic_city_name === city);
+          const sorted = cityData.sort((a, b) => (a.stat_month > b.stat_month ? 1 : -1));
+          const last12 = sorted.slice(-12);
+          const monthLabels = last12.map(d => ({
+            label: String(d.stat_month),
+            weekNo: Number(String(d.stat_month).slice(5)),
+            year: Number(String(d.stat_month).slice(0,4))
+          }));
+          setWeeks(monthLabels);
+          setWeeklyPrice(last12.map(d => Number(d.output_standard_rate_pct)));
+          setWeeklyPriceLY(last12.map(d => (d.prev_year_output_standard_rate_pct != null ? Number(d.prev_year_output_standard_rate_pct) : null)));
+          setWeeklyYoYRates(last12.map(d => (d.yoy_change_pct_point != null ? Number(d.yoy_change_pct_point) : null)));
        } else {
-          const base = procMetric === 'therapistYield' ? 80 : 85;
-          const currSeries = months.map((m, i) => Math.max(60, Math.min(100, base + ((seed + i * 17) % 21) - 10)));
-          const lastSeries = months.map((m, i) => Math.max(60, Math.min(100, (base-2) + ((seed + i * 11) % 19) - 9)));
-          setWeeklyPrice(currSeries);
-          setWeeklyPriceLY(lastSeries);
+          setWeeks([]);
+          setWeeklyPrice([]);
+          setWeeklyPriceLY([]);
+          setWeeklyYoYRates([]);
        }
 
-       let storeNames = getFallbackStores();
-       if (modalStoreData && modalStoreData.length > 0) {
-          const stores = new Set();
-          modalStoreData.forEach(d => stores.add(d.store_name));
-          if (stores.size > 0) storeNames = Array.from(stores);
+       if (empOutputStoreMonthly && empOutputStoreMonthly.length > 0) {
+          const city = modalContextCity || selectedCity;
+          const sorted = [...empOutputStoreMonthly].sort((a, b) => (a.stat_month > b.stat_month ? 1 : -1));
+          const latestMonth = sorted[sorted.length - 1].stat_month;
+          const filtered = empOutputStoreMonthly.filter(d => d.stat_month === latestMonth && d.statistics_city_name === city);
+          const rows = filtered.map((d, idx) => ({
+            key: d.store_code || idx,
+            '城市': d.statistics_city_name,
+            '门店编码': d.store_code,
+            '门店名称': d.store_name,
+            '推拿师人数': d.total_massagists,
+            '产值达标人数': d.standard_count,
+            '推拿师产值达标率': d.output_standard_rate_pct != null ? `${Number(d.output_standard_rate_pct).toFixed(2)}%` : '',
+            '上月产值达标率': d.prev_year_output_standard_rate_pct != null ? `${Number(d.prev_year_output_standard_rate_pct).toFixed(2)}%` : '',
+            '同比值': d.yoy_change_pct_point != null ? `${Number(d.yoy_change_pct_point).toFixed(2)}%` : ''
+          }));
+          const storeCols = [
+            { key: '城市', title: '城市', dataIndex: '城市' },
+            { key: '门店编码', title: '门店编码', dataIndex: '门店编码' },
+            { key: '门店名称', title: '门店名称', dataIndex: '门店名称' },
+            { key: '推拿师人数', title: '推拿师人数', dataIndex: '推拿师人数' },
+            { key: '产值达标人数', title: '产值达标人数', dataIndex: '产值达标人数' },
+            { key: '推拿师产值达标率', title: '推拿师产值达标率', dataIndex: '推拿师产值达标率' },
+            { key: '上月产值达标率', title: '上月产值达标率', dataIndex: '上月产值达标率' },
+            { key: '同比值', title: '同比值', dataIndex: '同比值' }
+          ];
+          setModalColumns(storeCols);
+          setStoreRows(rows);
+       } else {
+          setStoreRows([]);
        }
-       
-       const storeCols = [
-        { key: 'month', title: '月份', dataIndex: 'month', fixed: 'left', width: 100 },
-        ...storeNames.map(store => ({
-          key: store,
-          title: store,
-          dataIndex: store,
-          render: (val) => {
-             const num = parseFloat(String(val).replace('%', '')) || 0;
-             const isHigh = num >= 80;
-             return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
-          }
-        }))
-       ];
-       setModalColumns(storeCols);
-       
-       const tableRows = months.map(m => {
-          const row = { key: `m-${m}`, month: `2025年${m}月` };
-          storeNames.forEach((store, sIdx) => {
-            const rateSeed = seed + m * 100 + sIdx * 10;
-            const rate = 70 + (rateSeed % 31); 
-            row[store] = `${rate.toFixed(1)}%`;
-          });
-          return row;
-       });
-       setStoreRows(tableRows);
     } else if (procMetric === 'newEmpReturn' && !isPriceDecompositionModal) {
        // 上半部分：城市维度近12个月趋势
        if (newEmpCityMonthly && newEmpCityMonthly.length > 0) {
@@ -1144,10 +1278,10 @@ const PriceDecompositionContainer = () => {
        
        setModalColumns(columnsForStore);
        setStoreRows(processedStores);
-    }
-  }, [isModalOpen, selectedCity, modalContextCity, procMetric, modalTrendData, modalStoreData, tableData, cityWeeklyData, storeWeeklyData, isPriceDecompositionModal, repurchaseCityWeekly, repurchaseStoreWeekly]);
+   }
+  }, [isModalOpen, selectedCity, modalContextCity, procMetric, tableData, cityWeeklyData, storeWeeklyData, isPriceDecompositionModal, repurchaseCityWeekly, repurchaseStoreWeekly, bedStaffRatioCityWeekly, bedStaffRatioStoreAnnual, empOutputCityMonthly, empOutputStoreMonthly]);
 
-  const [showReminder, setShowReminder] = useState(false);
+ const [showReminder, setShowReminder] = useState(false);
   const [reminderText, setReminderText] = useState('');
   const [isReminderLoading, setIsReminderLoading] = useState(false);
 
@@ -1388,7 +1522,7 @@ const PriceDecompositionContainer = () => {
                   const actual = impactInfos[procMetric]?.actual;
                   const unit = impactInfos[procMetric]?.unit;
                   if (actual === null || actual === undefined) return '—';
-                  return unit === '%' ? `${Number(actual).toFixed(procMetric === 'newEmpReturn' ? 2 : 0)}%` : `${actual}`;
+                  return unit === '%' ? `${Number(actual).toFixed((procMetric === 'newEmpReturn' || procMetric === 'therapistYield') ? 2 : 0)}%` : `${actual}`;
                 })()}
               </div>
               <div className="mt-2 text-xs text-gray-500">
@@ -1401,14 +1535,16 @@ const PriceDecompositionContainer = () => {
                   </span>
                 </div>
                 <div>
-                  去年：
+                  {(procMetric === 'therapistYield' || procMetric === 'newEmpOutput') ? '上月：' : '去年：'}
                   <span className="font-semibold text-gray-700">
                     {(() => {
                       const a = Number(impactInfos[procMetric]?.actual);
                       const l = Number(impactInfos[procMetric]?.last);
                       const hasLast = impactInfos[procMetric]?.last !== null && impactInfos[procMetric]?.last !== undefined;
                       if (hasLast) {
-                        const base = impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.last}%` : `${impactInfos[procMetric]?.last}`;
+                        const base = impactInfos[procMetric]?.unit === '%' 
+                          ? `${Number(impactInfos[procMetric]?.last).toFixed((procMetric === 'newEmpReturn' || procMetric === 'therapistYield') ? 2 : 0)}%` 
+                          : `${impactInfos[procMetric]?.last}`;
                         const yoy = l ? ((a - l) / l) * 100 : 0;
                         const sign = yoy > 0 ? '+' : '';
                         const cls = yoy > 0 ? 'text-red-600' : yoy < 0 ? 'text-green-600' : 'text-gray-600';
@@ -1416,7 +1552,7 @@ const PriceDecompositionContainer = () => {
                           <>
                             {base}
                             <span className="ml-1">
-                              （同比 <span className={cls}>{`${sign}${yoy.toFixed(1)}%`}</span>）
+                              （同比 <span className={cls}>{`${sign}${yoy.toFixed(2)}%`}</span>）
                             </span>
                           </>
                         );
@@ -1630,6 +1766,7 @@ const PriceDecompositionContainer = () => {
             valueFormatter={(v) => {
               if (procMetric === 'configRatio') return `${Number(v).toFixed(2)}`;
               if (procMetric === 'newEmpReturn') return `${Number(v).toFixed(2)}%`;
+              if (procMetric === 'therapistYield') return `${Number(v).toFixed(2)}%`;
               return `${Number(v).toFixed(1)}%`;
             }}
             colorPrimary="#a40035"

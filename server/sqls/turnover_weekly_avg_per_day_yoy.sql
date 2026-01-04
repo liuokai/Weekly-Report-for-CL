@@ -37,5 +37,5 @@ FROM weekly_avg curr
          LEFT JOIN weekly_avg prev
                    ON curr.sales_year = prev.sales_year + 1
                        AND curr.sales_week = prev.sales_week
-where curr.sales_year = 2025
+where curr.sales_year >= 2025
 ORDER BY curr.sales_year DESC, curr.sales_week DESC;
