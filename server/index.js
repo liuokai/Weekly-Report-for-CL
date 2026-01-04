@@ -86,6 +86,24 @@ app.post('/api/fetch-data', async (req, res) => {
     const duration = Date.now() - startTime;
     console.log(`[Query End] ${queryKey} - ${duration}ms`);
 
+    // Post-processing filters for specific queries
+    try {
+      if (queryKey === 'getStaffServiceDurationCityMonthly' && params && params.city) {
+        rows = rows.filter(r => {
+          const cityName = r.statistics_city_name || r.city || r.statistics_city;
+          return cityName === params.city;
+        });
+      }
+      if (queryKey === 'getStaffServiceDurationStoreMonthly' && params && params.city) {
+        rows = rows.filter(r => {
+          const cityName = r.statistics_city_name || r.city || r.statistics_city;
+          return cityName === params.city;
+        });
+      }
+    } catch (e) {
+      console.warn(`[PostProcess Warn] ${queryKey} filter failed:`, e?.message);
+    }
+
     // Save to Cache
     cacheService.set(queryKey, params, rows);
 

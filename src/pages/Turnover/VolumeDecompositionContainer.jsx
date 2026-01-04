@@ -31,6 +31,10 @@ const VolumeDecompositionContainer = () => {
   const { data: influenceTrendData } = useFetchData('getVolumeInfluenceTrend', { metric: influenceMetric });
   const { data: modalTrendData } = useFetchData('getVolumeCityModalTrend', { city: selectedCity, metric: influenceMetric });
   const { data: modalStoreData } = useFetchData('getVolumeCityModalStoreData', { city: selectedCity, metric: influenceMetric });
+  // 推拿师天均服务时长（新的真实数据源）
+  const { data: staffDurationMonthly } = useFetchData('getStaffServiceDurationMonthly', []);
+  const { data: staffDurationCityMonthly } = useFetchData('getStaffServiceDurationCityMonthly', []);
+  const { data: staffDurationStoreMonthly } = useFetchData('getStaffServiceDurationStoreMonthly', { city: selectedCity });
   const { data: cityBreakdownData } = useFetchData('getVolumeCityBreakdown');
 
   const tableData = useMemo(() => {
@@ -339,23 +343,65 @@ const VolumeDecompositionContainer = () => {
       review_rate: "主动评价率"
     };
 
-    const months = Array.from({length: 12}, (_, i) => `25年${i+1}月`);
+    // 计算近12个月（表头按当前月份滚动）
+    const buildLast12Months = () => {
+      const now = new Date();
+      const arr = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+        const y = d.getUTCFullYear();
+        const m = d.getUTCMonth() + 1;
+        const ym = `${y}-${String(m).padStart(2, '0')}`;
+        arr.push(ym);
+      }
+      return arr;
+    };
+    const formatMonthLabel = (ym) => {
+      const [y, m] = ym.split('-');
+      return `${String(y).slice(-2)}年${Number(m)}月`;
+    };
+    const monthKeysAsc = buildLast12Months();
+    const monthsAsc = monthKeysAsc.map(formatMonthLabel);
+    const monthKeysDesc = [...monthKeysAsc].reverse();
+    const monthsDesc = monthKeysDesc.map(formatMonthLabel);
+
+    // 上半部分趋势：选定城市近12月的推拿师天均服务时长
     let trendValues = [];
-    if (modalTrendData && modalTrendData.length > 0) {
-      const normalized = [...modalTrendData].sort((a, b) => a.month - b.month).slice(0, 12);
-      trendValues = normalized.map(d => Number(d.value));
+    let trendValuesYoY = [];
+    if (staffDurationCityMonthly && staffDurationCityMonthly.length > 0) {
+      const filtered = staffDurationCityMonthly.filter(d => d.statistics_city_name === selectedCity);
+      const byMonth = {};
+      filtered.forEach(d => { 
+        byMonth[d.month] = {
+          curr: Number(d.avg_staff_daily_duration),
+          prev: Number(d.avg_staff_daily_duration_yoy)
+        };
+      });
+      trendValues = monthKeysAsc.map(k => {
+        const v = byMonth[k]?.curr;
+        return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+      });
+      trendValuesYoY = monthKeysAsc.map(k => {
+        const v = byMonth[k]?.prev;
+        return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+      });
     }
 
+    // 下半部分表格：该城市下各门店近12月推拿师天均服务时长
     let storeData = [];
-    if (modalStoreData && modalStoreData.length > 0) {
-      // Pivot fetched data
-      // Expecting [{store_name, month, value}, ...]
+    if (staffDurationStoreMonthly && staffDurationStoreMonthly.length > 0) {
+      const filtered = staffDurationStoreMonthly.filter(d => d.statistics_city_name === selectedCity);
       const storeMap = {};
-      modalStoreData.forEach(d => {
-        if (!storeMap[d.store_name]) {
-          storeMap[d.store_name] = { key: d.store_name, store: d.store_name };
+      filtered.forEach(d => {
+        const key = d.store_name;
+        if (!storeMap[key]) {
+          storeMap[key] = { key, store: d.store_name };
         }
-        storeMap[d.store_name][`m${d.month}`] = d.value;
+        const idx = monthKeysDesc.indexOf(d.month);
+        if (idx !== -1) {
+          const num = Number(d.avg_staff_daily_duration);
+          storeMap[key][`m${idx + 1}`] = Number.isFinite(num) ? Number(num.toFixed(2)) : null;
+        }
       });
       storeData = Object.values(storeMap);
     }
@@ -375,7 +421,7 @@ const VolumeDecompositionContainer = () => {
 
     const storeColumns = [
       { key: 'store', title: '门店名称', dataIndex: 'store', fixed: 'left', width: 120 },
-      ...months.map((month, idx) => ({
+      ...monthsDesc.map((month, idx) => ({
         key: `m${idx+1}`,
         title: month,
         dataIndex: `m${idx+1}`,
@@ -383,7 +429,9 @@ const VolumeDecompositionContainer = () => {
            const num = Number(val);
            let displayVal = '—';
            if (Number.isFinite(num)) {
-             if (influenceMetric === 'duration' || influenceMetric === 'active_members') {
+             if (influenceMetric === 'duration') {
+               displayVal = Number(num).toFixed(2);
+             } else if (influenceMetric === 'active_members') {
                displayVal = Math.round(num).toLocaleString();
              } else if (influenceMetric === 'utilization') {
                displayVal = num.toFixed(2);
@@ -414,18 +462,51 @@ const VolumeDecompositionContainer = () => {
           <div className="p-6 space-y-8">
             {/* Top: Trend Chart */}
             <div>
-              <h4 className="text-sm font-bold text-gray-600 mb-4 border-l-4 border-[#a40035] pl-2">月度趋势</h4>
+              <div className="flex items-center gap-3 mb-3">
+                <button 
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showInfYoY ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                  onClick={() => setShowInfYoY(!showInfYoY)}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 7-7" stroke="currentColor" strokeWidth="2" /></svg>
+                    显示同比
+                  </span>
+                </button>
+                <button 
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showInfAvg ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                  onClick={() => setShowInfAvg(!showInfAvg)}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12h16" stroke="currentColor" strokeWidth="2" /></svg>
+                    显示均值
+                  </span>
+                </button>
+                <button 
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showInfExtremes ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                  onClick={() => setShowInfExtremes(!showInfExtremes)}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6 .5-4.5 4 1.5 6-6-3.5-6 3.5 1.5-6L3 8.5l6-.5 3-6z" stroke="currentColor" strokeWidth="1.5" fill="none"/></svg>
+                    显示极值
+                  </span>
+                </button>
+              </div>
               <LineTrendChart
                 headerTitle={`${metricNameMap[influenceMetric]}趋势`}
                 values={trendValues}
-                xLabels={months}
+                valuesYoY={trendValuesYoY}
+                xLabels={monthsAsc}
                 height={300}
                 valueFormatter={(v) => {
                    const num = Number(v);
                    if (!Number.isFinite(num)) return '—';
-                   if (influenceMetric === 'duration' || influenceMetric === 'active_members') return Math.round(num).toLocaleString();
+                   if (influenceMetric === 'duration') return Number(num).toFixed(2);
+                   if (influenceMetric === 'active_members') return Math.round(num).toLocaleString();
                    return influenceMetric === 'utilization' ? num.toFixed(2) : `${num.toFixed(2)}%`;
                 }}
+                showYoY={showInfYoY}
+                showAverage={showInfAvg}
+                showExtremes={showInfExtremes}
               />
             </div>
 
@@ -442,22 +523,57 @@ const VolumeDecompositionContainer = () => {
 
   const renderInfluenceTable = () => {
     const cities = Object.keys(cityStoreMap);
-    const months = Array.from({length: 12}, (_, i) => `25年${i+1}月`);
+    // 近12个月的表头（随时间滚动）
+    const buildLast12Months = () => {
+      const now = new Date();
+      const arr = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+        const y = d.getUTCFullYear();
+        const m = d.getUTCMonth() + 1;
+        const ym = `${y}-${String(m).padStart(2, '0')}`;
+        arr.push(ym);
+      }
+      return arr;
+    };
+    const monthKeysAsc = buildLast12Months();
+    const monthKeysDesc = [...monthKeysAsc].reverse();
+    const months = monthKeysDesc.map(ym => {
+      const [y, m] = ym.split('-');
+      return `${String(y).slice(-2)}年${Number(m)}月`;
+    });
     
     // Generate City Data with 12 months
     let cityData = [];
     
-    if (influenceCityData && influenceCityData.length > 0) {
-      // Pivot fetched data: [{city, month, value}, ...]
-      const map = {};
-      influenceCityData.forEach(item => {
-         if (!map[item.city]) {
-           map[item.city] = { key: item.city, city: item.city };
-         }
-         // item.month is expected to be 1-12
-         map[item.city][`m${item.month}`] = item.value;
-      });
-      cityData = Object.values(map);
+    if (influenceMetric === 'duration') {
+      if (staffDurationCityMonthly && staffDurationCityMonthly.length > 0) {
+        const map = {};
+        staffDurationCityMonthly.forEach(item => {
+          const city = item.statistics_city_name;
+          const month = item.month;
+          if (!map[city]) {
+            map[city] = { key: city, city };
+          }
+          const idx = monthKeysDesc.indexOf(month);
+          if (idx !== -1) {
+            const num = Number(item.avg_staff_daily_duration);
+            map[city][`m${idx + 1}`] = Number.isFinite(num) ? Number(num.toFixed(2)) : null;
+          }
+        });
+        cityData = Object.values(map);
+      }
+    } else {
+      if (influenceCityData && influenceCityData.length > 0) {
+        const map = {};
+        influenceCityData.forEach(item => {
+           if (!map[item.city]) {
+             map[item.city] = { key: item.city, city: item.city };
+           }
+           map[item.city][`m${item.month}`] = item.value;
+        });
+        cityData = Object.values(map);
+      }
     }
 
     const getMetricConfig = () => {
@@ -498,7 +614,9 @@ const VolumeDecompositionContainer = () => {
            const num = Number(val);
            let displayVal = '—';
            if (Number.isFinite(num)) {
-             if (influenceMetric === 'duration' || influenceMetric === 'active_members') {
+             if (influenceMetric === 'duration') {
+               displayVal = Number(num).toFixed(2);
+             } else if (influenceMetric === 'active_members') {
                displayVal = Math.round(num).toLocaleString();
              } else if (influenceMetric === 'utilization') {
                displayVal = num.toFixed(2);
@@ -526,7 +644,23 @@ const VolumeDecompositionContainer = () => {
   };
 
   const renderInfluenceAnalysisChart = () => {
-    const months = Array.from({length: 12}, (_, i) => `25年${i+1}月`);
+    const buildLast12Months = () => {
+      const now = new Date();
+      const arr = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+        const y = d.getUTCFullYear();
+        const m = d.getUTCMonth() + 1;
+        const ym = `${y}-${String(m).padStart(2, '0')}`;
+        arr.push(ym);
+      }
+      return arr;
+    };
+    const monthKeys = buildLast12Months();
+    const months = monthKeys.map(ym => {
+      const [y, m] = ym.split('-');
+      return `${String(y).slice(-2)}年${Number(m)}月`;
+    });
     let values = [], valuesYoY = [], title, unit, yAxisFormatter, valueFormatter;
 
     // Set titles and formatters based on metric
@@ -535,11 +669,11 @@ const VolumeDecompositionContainer = () => {
       unit = "分钟";
       yAxisFormatter = (v) => {
         const num = Number(v);
-        return Number.isFinite(num) ? Math.round(num) : '—';
+        return Number.isFinite(num) ? Number(num.toFixed(2)) : '—';
       };
       valueFormatter = (v) => {
         const num = Number(v);
-        return Number.isFinite(num) ? `${Math.round(num)}分钟` : '—';
+        return Number.isFinite(num) ? Number(num).toFixed(2) : '—';
       };
     } else if (influenceMetric === 'compliance') {
       title = "推拿师天均服务时长不达标占比";
@@ -598,10 +732,30 @@ const VolumeDecompositionContainer = () => {
       };
     }
 
-    if (influenceTrendData && influenceTrendData.length > 0) {
-      const sorted = [...influenceTrendData].sort((a, b) => a.month - b.month);
-      values = sorted.map(d => parseFloat(d.current_value));
-      valuesYoY = sorted.map(d => parseFloat(d.last_year_value));
+    if (influenceMetric === 'duration') {
+      if (staffDurationMonthly && staffDurationMonthly.length > 0) {
+        const byMonth = {};
+        staffDurationMonthly.forEach(d => {
+          byMonth[d.month] = {
+            curr: Number(d.avg_staff_daily_duration),
+            prev: Number(d.avg_staff_daily_duration_yoy)
+          };
+        });
+        values = monthKeys.map(k => {
+          const v = byMonth[k]?.curr;
+          return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+        });
+        valuesYoY = monthKeys.map(k => {
+          const v = byMonth[k]?.prev;
+          return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
+        });
+      }
+    } else {
+      if (influenceTrendData && influenceTrendData.length > 0) {
+        const sorted = [...influenceTrendData].sort((a, b) => a.month - b.month);
+        values = sorted.map(d => parseFloat(d.current_value));
+        valuesYoY = sorted.map(d => parseFloat(d.last_year_value));
+      }
     }
 
     return (
@@ -657,19 +811,28 @@ const VolumeDecompositionContainer = () => {
                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showInfYoY ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                onClick={() => setShowInfYoY(!showInfYoY)}
              >
-               显示同比
+               <span className="inline-flex items-center gap-1">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 7-7" stroke="currentColor" strokeWidth="2" /></svg>
+                 显示同比
+               </span>
              </button>
              <button 
                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showInfAvg ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                onClick={() => setShowInfAvg(!showInfAvg)}
              >
-               显示均值
+               <span className="inline-flex items-center gap-1">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12h16" stroke="currentColor" strokeWidth="2" /></svg>
+                 显示均值
+               </span>
              </button>
              <button 
                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showInfExtremes ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                onClick={() => setShowInfExtremes(!showInfExtremes)}
              >
-               显示极值
+               <span className="inline-flex items-center gap-1">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6 .5-4.5 4 1.5 6-6-3.5-6 3.5 1.5-6L3 8.5l6-.5 3-6z" stroke="currentColor" strokeWidth="1.5" fill="none"/></svg>
+                 显示极值
+               </span>
              </button>
           </div>
         </div>

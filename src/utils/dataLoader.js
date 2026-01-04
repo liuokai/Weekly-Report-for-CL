@@ -31,6 +31,11 @@ export const PRELOAD_QUERIES = [
   'getEmployeeOutputStandardRateMonthly',
   'getEmployeeOutputStandardRateCityMonthly',
   'getEmployeeOutputStandardRateStoreMonthly'
+  ,
+  // 新增：推拿师天均服务时长（月度/城市/月度门店）
+  'getStaffServiceDurationMonthly',
+  'getStaffServiceDurationCityMonthly',
+  'getStaffServiceDurationStoreMonthly'
 ];
 
 class DataLoader {
