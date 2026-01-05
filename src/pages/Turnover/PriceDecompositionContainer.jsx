@@ -38,9 +38,6 @@ const PriceDecompositionContainer = () => {
   const [procCityRows, setProcCityRows] = useState([]);
   const [procColumnsDyn, setProcColumnsDyn] = useState([]);
 
-  // Fetch trend data and city data using SQL
-  const { data: fetchedTrendData, loading: trendLoading } = useFetchData('getProcessMetricTrend', { metric: procMetric });
-  const { data: fetchedCityData, loading: cityLoading } = useFetchData('getProcessCityData', { metric: procMetric });
   // Fetch city price growth data
   const { data: cityAnnualPriceData } = useFetchData('getCityAnnualAvgPrice');
   // Fetch annual average price data
@@ -597,14 +594,6 @@ const PriceDecompositionContainer = () => {
         setProcValues([]);
         setProcValuesLY([]);
       }
-    } else if (fetchedTrendData && fetchedTrendData.length > 0) {
-      // Expecting [{ week_num, current_value, last_year_value }, ...]
-      // Sort by week_num to ensure correct order
-      const sorted = [...fetchedTrendData].sort((a, b) => a.week_num - b.week_num);
-      setProcValues(sorted.map(d => Number(d.current_value)));
-      setProcValuesLY(sorted.map(d => Number(d.last_year_value)));
-      // Note: fetchedTrendData might not have full date info to rebuild procWeeks perfectly
-      // so we keep the default procWeeks or leave it as is.
     } else {
       // No data - clear charts
       setProcValues([]);
@@ -847,63 +836,12 @@ const PriceDecompositionContainer = () => {
       } else {
         setProcCityRows([]);
       }
-    } else if (fetchedCityData && fetchedCityData.length > 0) {
-      const cityCol = { 
-        key: 'city', 
-        title: '城市', 
-        dataIndex: 'city',
-        render: (val) => (
-          <span 
-            className="text-[#a40035] cursor-pointer hover:underline"
-            onClick={() => openCityModal(val)}
-          >
-            {val}
-          </span>
-        )
-      };
-
-      let cols = [];
-      if (procMetric === 'returnRate') {
-        cols = [
-           cityCol,
-           { key: 'value', title: '项目回头率', dataIndex: 'value', 
-             render: (val) => {
-                const num = parseFloat(String(val).replace('%','')) || 0;
-                const target = BusinessTargets.turnover.impactAnalysis.projectRetention.target || 30;
-                const isHigh = num >= target;
-                return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
-             }
-           },
-           { key: 'target', title: '目标', dataIndex: 'target' },
-           { key: 'status', title: '状态', dataIndex: 'status' }
-        ];
-      } else if (procMetric === 'newEmpReturn') {
-         // 已在上方专用分支处理
-         cols = [];
-      } else if (procMetric === 'therapistYield') {
-         cols = [];
-      } else {
-        cols = [
-          cityCol,
-          { key: 'value', title: '指标值', dataIndex: 'value' },
-          { key: 'target', title: '目标', dataIndex: 'target' },
-          { key: 'status', title: '达标', dataIndex: 'status',
-            render: (val) => {
-              const cls = val === '达标' ? 'text-green-600' : 'text-red-600';
-              return <span className={cls}>{val}</span>;
-            } 
-          },
-        ];
-      }
-      
-      setProcColumnsDyn(cols);
-      setProcCityRows(fetchedCityData.map((r, i) => ({ key: i, ...r })));
     } else {
       // No data - clear
       setProcCityRows([]);
       setProcColumnsDyn(procColumnsDefault);
     }
-  }, [fetchedTrendData, fetchedCityData, procMetric, repurchaseWeekly, repurchaseCityWeekly, bedStaffRatioWeekly, bedStaffRatioCityAnnual, newEmpMonthly, newEmpCityAnnual, empOutputMonthly, empOutputCityMonthly]);
+  }, [procMetric, repurchaseWeekly, repurchaseCityWeekly, bedStaffRatioWeekly, bedStaffRatioCityAnnual, newEmpMonthly, newEmpCityAnnual, empOutputMonthly, empOutputCityMonthly]);
 
   const openCityModal = (cityName) => {
     setSelectedCity(cityName);

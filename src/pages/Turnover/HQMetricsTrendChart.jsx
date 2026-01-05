@@ -54,13 +54,6 @@ const HQMetricsTrendChart = () => {
   // Use new APIs for price data
   const { data: annualYtdData } = useFetchData('getWeeklyAvgPriceYTD');
   const { data: weeklyData } = useFetchData('getWeeklyAvgPrice');
-  
-  // Keep original API for other metrics if needed (or remove if unused)
-  const { data: fetchedData, fetchData } = useFetchData('getHQMetrics');
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   useEffect(() => {
     // Always start from the initial METRICS template to ensure clean state
@@ -91,27 +84,8 @@ const HQMetricsTrendChart = () => {
         newMetrics.weeklyAvgPrice.dataPct = sorted.map(item => Number(item.aov_yoy_pct) || 0);
     }
 
-    // Process other metrics from getHQMetrics if available
-    if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
-       // Clear default mock data for other metrics before populating
-       Object.keys(newMetrics).forEach(key => {
-         if (key !== 'annualAvgPrice' && key !== 'weeklyAvgPrice') {
-            newMetrics[key].data = [];
-            newMetrics[key].dataYoY = [];
-            // pct not standard for these yet
-         }
-       });
-
-       fetchedData.forEach(row => {
-         if (newMetrics[row.metric] && row.metric !== 'annualAvgPrice' && row.metric !== 'weeklyAvgPrice') {
-           newMetrics[row.metric].data.push(Number(row.current_value) || 0);
-           newMetrics[row.metric].dataYoY.push(Number(row.last_year_value) || 0);
-         }
-       });
-    }
-
     setMetricsData(newMetrics);
-  }, [annualYtdData, weeklyData, fetchedData]);
+  }, [annualYtdData, weeklyData]);
 
   const toggleControl = (key) => {
     setControls(prev => ({ ...prev, [key]: !prev[key] }));

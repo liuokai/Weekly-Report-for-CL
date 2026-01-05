@@ -27,10 +27,7 @@ const VolumeDecompositionContainer = () => {
   const { data: annualVisitData } = useFetchData('getUserVisitCountAnnual', []);
   const { data: dailyAvgVisitMonthlyData } = useFetchData('getUserVisitCountDailyAvgMonthly', []);
   const { data: cumVisitMonthlyData } = useFetchData('getUserVisitCountCumMonthly', []);
-  const { data: influenceCityData } = useFetchData('getVolumeInfluenceCity', { metric: influenceMetric });
-  const { data: influenceTrendData } = useFetchData('getVolumeInfluenceTrend', { metric: influenceMetric });
-  const { data: modalTrendData } = useFetchData('getVolumeCityModalTrend', { city: selectedCity, metric: influenceMetric });
-  const { data: modalStoreData } = useFetchData('getVolumeCityModalStoreData', { city: selectedCity, metric: influenceMetric });
+  // 旧的城市下钻数据源移除，统一使用新的真实数据源（各指标按月/城市/门店）
   // 推拿师天均服务时长（新的真实数据源）
   const { data: staffDurationMonthly } = useFetchData('getStaffServiceDurationMonthly', []);
   const { data: staffDurationCityMonthly } = useFetchData('getStaffServiceDurationCityMonthly', []);
@@ -804,17 +801,6 @@ const VolumeDecompositionContainer = () => {
         });
         cityData = Object.values(map);
       }
-    } else {
-      if (influenceCityData && influenceCityData.length > 0) {
-        const map = {};
-        influenceCityData.forEach(item => {
-           if (!map[item.city]) {
-             map[item.city] = { key: item.city, city: item.city };
-           }
-           map[item.city][`m${item.month}`] = item.value;
-        });
-        cityData = Object.values(map);
-      }
     }
 
     const getMetricConfig = () => {
@@ -1085,13 +1071,7 @@ const VolumeDecompositionContainer = () => {
            return Number.isFinite(v) ? Number(v) : null;
          });
        }
-     } else {
-       if (influenceTrendData && influenceTrendData.length > 0) {
-         const sorted = [...influenceTrendData].sort((a, b) => a.month - b.month);
-         values = sorted.map(d => parseFloat(d.current_value));
-         valuesYoY = sorted.map(d => parseFloat(d.last_year_value));
-       }
-     }
+    }
 
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mt-6">

@@ -29,10 +29,6 @@ const queryRegistry = {
     sql: loadSql('turnover_overview.sql'),
     description: '营业额概览中的年度累计营业额'
   },
-  getHQMetrics: {
-    sql: loadSql('hq_metrics.sql'), // 不知是什么文件
-    description: 'Get HQ metrics trend data'
-  },
   getWeeklyTurnover: {
     sql: loadSql('turnover_weekly.sql'),
     description: '获取周度营业额'
@@ -57,65 +53,25 @@ const queryRegistry = {
     sql: loadSql('turnover_city_actual_target.sql'),
     description: '获取城市年度营业额数据'
   },
-  getStoreList: {
-    sql: loadSql('store_list.sql'),
-    description: 'Get store list by city'
-  },
-  getProcessMetricTrend: {
-    sql: loadSql('process_metric_trend.sql'),
-    description: 'Get process metric trend data'
-  },
-  getProcessCityData: {
-    sql: loadSql('process_city_data.sql'),
-    description: 'Get process metric city data'
-  },
-  getVolumeTrend: {
-    sql: loadSql('volume_trend.sql'),
-    description: 'Get volume trend data'
-  },
-  getVolumeInfluenceCity: {
-    sql: loadSql('volume_influence_city.sql'),
-    description: 'Get volume influence city data'
-  },
-  getCityPriceGrowth: {
-    sql: loadSql('city_price_growth.sql'),
-    description: 'Get city price growth and cost data'
-  },
   getCityAnnualAvgPrice: {
     sql: loadSql('avg_order_value_city_annual_yoy.sql'),
     description: '获取城市年度客单价及同比'
   },
   getCityWeeklyTrend: {
     sql: loadSql('turnover_weekly_city_yoy.sql'),
-    description: 'Get city weekly turnover trend data'
+    description: '获取城市周度营业额趋势数据'
   },
   getCityWeeklyCumTrend: {
     sql: loadSql('turnover_weekly_city_cum_yoy.sql'),
-    description: 'Get city weekly cumulative turnover trend data'
+    description: '获取城市周度年度累计营业额趋势数据'
   },
   getCityWeeklyAvgDayTrend: {
     sql: loadSql('turnover_weekly_city_per_day_yoy.sql'),
-    description: 'Get city weekly average daily turnover trend data'
+    description: '获取城市周度天均营业额趋势数据'
   },
   getCityStoreWeeklyTurnover: {
     sql: loadSql('turnover_weekly_store_yoy.sql'),
-    description: 'Get weekly turnover by store for a city'
-  },
-  getCityModalTrend: {
-    sql: loadSql('city_modal_trend.sql'),
-    description: 'Get city modal trend data'
-  },
-  getCityModalStoreData: {
-    sql: loadSql('city_modal_store_data.sql'),
-    description: 'Get city modal store data'
-  },
-  getVolumeCityBreakdown: {
-    sql: loadSql('volume_city_breakdown.sql'),
-    description: 'Get volume city breakdown data'
-  },
-  getVolumeHQOverview: {
-    sql: loadSql('volume_hq_overview.sql'),
-    description: 'Get volume HQ overview data'
+    description: '获取某城市门店周度营业额数据'
   },
   // 客次量：年度累计（取最新年份）
   getUserVisitCountAnnual: {
@@ -131,18 +87,6 @@ const queryRegistry = {
   getUserVisitCountCumMonthly: {
     sql: loadSql('user_visit_count_cum_monthly.sql'),
     description: '按月统计年度累计客次量（含去年同期与同比），取最近12个月'
-  },
-  getVolumeInfluenceTrend: {
-    sql: loadSql('volume_influence_trend.sql'),
-    description: 'Get volume influence trend data'
-  },
-  getVolumeCityModalTrend: {
-    sql: loadSql('volume_city_modal_trend.sql'),
-    description: 'Get volume city modal trend data'
-  },
-  getVolumeCityModalStoreData: {
-    sql: loadSql('volume_city_modal_store_data.sql'),
-    description: 'Get volume city modal store data'
   },
   getRepurchaseRateAnnual: {
     sql: loadSql('repurchase_rate_annual_yoy.sql'),

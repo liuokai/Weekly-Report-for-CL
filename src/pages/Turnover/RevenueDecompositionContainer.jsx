@@ -21,7 +21,6 @@ const RevenueDecompositionContainer = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   
   const { data: fetchedData, loading, fetchData } = useFetchData('getCityTurnover');
-  const { data: storeData, fetchData: fetchStoreData } = useFetchData('getStoreList');
   const { data: storeWeeklyData, loading: storeWeeklyLoading, fetchData: fetchStoreWeeklyData } = useFetchData('getCityStoreWeeklyTurnover', [], [], { manual: true });
   const { data: modalTrendData, loading: modalLoading, error: modalError, fetchData: fetchModalTrendData } = useFetchData('getCityWeeklyTrend', [], [], { manual: true });
   const { data: modalCumData, loading: modalCumLoading, error: modalCumError, fetchData: fetchModalCumData } = useFetchData('getCityWeeklyCumTrend', [], [], { manual: true });
@@ -125,7 +124,6 @@ const RevenueDecompositionContainer = () => {
     setSelectedCity(cityName);
     setIsModalOpen(true);
     setSelectedMetricKey("revenue");
-    fetchStoreData();
     fetchStoreWeeklyData([cityName]);
     fetchModalTrendData([cityName]);
     fetchModalCumData([cityName]);
