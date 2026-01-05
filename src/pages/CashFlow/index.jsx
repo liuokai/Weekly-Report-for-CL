@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
-import { cityStoreMap } from '../../data/storeData';
+import useFetchData from '../../hooks/useFetchData';
 
 const CashFlowTab = () => {
   // Data Constants
@@ -115,6 +115,8 @@ const CashFlowTab = () => {
   const [modalShowAvg, setModalShowAvg] = useState(true);
   const [modalShowExtremes, setModalShowExtremes] = useState(true);
 
+  const { data: storeWeeklyTurnover } = useFetchData('getCityStoreWeeklyTurnover');
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (selectedCity) {
@@ -162,8 +164,11 @@ const CashFlowTab = () => {
   const storeData = useMemo(() => {
     if (!selectedCity) return [];
     
-    const storeList = cityStoreMap[selectedCity] || [];
-    return storeList.map((store, index) => {
+    const stores = (storeWeeklyTurnover || [])
+      .filter(r => (r.statistics_city_name || r.city) === selectedCity)
+      .map(r => r.store_name);
+    const uniqueStores = Array.from(new Set(stores));
+    return uniqueStores.map((store, index) => {
       // Mock data for each store
       const newStoreInvestment = Math.floor(Math.random() * 50);
       const operatingCashFlow = Math.floor(20 + Math.random() * 100);
@@ -177,7 +182,7 @@ const CashFlowTab = () => {
         annualSurplus
       };
     });
-  }, [selectedCity]);
+  }, [selectedCity, storeWeeklyTurnover]);
 
   // Table Columns
   const cityColumns = [

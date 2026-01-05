@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import axios from 'axios';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import DataTable from '../../components/Common/DataTable';
 import UnifiedProgressBar from '../../components/Common/UnifiedProgressBar';
-import { cityStoreMap } from '../../data/storeData';
 import BusinessTargets from '../../config/businessTargets';
 import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 import CostStructureContainer from '../CashFlow/CostStructureContainer';
@@ -40,6 +40,20 @@ const CostAndProfitTab = () => {
   const [modalShowYoY, setModalShowYoY] = useState(false);
   const [modalShowAvg, setModalShowAvg] = useState(true);
   const [modalShowExtremes, setModalShowExtremes] = useState(true);
+
+  const [costData, setCostData] = useState(null);
+  useEffect(() => {
+    const fetchCost = async () => {
+      try {
+        const res = await axios.get('/api/cost-structure');
+        if (res.data && res.data.status === 'success') {
+          setCostData(res.data.data);
+        }
+      } catch (e) {
+      }
+    };
+    fetchCost();
+  }, []);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -109,36 +123,28 @@ const CostAndProfitTab = () => {
 
   // --- City Table Data ---
   const cityTableData = useMemo(() => {
-    return Object.keys(cityStoreMap).map((city, index) => {
-      // Mock Financial Data per City
-      const revenue = Math.floor(10000000 + Math.random() * 50000000); // 10M - 60M
-      
-      // Target Profit Rate: 3% - 7%
-      const targetProfitRate = 3.0 + Math.random() * 4.0;
-      const profit = revenue * (targetProfitRate / 100);
-      
-      // Costs Breakdown
-      // Mgmt Fee: ~5-6%
-      const mgmtFee = revenue * (0.05 + Math.random() * 0.01);
-      // Labor Cost: ~50-55% (High labor intensity)
-      const laborCost = revenue * (0.50 + Math.random() * 0.05);
-      // Variable Cost: Remainder (Revenue - Profit - Mgmt - Labor)
-      const variableCost = revenue - profit - mgmtFee - laborCost;
-
-      const profitRate = (profit / revenue) * 100;
-
+    if (!costData || !costData.city_dimension) return [];
+    return costData.city_dimension.map((row, index) => {
+      const revenue = Number(row.revenue) || 0;
+      const netProfit = Number(row.netProfit) || 0;
+      const mgmt = row.costs.find(c => c.name === '服务费');
+      const labor = row.costs.find(c => c.name === '人工成本') || row.costs.find(c => c.name === '推拿师成本') || row.costs.find(c => c.name === '客户经理成本');
+      const mgmtFee = mgmt ? Number(mgmt.value) || 0 : 0;
+      const laborCost = labor ? Number(labor.value) || 0 : 0;
+      const variableCost = revenue - netProfit - mgmtFee - laborCost;
+      const profitRate = revenue ? (netProfit / revenue) * 100 : 0;
       return {
         key: index,
-        city,
+        city: row.name,
         revenue,
         mgmtFee,
         laborCost,
         variableCost,
-        profit,
+        profit: netProfit,
         profitRate
       };
     });
-  }, []);
+  }, [costData]);
 
   const cityColumns = [
     { 
@@ -202,24 +208,23 @@ const CostAndProfitTab = () => {
   const renderCityModal = () => {
     if (!selectedCity) return null;
 
-    // Mock Store Data for Selected City
-    const storeList = cityStoreMap[selectedCity] || [];
-    const storeData = storeList.map((store, index) => {
-      const revenue = Math.floor(500000 + Math.random() * 2000000); // 500k - 2.5M
-      const mgmtFee = revenue * 0.05;
-      const laborCost = revenue * (0.4 + Math.random() * 0.1);
-      const variableCost = revenue * (0.1 + Math.random() * 0.05);
-      const profit = revenue - mgmtFee - laborCost - variableCost;
-      const profitRate = (profit / revenue) * 100;
-
+    const rows = (costData?.store_dimension || []).filter(r => r.city === selectedCity).map((r, idx) => {
+      const revenue = Number(r.revenue) || 0;
+      const netProfit = Number(r.netProfit) || 0;
+      const mgmt = r.costs.find(c => c.name === '服务费');
+      const labor = r.costs.find(c => c.name === '人工成本') || r.costs.find(c => c.name === '推拿师成本') || r.costs.find(c => c.name === '客户经理成本');
+      const mgmtFee = mgmt ? Number(mgmt.value) || 0 : 0;
+      const laborCost = labor ? Number(labor.value) || 0 : 0;
+      const variableCost = revenue - netProfit - mgmtFee - laborCost;
+      const profitRate = revenue ? (netProfit / revenue) * 100 : 0;
       return {
-        key: index,
-        store,
+        key: idx,
+        store: r.store,
         revenue,
         mgmtFee,
         laborCost,
         variableCost,
-        profit,
+        profit: netProfit,
         profitRate
       };
     });

@@ -1,176 +1,131 @@
-# 常乐经营管理周报系统 (ChangLe Operations Weekly)
+# 常乐经营管理周报系统
 
-![React](https://img.shields.io/badge/React-18.2-61DAFB?logo=react&logoColor=black)
-![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=nodedotjs&logoColor=white)
-![Express](https://img.shields.io/badge/Express-4.x-000000?logo=express&logoColor=white)
-![Webpack](https://img.shields.io/badge/Webpack-5.x-8DD6F9?logo=webpack&logoColor=black)
-![TailwindCSS](https://img.shields.io/badge/Tailwind-3.x-38B2AC?logo=tailwindcss&logoColor=white)
-![Doris](https://img.shields.io/badge/Doris-DB-000000?logo=apache&logoColor=white)
-![Dify](https://img.shields.io/badge/Dify-Workflow-blue?logo=openai&logoColor=white)
+- 技术栈：React 18、Webpack 5、Express、MySQL2（Doris 兼容）、TailwindCSS
+- 端口：前端 8000（代理后端 3001）
 
-## 📖 项目概述
+## 项目概述
 
-**常乐经营管理周报系统** 是一个集成了 **商业智能 (BI)** 与 **人工智能 (AI)** 的现代化数据看板。它不仅展示总部与城市维度的核心营运指标（如营业额、成本、利润、门店运营），还通过 **Dify Workflow API** 集成智能分析能力，为业务数据提供即时的自然语言深度洞察。
+常乐经营管理周报系统聚焦总部与城市维度核心营运指标的周报看板。前端以 React 单页应用展示业务数据与图表，后端以 Node.js/Express 作为 BFF 层统一管理 SQL 查询与 AI 工作流代理，前后端通过 `/api` 路由交互。
 
-### ✨ 核心特性
+### 核心特性
 
-- **BFF 架构设计**：通过 Node.js 中间层隔离前端与数据库/AI 服务，确保密钥安全，统一数据聚合。
-- **Dify 智能工作流**：无缝集成 Dify Workflow，将复杂的业务逻辑和 Prompt 托管在 Dify 平台，前端仅需调用接口即可获取高质量分析报告。
-- **AI 全局控制**：提供全局 AI 功能开关，可一键开启或关闭系统内所有智能分析组件，灵活应对演示或生产环境需求。
-- **统一 UI 规范**：封装通用的进度条、图表与数据容器组件，确保不同业务板块视觉风格高度一致。
-- **高性能体验**：采用数据缓存、异步 AI 请求、错误熔断等策略，拒绝页面卡顿。
+- BFF 中台：后端统一维护 SQL 注册表与查询执行，隔离前端与数据源/密钥
+- 统一 UI：通用图表、表格、进度条组件保证一致性
+- 代理与缓存：Webpack Dev Server 代理后端；后端内置缓存命中提升体验
+- 无兜底策略：移除兜底/示例数据源；真实 SQL 无结果时前端展示空白
 
----
+## 系统架构
 
-## 🏗️ 系统架构
+采用 Client–BFF–Database 三层架构，BFF 同时承担 AI 工作流代理。
 
-本项目采用 **Client-Server-Database** 的三层架构，其中 Server 端作为 BFF (Backend for Frontend) 层，同时充当 Dify API 的安全代理。
-
-```mermaid
-flowchart LR
-    subgraph Client [前端 (React SPA)]
-        UI[页面组件] --> |Fetch Data| API_Data[数据接口]
-        UI --> |Fetch Analysis| API_AI[AI 代理接口]
-        API_AI --> |Check Config| AI_Switch{AI 开关}
-    end
-
-    subgraph Server [BFF 层 (Node.js/Express)]
-        Router[路由分发] --> |Registry| Registry[SQL 注册表]
-        Router --> |Proxy| Dify_Proxy[Dify 安全代理]
-        Registry --> |Load| SQLs[SQL 文件]
-        Router --> |Query| DB_Pool[Doris 连接池]
-    end
-    
-    subgraph Infrastructure [基础设施]
-        Doris[(Doris 数仓)]
-        Dify[Dify Workflow API]
-    end
-
-    API_Data --> Router
-    AI_Switch -- Enabled --> Dify_Proxy
-    AI_Switch -- Disabled --> Stop[停止请求]
-    DB_Pool <--> Doris
-    Dify_Proxy <--> Dify
-```
-
-### 📂 核心目录结构
+### 核心目录结构
 
 ```
-ChangLe-Operations-Weekly/
-├── public/                 # 静态资源入口
-├── src/                    # 前端源码 (React)
-│   ├── components/         # 通用组件
-│   │   ├── Common/         # 核心UI组件 (UnifiedProgressBar, AiAnalysisBox等)
-│   ├── config/             # 前端配置
-│   │   ├── aiConfig.js     # AI 功能全局开关
-│   │   └── businessTargets.js # 业务目标配置
-│   ├── pages/              # 业务页面 (Turnover, Cost, Store...)
-│   │   └── Turnover/       # 营业额模块
-│   ├── services/           # 业务服务
-│   │   └── difyService.js  # Dify API 前端调用封装
-│   └── utils/              # 工具函数
-├── server/                 # 后端源码 (BFF)
-│   ├── sqls/               # SQL 查询文件仓库
-│   ├── index.js            # 服务入口、DB连接与 Dify 代理路由
-│   ├── queryRegistry.js    # SQL 映射注册表
-│   └── .env                # 环境变量 (数据库凭证、Dify Keys)
-├── package.json            # 项目依赖配置
-└── webpack.config.js       # 构建与代理配置
+├── public/                 静态资源入口
+├── src/                    前端源码 (React)
+│   ├── components/Common   通用组件
+│   ├── pages               业务页面（营业额/成本与利润/现金流/门店）
+│   │   └── Turnover        营业额模块页面与组件
+│   ├── config              前端配置（业务目标、AI 开关）
+│   ├── services            接口封装
+│   └── utils               工具函数与数据预加载
+├── server/                 后端源码 (BFF)
+│   ├── sqls                SQL 查询文件仓库
+│   ├── index.js            服务入口与路由
+│   ├── queryRegistry.js    SQL 注册表（queryKey → SQL）
+│   └── .env                环境变量（数据库、AI Keys）
+├── package.json            根依赖与脚本
+└── webpack.config.js       构建与代理配置
 ```
 
----
+## 页面与数据
 
-## 🛠️ 技术深度解析
+### WeeklyReport 总览
+- Tab 切换：营业额 / 成本与利润 / 现金流 / 门店
+- 入口组件位置：[WeeklyReport/index.jsx](file:///Users/kailiu/AI-Project/ChangLe%20Operations%20Weekly/src/pages/WeeklyReport/index.jsx)
 
-### 1. Dify 工作流集成 (Dify Integration)
-我们将复杂的 AI 分析逻辑从代码中剥离，迁移至 **Dify** 平台。
-*   **配置管理**：在 `server/.env` 中配置 `DIFY_API_KEY`、`DIFY_BASE_URL` 和 `DIFY_USER`。
-*   **安全代理**：前端通过 `src/services/difyService.js` 发起请求，后端 `/api/dify/run-workflow` 负责附加鉴权信息并转发给 Dify，避免 API Key 泄露。
-*   **智能解析**：前端服务自动解析 Dify 返回的复杂 JSON 结构（支持 Markdown、普通文本或嵌套 JSON），确保 UI 正确渲染。
+### 营业额模块（Turnover）
+- 价格分解（客单价、指标联动）：[PriceDecompositionContainer.jsx](file:///Users/kailiu/AI-Project/ChangLe%20Operations%20Weekly/src/pages/Turnover/PriceDecompositionContainer.jsx)
+- 客次量分解（影响指标分析、城市统计）：[VolumeDecompositionContainer.jsx](file:///Users/kailiu/AI-Project/ChangLe%20Operations%20Weekly/src/pages/Turnover/VolumeDecompositionContainer.jsx)
+- 城市与门店周度营业额：城市趋势与门店列表：[RevenueDecompositionContainer.jsx](file:///Users/kailiu/AI-Project/ChangLe%20Operations%20Weekly/src/pages/Turnover/RevenueDecompositionContainer.jsx)
 
-### 2. AI 功能全局开关
-为了方便演示和调试，系统引入了全局 AI 控制机制。
-*   **位置**：`src/config/aiConfig.js`
-*   **原理**：修改 `ENABLE_AI` 为 `false` 时，前端 `difyService` 会拦截所有 AI 请求，且相关 UI 组件（如 `AiAnalysisBox`）会自动隐藏，实现“零打扰”模式。
+### 真实数据源（示例）
+- 周度营业额（城市/门店）：`turnover_weekly_city_yoy.sql`、`turnover_weekly_store_yoy.sql`
+- 客次量：`user_visit_count_annual.sql`、`user_visit_count_daily_avg_visit_monthly.sql`、`user_visit_count_cum_monthly.sql`
+- 回头率：`repurchase_rate_annual_yoy.sql`、`repurchase_rate_weekly_yoy.sql`、`repurchase_reate_city_weekly_yoy.sql`、`repurchase_reate_store_weekly_yoy.sql`
+- 活跃会员数：`active_user_monthly_yoy.sql`、`active_user_city_monthly_yoy.sql`、`active_user_store_monthly_yoy.sql`
+- 主动评价率：`active_review_rates_monthly_yoy.sql`、`active_review_rates_city_monthly_yoy.sql`、`active_review_rates_store_monthly_yoy.sql`
+- 推拿师天均服务时长：`staff_avg_daily_service_duration_monthly_yoy.sql`、`staff_avg_daily_service_duration_city_monthly_yoy.sql`、`staff_avg_daily_service_duration_store_monthly_yoy.sql`
+- 推拿师时长不达标占比：`staff_service_duration_below_standard_monthly.sql`、`staff_service_duration_below_standard_city_monthly.sql`
+- 新员工回头率达标率：`staff_return_compliance_annual.sql`、`staff_return_compliance_monthly.sql`、`staff_return_compliance_city_annual.sql`、`staff_return_compliance_city_monthly.sql`、`staff_return_compliance_store_annual.sql`
+- 床位人员配置比：`bed_to_staff_ratio_annual.sql`、`bed_to_staff_ratio_weekly.sql`、`bed_to_staff_ratio_city_annual.sql`、`bed_to_staff_ratio_city_weekly.sql`、`bed_to_staff_ratio_store_annual.sql`
 
-### 3. 统一进度条组件 (UnifiedProgressBar)
-针对不同业务场景（营业额、利润、门店），封装了高度可复用的进度条组件。
-*   **特性**：支持“实际进度”与“时间进度”对比，自动根据完成率显示不同颜色（完成度>=时间进度为主题色，否则为绿色预警），并统一了视觉宽度和排版。
+## 无兜底数据策略
 
----
+已移除所有兜底/示例 SQL 及引用。当真实 SQL 无结果时，前端展示空白。
 
-## 🚀 快速开始
+移除列表（示例）：
+- `process_city_data.sql`
+- `process_metric_trend.sql`
+- `volume_city_breakdown.sql`
+- `volume_influence_city.sql`
+- `volume_influence_trend.sql`
 
-### 1. 环境准备
-*   **Node.js**: >= 16.0.0 (推荐 18.x)
-*   **MySQL/Doris**: 确保数据库服务可用
+## 后端接口
 
-### 2. 安装依赖
+主要接口位于：[server/index.js](file:///Users/kailiu/AI-Project/ChangLe%20Operations%20Weekly/server/index.js)
+
+- `POST /api/fetch-data` 执行 SQL（queryKey 见注册表）
+- `GET /api/cost-structure` 成本结构分析（含回退逻辑）
+- `POST /api/generate-reminder` 生成提醒/公告
+- `POST /api/dify/run-workflow` Dify 工作流代理
+- `GET /api/analysis/variables` 获取分析变量配置
+- `GET /api/analysis/workflows` 获取工作流配置
+- `POST /api/analysis/execute-smart-analysis` 执行智能分析
+- `GET /health` 健康检查
+
+## SQL 注册与调用
+
+后端注册表：[queryRegistry.js](file:///Users/kailiu/AI-Project/ChangLe%20Operations%20Weekly/server/queryRegistry.js)，每个 `queryKey` 对应一份 SQL 与中文描述。前端通过 `useFetchData(queryKey)` 或直接调用 `/api/fetch-data` 获取数据。
+
+示例请求体：
+
+```json
+{ "queryKey": "getCityWeeklyTrend", "params": ["成都市"] }
+```
+
+## 快速开始
 
 ```bash
-# 安装根目录依赖（前端 + 构建工具）
+# 安装依赖（根目录）
 npm install
 
-# 安装服务端依赖
-cd server
-npm install
-cd ..
-```
+# 安装后端依赖
+cd server && npm install && cd ..
 
-### 3. 配置环境变量
+# 启动后端（终端1）
+npm run server
 
-复制 server 端的示例配置文件并填入真实信息：
-
-```bash
-cp server/.env.example server/.env
-```
-
-编辑 `server/.env`：
-
-```env
-# Database
-DB_HOST=your_doris_host
-DB_PORT=9030
-DB_USER=your_username
-DB_PASSWORD=your_password
-DB_NAME=data_warehouse
-
-# Dify Workflow
-DIFY_API_KEY=your_dify_api_key
-DIFY_BASE_URL=http://your_dify_host/v1/workflows/run
-DIFY_USER=changle-report
-```
-
-### 4. 启动开发服务
-
-```bash
-# 终端 1：启动后端服务 (BFF)
-node server/index.js
-
-# 终端 2：启动前端开发服务器 (Webpack Dev Server)
+# 启动前端（终端2）
 npm run dev
 ```
 
-访问浏览器：`http://localhost:8000`
+打开浏览器访问：`http://localhost:8000`
 
----
+## 环境变量与安全
 
-## 📝 开发指南
+后端环境变量位于 `server/.env`。该文件非常重要，包含数据库与第三方服务密钥，不应随意修改。如需调整请先获得授权，并避免在版本库中泄露。
+
+## 开发指南
 
 ### 添加新的 SQL 报表
-1. 在 `server/sqls/` 下创建新的 `.sql` 文件。
-2. 在 `server/queryRegistry.js` 中注册该 SQL，分配一个 `queryKey`。
-3. 前端使用 `fetch('/api/fetch-data', { body: { queryKey: '...' } })` 获取数据。
+1. 在 `server/sqls` 新建 `.sql`
+2. 在 `server/queryRegistry.js` 注册并编写中文描述
+3. 前端通过 `useFetchData('queryKey')` 或 `/api/fetch-data` 使用
 
-### 添加新的 AI 分析
-1. 在 Dify 平台配置好 Workflow。
-2. 在前端组件中引入 `difyService`。
-3. 调用 `await difyService.runWorkflow(workflowKey, inputs)` 获取分析结果。
+### 常见问题
+- 端口占用：`EADDRINUSE :3001`，请结束占用进程或修改端口
+- Invalid query key：说明未在注册表注册或已删除
+- Doris 表缺失：后端将返回错误；本项目不再返回兜底数据
+- 构建警告：bundle 较大可考虑代码分割
 
-### 控制 AI 开关
-修改 `src/config/aiConfig.js`：
-```javascript
-export const AI_CONFIG = {
-  ENABLE_AI: true, // true: 开启; false: 关闭
-};
-```

@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { cityStoreMap } from '../../data/storeData';
 import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
@@ -692,7 +691,6 @@ const VolumeDecompositionContainer = () => {
   };
 
   const renderInfluenceTable = () => {
-    const cities = Object.keys(cityStoreMap);
     // 近12个月的表头（随时间滚动）
     const buildLast12Months = () => {
       const now = new Date();
