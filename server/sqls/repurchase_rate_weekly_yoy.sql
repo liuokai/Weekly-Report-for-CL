@@ -3,8 +3,8 @@
 WITH weekly_metrics AS (
     -- 第一步：按年、周维度汇总数据
     SELECT 
-        YEAR(off_clock_time)                                 AS s_year,
-        WEEK(off_clock_time, 1)                              AS s_week,
+        YEAR(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'))    AS s_year,
+        WEEK(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'), 1) AS s_week,
         COUNT(DISTINCT order_uid)                            AS total_orders,
         SUM(IF(is_project_repurchase_customer = '是', 1, 0)) AS repurchase_orders
     FROM dwd_sales_order_detail

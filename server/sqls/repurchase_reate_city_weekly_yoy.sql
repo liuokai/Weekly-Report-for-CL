@@ -3,11 +3,11 @@
 WITH weekly_city_metrics AS (
     -- 第一步：按年、周、统计城市名称汇总数据
     SELECT
-        YEAR(t1.off_clock_time)                                 AS s_year,
-        WEEK(t1.off_clock_time, 1)                              AS s_week,
-        -- 这两个是聚合结果，不需要放入 GROUP BY
-        MIN(DATE(t1.off_clock_time))                            AS week_start_date,
-        MAX(DATE(t1.off_clock_time))                            AS week_end_date,
+        YEAR(STR_TO_DATE(CONCAT(YEARWEEK(t1.off_clock_time, 1), ' Monday'), '%x%v %W'))    AS s_year,
+        WEEK(STR_TO_DATE(CONCAT(YEARWEEK(t1.off_clock_time, 1), ' Monday'), '%x%v %W'), 1) AS s_week,
+        STR_TO_DATE(CONCAT(YEARWEEK(t1.off_clock_time, 1), ' Monday'), '%x%v %W')          AS week_start_date,
+        DATE_ADD(STR_TO_DATE(CONCAT(YEARWEEK(t1.off_clock_time, 1), ' Monday'), '%x%v %W'),
+                 INTERVAL 6 DAY)                                                            AS week_end_date,
         t2.statistics_city_name,
         COUNT(DISTINCT t1.order_uid)                            AS total_orders,
         SUM(IF(t1.is_project_repurchase_customer = '是', 1, 0)) AS repurchase_orders
@@ -15,9 +15,7 @@ WITH weekly_city_metrics AS (
     LEFT JOIN dm_city t2 ON t1.city_code = t2.city_code
     WHERE t1.off_clock_time IS NOT NULL
       AND t1.off_clock_time >= '2024-01-01'
-    -- 核心修改：按第1、2、5列分组（年份、周数、城市名）
-    -- 对应 SELECT 中的：s_year, s_week, statistics_city_name
-    GROUP BY 1, 2, 5
+    GROUP BY 1, 2, 3, 4, 5
 ),
 rate_calculation AS (
     -- 第二步：计算回头率

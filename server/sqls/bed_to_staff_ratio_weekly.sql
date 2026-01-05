@@ -2,8 +2,8 @@
 
 WITH weekly_last_day_data AS (
     -- 第一步：通过窗口函数找出每周日期最大（最后一天）的那行数据
-    SELECT YEAR(date)    AS s_year,
-           WEEK(date, 1) AS s_week,
+    SELECT YEAR(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W'))    AS s_year,
+           WEEK(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W'), 1) AS s_week,
            store_code,
            store_name,
            massager_on_duty_count,
@@ -11,7 +11,8 @@ WITH weekly_last_day_data AS (
            bed_to_staff_ratio_on_duty,
            date          AS last_date_of_week,
            ROW_NUMBER() OVER (
-               PARTITION BY YEAR(date), WEEK(date, 1)
+               PARTITION BY YEAR(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W')),
+                            WEEK(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W'), 1)
                ORDER BY date DESC
                )         AS rn
     FROM dws_indicator_bed_staffing_table_daily

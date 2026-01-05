@@ -118,50 +118,16 @@ const HQMetricsTrendChart = () => {
   };
 
   const weeksMeta = useMemo(() => {
-    const result = [];
-    const today = new Date();
-    const oneDay = 24 * 60 * 60 * 1000;
-    const startOfWeek = (date) => {
-      const d = new Date(date);
-      const day = d.getDay() || 7; // Sunday=0 -> 7
-      const diff = day - 1; // Monday as start
-      d.setDate(d.getDate() - diff);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    };
-    const endOfWeek = (start) => {
-      const d = new Date(start.getTime() + 6 * oneDay);
-      d.setHours(23, 59, 59, 999);
-      return d;
-    };
-    const fmtYYMMDD = (d) => {
-      const yy = String(d.getFullYear()).slice(-2);
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${yy}${mm}${dd}`;
-    };
-    const getISOWeekInfo = (date) => {
-      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      const dayNum = d.getUTCDay() || 7;
-      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-      const week = Math.ceil((((d - yearStart) / oneDay) + 1) / 7);
-      return { year: d.getUTCFullYear(), week };
-    };
-    for (let i = 11; i >= 0; i--) {
-      const ref = new Date(today.getTime() - i * 7 * oneDay);
-      const start = startOfWeek(ref);
-      const end = endOfWeek(start);
-      const { year, week } = getISOWeekInfo(start);
-      result.push({
-        year,
-        week,
-        startStr: fmtYYMMDD(start),
-        endStr: fmtYYMMDD(end)
-      });
-    }
-    return result;
-  }, []);
+    const src = activeMetric === 'annualAvgPrice' ? annualYtdData : weeklyData;
+    if (!src || src.length === 0) return [];
+    const sorted = [...src].slice(0, 12).reverse();
+    return sorted.map(item => ({
+      year: Number(item.sales_year) || 0,
+      week: Number(item.sales_week) || 0,
+      startStr: String((item.week_date_range || '').split('~')[0] || '').trim().replace(/-/g, '/').slice(2).replace(/\//g, '').replace(/^(\d{2})(\d{2})(\d{2}).*$/, '$1$2$3'),
+      endStr: String((item.week_date_range || '').split('~')[1] || '').trim().replace(/-/g, '/').slice(2).replace(/\//g, '').replace(/^(\d{2})(\d{2})(\d{2}).*$/, '$1$2$3')
+    }));
+  }, [activeMetric, annualYtdData, weeklyData]);
 
   const currentMetricConfig = metricsData[activeMetric];
 
@@ -232,7 +198,7 @@ const HQMetricsTrendChart = () => {
         values={currentMetricConfig.data}
         valuesYoY={currentMetricConfig.dataYoY}
         valuesPct={currentMetricConfig.dataPct}
-        xLabels={weeksMeta.map(w => `${w.week} 周`)}
+        xLabels={weeksMeta.map(w => `第${String(w.week).padStart(2, '0')}周`)}
         showYoY={controls.showYoY}
         showTrend={controls.showAverage}
         showExtremes={controls.showExtremes}

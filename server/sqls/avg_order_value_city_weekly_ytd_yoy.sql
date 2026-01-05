@@ -5,8 +5,8 @@ WITH city_weekly_stats AS (
     SELECT
         b.statistics_city_name                                                                AS city_name,
         YEARWEEK(off_clock_time, 1)                                                          AS year_week_key,
-        YEAR(off_clock_time)                                                                 AS sales_year,
-        WEEK(off_clock_time, 1)                                                              AS sales_week,
+        YEAR(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'))        AS sales_year,
+        WEEK(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'), 1)     AS sales_week,
         -- 计算该周的日期范围
         STR_TO_DATE(
             CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'),

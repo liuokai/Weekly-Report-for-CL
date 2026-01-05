@@ -3,12 +3,13 @@
 WITH weekly_snapshot_date AS (
     -- 第一步：找出每年、每周有数据的最后一天
     SELECT
-        YEAR(date)    AS s_year,
-        WEEK(date, 1) AS s_week,
+        YEAR(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W'))    AS s_year,
+        WEEK(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W'), 1) AS s_week,
         MAX(date)     AS last_date_of_week
     FROM dws_indicator_bed_staffing_table_daily
     WHERE date IS NOT NULL
-    GROUP BY YEAR(date), WEEK(date, 1)
+    GROUP BY YEAR(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W')),
+             WEEK(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W'), 1)
 ),
 weekly_city_aggregated_metrics AS (
     -- 第二步：按年、周、城市汇总该周最后一天的总人数和总床位
