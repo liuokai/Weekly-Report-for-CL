@@ -42,6 +42,14 @@ const VolumeDecompositionContainer = () => {
   const { data: activeUserMonthlyYoy } = useFetchData('getActiveUserMonthlyYoy', []);
   const { data: activeUserCityMonthlyYoy } = useFetchData('getActiveUserCityMonthlyYoy', []);
   const { data: activeUserStoreMonthlyYoy } = useFetchData('getActiveUserStoreMonthlyYoy', { city: selectedCity });
+  // 会员流失率（真实数据源）
+  const { data: memberChurnMonthlyYoy } = useFetchData('getMemberChurnRateMonthlyYoy', []);
+  const { data: memberChurnCityMonthlyYoy } = useFetchData('getMemberChurnRateCityMonthlyYoy', []);
+  const { data: memberChurnStoreMonthlyYoy } = useFetchData('getMemberChurnRateStoreMonthlyYoy', { city: selectedCity });
+  // 主动评价率（真实数据源）
+  const { data: activeReviewRateMonthlyYoy } = useFetchData('getActiveReviewRateMonthlyYoy', []);
+  const { data: activeReviewRateCityMonthlyYoy } = useFetchData('getActiveReviewRateCityMonthlyYoy', []);
+  const { data: activeReviewRateStoreMonthlyYoy } = useFetchData('getActiveReviewRateStoreMonthlyYoy', { city: selectedCity });
 
   const { data: cityBreakdownData } = useFetchData('getVolumeCityBreakdown');
 
@@ -441,6 +449,59 @@ const VolumeDecompositionContainer = () => {
           return Number.isFinite(v) ? v : null;
         });
       }
+    } else if (influenceMetric === 'churn_rate') {
+      if (memberChurnCityMonthlyYoy && memberChurnCityMonthlyYoy.length > 0) {
+        const filtered = memberChurnCityMonthlyYoy.filter(d => d.city === selectedCity);
+        const byMonth = {};
+        filtered.forEach(d => { 
+          const m = String(d.month).substring(0, 7);
+          byMonth[m] = {
+            curr: Number(d.churn_rate),
+            prev: Number(d.churn_rate_last_year),
+            pct: Number(d.churn_rate_yoy)
+          };
+        });
+        trendValues = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.curr;
+          return Number.isFinite(v) ? v : null;
+        });
+        trendValuesYoY = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.prev;
+          return Number.isFinite(v) ? v : null;
+        });
+        trendValuesPct = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.pct;
+          return Number.isFinite(v) ? v : null;
+        });
+      }
+    } else if (influenceMetric === 'review_rate') {
+      if (activeReviewRateCityMonthlyYoy && activeReviewRateCityMonthlyYoy.length > 0) {
+        const filtered = activeReviewRateCityMonthlyYoy.filter(d => (d.city === selectedCity || d.city_name === selectedCity));
+        const byMonth = {};
+        filtered.forEach(d => {
+          const m = String(d.month).substring(0, 7);
+          const curr = d.review_rate_pct != null ? Number(d.review_rate_pct) : Number(d.review_rate);
+          const prev = d.last_year_review_rate_pct != null ? Number(d.last_year_review_rate_pct) : Number(d.last_year_review_rate);
+          const yoy = d.yoy_change_pct_points != null ? Number(d.yoy_change_pct_points) : (curr != null && prev != null ? Number((curr - prev).toFixed(2)) : null);
+          byMonth[m] = {
+            curr: Number.isFinite(curr) ? curr : null,
+            prev: Number.isFinite(prev) ? prev : null,
+            pct: Number.isFinite(yoy) ? yoy : null
+          };
+        });
+        trendValues = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.curr;
+          return Number.isFinite(v) ? Number(v) : null;
+        });
+        trendValuesYoY = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.prev;
+          return Number.isFinite(v) ? Number(v) : null;
+        });
+        trendValuesPct = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.pct;
+          return Number.isFinite(v) ? Number(v) : null;
+        });
+      }
     }
 
     // 下半部分表格：该城市下各门店近12月推拿师天均服务时长
@@ -459,6 +520,42 @@ const VolumeDecompositionContainer = () => {
           if (idx !== -1) {
             const num = Number(d.active_member_count);
             storeMap[key][`m${idx + 1}`] = Number.isFinite(num) ? num : null;
+          }
+        });
+        storeData = Object.values(storeMap);
+      }
+    } else if (influenceMetric === 'churn_rate') {
+      if (memberChurnStoreMonthlyYoy && memberChurnStoreMonthlyYoy.length > 0) {
+        const filtered = memberChurnStoreMonthlyYoy.filter(d => d.city === selectedCity);
+        const storeMap = {};
+        filtered.forEach(d => {
+          const key = d.store_name;
+          if (!storeMap[key]) {
+            storeMap[key] = { key, store: d.store_name };
+          }
+          const m = String(d.month).substring(0, 7);
+          const idx = monthKeysDesc.indexOf(m);
+          if (idx !== -1) {
+            const num = Number(d.churn_rate);
+            storeMap[key][`m${idx + 1}`] = Number.isFinite(num) ? Number(num.toFixed(2)) : null;
+          }
+        });
+        storeData = Object.values(storeMap);
+      }
+    } else if (influenceMetric === 'review_rate') {
+      if (activeReviewRateStoreMonthlyYoy && activeReviewRateStoreMonthlyYoy.length > 0) {
+        const filtered = activeReviewRateStoreMonthlyYoy.filter(d => (d.city === selectedCity || d.city_name === selectedCity));
+        const storeMap = {};
+        filtered.forEach(d => {
+          const key = d.store_name;
+          if (!storeMap[key]) {
+            storeMap[key] = { key, store: d.store_name };
+          }
+          const m = String(d.month).substring(0, 7);
+          const idx = monthKeysDesc.indexOf(m);
+          if (idx !== -1) {
+            const curr = d.review_rate_pct != null ? Number(d.review_rate_pct) : Number(d.review_rate);
+            storeMap[key][`m${idx + 1}`] = Number.isFinite(curr) ? Number(curr.toFixed(2)) : null;
           }
         });
         storeData = Object.values(storeMap);
@@ -671,6 +768,40 @@ const VolumeDecompositionContainer = () => {
              map[city][`m${idx + 1}`] = Number.isFinite(num) ? num : null;
            }
          });
+        cityData = Object.values(map);
+      }
+    } else if (influenceMetric === 'churn_rate') {
+      if (memberChurnCityMonthlyYoy && memberChurnCityMonthlyYoy.length > 0) {
+        const map = {};
+        memberChurnCityMonthlyYoy.forEach(item => {
+          const city = item.city;
+          const m = String(item.month).substring(0, 7);
+          if (!map[city]) {
+            map[city] = { key: city, city };
+          }
+          const idx = monthKeysDesc.indexOf(m);
+          if (idx !== -1) {
+            const num = Number(item.churn_rate);
+            map[city][`m${idx + 1}`] = Number.isFinite(num) ? Number(num.toFixed(2)) : null;
+          }
+        });
+        cityData = Object.values(map);
+      }
+    } else if (influenceMetric === 'review_rate') {
+      if (activeReviewRateCityMonthlyYoy && activeReviewRateCityMonthlyYoy.length > 0) {
+        const map = {};
+        activeReviewRateCityMonthlyYoy.forEach(item => {
+          const city = item.city || item.city_name;
+          const m = String(item.month).substring(0, 7);
+          if (!map[city]) {
+            map[city] = { key: city, city };
+          }
+          const idx = monthKeysDesc.indexOf(m);
+          if (idx !== -1) {
+            const curr = item.review_rate_pct != null ? Number(item.review_rate_pct) : Number(item.review_rate);
+            map[city][`m${idx + 1}`] = Number.isFinite(curr) ? Number(curr.toFixed(2)) : null;
+          }
+        });
         cityData = Object.values(map);
       }
     } else {
@@ -903,13 +1034,64 @@ const VolumeDecompositionContainer = () => {
            return Number.isFinite(v) ? v : null;
          });
        }
+     } else if (influenceMetric === 'churn_rate') {
+       if (memberChurnMonthlyYoy && memberChurnMonthlyYoy.length > 0) {
+         const byMonth = {};
+         memberChurnMonthlyYoy.forEach(d => {
+           const m = String(d.month).substring(0, 7);
+           byMonth[m] = {
+             curr: Number(d.churn_rate),
+             prev: Number(d.churn_rate_last_year),
+             pct: Number(d.churn_rate_yoy)
+           };
+         });
+         values = monthKeys.map(k => {
+           const v = byMonth[k]?.curr;
+           return Number.isFinite(v) ? v : null;
+         });
+         valuesYoY = monthKeys.map(k => {
+           const v = byMonth[k]?.prev;
+           return Number.isFinite(v) ? v : null;
+         });
+         valuesPct = monthKeys.map(k => {
+           const v = byMonth[k]?.pct;
+           return Number.isFinite(v) ? v : null;
+         });
+       }
+     } else if (influenceMetric === 'review_rate') {
+       if (activeReviewRateMonthlyYoy && activeReviewRateMonthlyYoy.length > 0) {
+         const byMonth = {};
+         activeReviewRateMonthlyYoy.forEach(d => {
+           const m = String(d.month).substring(0, 7);
+           const curr = d.review_rate_pct != null ? Number(d.review_rate_pct) : Number(d.review_rate);
+           const prev = d.last_year_review_rate_pct != null ? Number(d.last_year_review_rate_pct) : Number(d.last_year_review_rate);
+           const yoy = d.yoy_change_pct_points != null ? Number(d.yoy_change_pct_points) : (curr != null && prev != null ? Number((curr - prev).toFixed(2)) : null);
+           byMonth[m] = {
+             curr: Number.isFinite(curr) ? curr : null,
+             prev: Number.isFinite(prev) ? prev : null,
+             pct: Number.isFinite(yoy) ? yoy : null
+           };
+         });
+         values = monthKeys.map(k => {
+           const v = byMonth[k]?.curr;
+           return Number.isFinite(v) ? Number(v) : null;
+         });
+         valuesYoY = monthKeys.map(k => {
+           const v = byMonth[k]?.prev;
+           return Number.isFinite(v) ? Number(v) : null;
+         });
+         valuesPct = monthKeys.map(k => {
+           const v = byMonth[k]?.pct;
+           return Number.isFinite(v) ? Number(v) : null;
+         });
+       }
      } else {
-      if (influenceTrendData && influenceTrendData.length > 0) {
-        const sorted = [...influenceTrendData].sort((a, b) => a.month - b.month);
-        values = sorted.map(d => parseFloat(d.current_value));
-        valuesYoY = sorted.map(d => parseFloat(d.last_year_value));
-      }
-    }
+       if (influenceTrendData && influenceTrendData.length > 0) {
+         const sorted = [...influenceTrendData].sort((a, b) => a.month - b.month);
+         values = sorted.map(d => parseFloat(d.current_value));
+         valuesYoY = sorted.map(d => parseFloat(d.last_year_value));
+       }
+     }
 
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mt-6">

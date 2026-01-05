@@ -96,20 +96,36 @@ const TurnoverReport = () => {
             const currentYearData = sortedData[0];
             const prevYearData = sortedData[1];
 
+            // 1. 本年累计营业额 (最新一年 total_turnover)
             const currentTurnover = currentYearData ? parseFloat(currentYearData.total_turnover) : 0;
-            const prevTurnover = prevYearData ? parseFloat(prevYearData.total_turnover) : 0;
-            
             const actualInWan = currentTurnover / 10000;
             
+            // 2. 去年同期值
+            // 优先使用当前行数据中的 last_year_same_period_turnover 字段，该字段在 SQL 中已专门计算
+            // 如果该字段无效，再尝试回退到上一年的 same_period_turnover
+            let prevSamePeriodTurnover = 0;
+            if (currentYearData && currentYearData.last_year_same_period_turnover) {
+                prevSamePeriodTurnover = parseFloat(currentYearData.last_year_same_period_turnover);
+            } else if (prevYearData && prevYearData.same_period_turnover) {
+                prevSamePeriodTurnover = parseFloat(prevYearData.same_period_turnover);
+            }
+            
+            const lastYearSamePeriodInWan = prevSamePeriodTurnover / 10000;
+
+            // 4. 同比 (最新一年 yoy_rate)
             let yoy = 0;
-            if (prevTurnover > 0) {
-              yoy = ((currentTurnover - prevTurnover) / prevTurnover) * 100;
+            if (currentYearData && currentYearData.yoy_rate != null) {
+              yoy = parseFloat(currentYearData.yoy_rate);
+            } else if (prevSamePeriodTurnover > 0) {
+              yoy = ((currentTurnover - prevSamePeriodTurnover) / prevSamePeriodTurnover) * 100;
             }
 
             const newMetrics = {
               actual: parseFloat(actualInWan.toFixed(2)),
               target: BusinessTargets.turnover.annualTarget,
-              yoy: parseFloat(yoy.toFixed(1))
+              lastYearSamePeriod: parseFloat(lastYearSamePeriodInWan.toFixed(2)),
+              // 直接使用数值，不要再次 toFixed(1) 导致精度丢失或四舍五入
+              yoy: yoy
             };
 
             setRevenueMetrics(newMetrics);
@@ -225,9 +241,15 @@ const TurnoverReport = () => {
                           </span>
                        </div>
                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-gray-500 whitespace-nowrap">去年同期</span>
+                          <span className="text-lg font-bold text-gray-800">
+                            {revenueMetrics.lastYearSamePeriod?.toLocaleString() ?? 0} <span className="text-xs font-normal text-gray-500">万元</span>
+                          </span>
+                       </div>
+                       <div className="flex items-center gap-4">
                           <span className="text-sm text-gray-500 whitespace-nowrap">同比</span>
                           <span className={`text-lg font-bold ${revenueMetrics.yoy >= 0 ? 'text-[#a40035]' : 'text-green-600'}`}>
-                             {revenueMetrics.yoy > 0 ? '+' : ''}{revenueMetrics.yoy}%
+                             {revenueMetrics.yoy > 0 ? '+' : ''}{revenueMetrics.yoy?.toFixed(2)}%
                           </span>
                        </div>
                     </div>

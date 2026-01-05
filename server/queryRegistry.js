@@ -173,6 +173,32 @@ const queryRegistry = {
     sql: loadSql('active_user_store_monthly_yoy.sql'),
     description: '按月、城市、门店维度统计活跃会员数（含去年同期与同比）'
   },
+  // 主动评价率相关
+  getActiveReviewRateMonthlyYoy: {
+    sql: loadSql('active_review_rates_monthly_yoy.sql'),
+    description: '按月统计会员主动评价率（含去年同期与同比差）'
+  },
+  getActiveReviewRateCityMonthlyYoy: {
+    sql: loadSql('active_review_rates_city_monthly_yoy.sql'),
+    description: '按月、城市维度统计会员主动评价率（含去年同期与同比差）'
+  },
+  getActiveReviewRateStoreMonthlyYoy: {
+    sql: loadSql('active_review_rates_store_monthly_yoy.sql'),
+    description: '按月、城市、门店维度统计会员主动评价率（含去年同期与同比差）'
+  },
+  // 会员流失率相关
+  getMemberChurnRateMonthlyYoy: {
+    sql: loadSql('member_churn_rate_monthly_yoy.sql'),
+    description: '按月统计会员数量、流失数量及流失率（含去年同期与同比差）'
+  },
+  getMemberChurnRateCityMonthlyYoy: {
+    sql: loadSql('member_churn_rate_city_monthly_yoy.sql'),
+    description: '按月、城市维度统计会员数量、流失数量及流失率（含去年同期与同比差）'
+  },
+  getMemberChurnRateStoreMonthlyYoy: {
+    sql: loadSql('member_churn_rate_store_monthly_yoy.sql'),
+    description: '按月、城市、门店维度统计会员数量、流失数量及流失率（含去年同期与同比差）'
+  },
   // 新员工回头率达标率相关
   getNewEmpReturnComplianceAnnual: {
     sql: loadSql('staff_return_compliance_annual.sql'),

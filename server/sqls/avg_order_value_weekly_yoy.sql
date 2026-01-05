@@ -56,5 +56,5 @@ FROM weekly_aov_base curr
 LEFT JOIN weekly_aov_base prev
        ON curr.sales_year = prev.sales_year + 1
       AND curr.sales_week = prev.sales_week
-WHERE curr.sales_year = 2025
+WHERE curr.sales_year >= 2025
 ORDER BY curr.year_week_key DESC;
