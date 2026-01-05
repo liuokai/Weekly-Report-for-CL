@@ -38,6 +38,11 @@ const VolumeDecompositionContainer = () => {
   // 推拿师天均服务时长不达标占比（真实数据源）
   const { data: staffDurationBelowStandardMonthly } = useFetchData('getStaffServiceDurationBelowStandardMonthly', []);
   const { data: staffDurationBelowStandardCityMonthly } = useFetchData('getStaffServiceDurationBelowStandardCityMonthly', []);
+  // 活跃会员数（真实数据源）
+  const { data: activeUserMonthlyYoy } = useFetchData('getActiveUserMonthlyYoy', []);
+  const { data: activeUserCityMonthlyYoy } = useFetchData('getActiveUserCityMonthlyYoy', []);
+  const { data: activeUserStoreMonthlyYoy } = useFetchData('getActiveUserStoreMonthlyYoy', { city: selectedCity });
+
   const { data: cityBreakdownData } = useFetchData('getVolumeCityBreakdown');
 
   const tableData = useMemo(() => {
@@ -371,6 +376,7 @@ const VolumeDecompositionContainer = () => {
     // 上半部分趋势：选定城市近12月的指标趋势
     let trendValues = [];
     let trendValuesYoY = [];
+    let trendValuesPct = [];
     if (influenceMetric === 'duration') {
       if (staffDurationCityMonthly && staffDurationCityMonthly.length > 0) {
         const filtered = staffDurationCityMonthly.filter(d => d.statistics_city_name === selectedCity);
@@ -410,11 +416,54 @@ const VolumeDecompositionContainer = () => {
           return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
         });
       }
+    } else if (influenceMetric === 'active_members') {
+      if (activeUserCityMonthlyYoy && activeUserCityMonthlyYoy.length > 0) {
+        const filtered = activeUserCityMonthlyYoy.filter(d => d.statistics_city_name === selectedCity);
+        const byMonth = {};
+        filtered.forEach(d => {
+          const m = String(d.month).substring(0, 7);
+          byMonth[m] = {
+            curr: Number(d.active_member_count),
+            prev: Number(d.last_year_active_member_count),
+            pct: Number(d.yoy_rate)
+          };
+        });
+        trendValues = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.curr;
+          return Number.isFinite(v) ? v : null;
+        });
+        trendValuesYoY = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.prev;
+          return Number.isFinite(v) ? v : null;
+        });
+        trendValuesPct = monthKeysAsc.map(k => {
+          const v = byMonth[k]?.pct;
+          return Number.isFinite(v) ? v : null;
+        });
+      }
     }
 
     // 下半部分表格：该城市下各门店近12月推拿师天均服务时长
     let storeData = [];
-    if (staffDurationStoreMonthly && staffDurationStoreMonthly.length > 0) {
+    if (influenceMetric === 'active_members') {
+      if (activeUserStoreMonthlyYoy && activeUserStoreMonthlyYoy.length > 0) {
+        const filtered = activeUserStoreMonthlyYoy.filter(d => d.statistics_city_name === selectedCity);
+        const storeMap = {};
+        filtered.forEach(d => {
+          const key = d.store_name;
+          if (!storeMap[key]) {
+            storeMap[key] = { key, store: d.store_name };
+          }
+          const m = String(d.month).substring(0, 7);
+          const idx = monthKeysDesc.indexOf(m);
+          if (idx !== -1) {
+            const num = Number(d.active_member_count);
+            storeMap[key][`m${idx + 1}`] = Number.isFinite(num) ? num : null;
+          }
+        });
+        storeData = Object.values(storeMap);
+      }
+    } else if (staffDurationStoreMonthly && staffDurationStoreMonthly.length > 0) {
       const filtered = staffDurationStoreMonthly.filter(d => d.statistics_city_name === selectedCity);
       const storeMap = {};
       filtered.forEach(d => {
@@ -521,6 +570,7 @@ const VolumeDecompositionContainer = () => {
                 headerTitle={`${metricNameMap[influenceMetric]}趋势`}
                 values={trendValues}
                 valuesYoY={trendValuesYoY}
+                valuesPct={trendValuesPct}
                 xLabels={monthsAsc}
                 height={300}
                 valueFormatter={(v) => {
@@ -604,6 +654,23 @@ const VolumeDecompositionContainer = () => {
             map[city][`m${idx + 1}`] = Number.isFinite(num) ? Number(num.toFixed(2)) : null;
           }
         });
+        cityData = Object.values(map);
+      }
+    } else if (influenceMetric === 'active_members') {
+      if (activeUserCityMonthlyYoy && activeUserCityMonthlyYoy.length > 0) {
+        const map = {};
+         activeUserCityMonthlyYoy.forEach(item => {
+           const city = item.statistics_city_name;
+           const m = String(item.month).substring(0, 7);
+           if (!map[city]) {
+             map[city] = { key: city, city };
+           }
+           const idx = monthKeysDesc.indexOf(m);
+           if (idx !== -1) {
+             const num = Number(item.active_member_count);
+             map[city][`m${idx + 1}`] = Number.isFinite(num) ? num : null;
+           }
+         });
         cityData = Object.values(map);
       }
     } else {
@@ -704,7 +771,7 @@ const VolumeDecompositionContainer = () => {
       const [y, m] = ym.split('-');
       return `${String(y).slice(-2)}年${Number(m)}月`;
     });
-    let values = [], valuesYoY = [], title, unit, yAxisFormatter, valueFormatter;
+    let values = [], valuesYoY = [], valuesPct = [], title, unit, yAxisFormatter, valueFormatter;
 
     // Set titles and formatters based on metric
     if (influenceMetric === 'duration') {
@@ -812,7 +879,31 @@ const VolumeDecompositionContainer = () => {
           return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
         });
       }
-    } else {
+    } else if (influenceMetric === 'active_members') {
+      if (activeUserMonthlyYoy && activeUserMonthlyYoy.length > 0) {
+        const byMonth = {};
+          activeUserMonthlyYoy.forEach(d => {
+            const m = String(d.month).substring(0, 7);
+            byMonth[m] = {
+              curr: Number(d.active_member_count),
+              prev: Number(d.last_year_active_member_count),
+              pct: Number(d.yoy_rate)
+            };
+          });
+          values = monthKeys.map(k => {
+           const v = byMonth[k]?.curr;
+           return Number.isFinite(v) ? v : null;
+         });
+         valuesYoY = monthKeys.map(k => {
+           const v = byMonth[k]?.prev;
+           return Number.isFinite(v) ? v : null;
+         });
+         valuesPct = monthKeys.map(k => {
+           const v = byMonth[k]?.pct;
+           return Number.isFinite(v) ? v : null;
+         });
+       }
+     } else {
       if (influenceTrendData && influenceTrendData.length > 0) {
         const sorted = [...influenceTrendData].sort((a, b) => a.month - b.month);
         values = sorted.map(d => parseFloat(d.current_value));
@@ -904,6 +995,7 @@ const VolumeDecompositionContainer = () => {
           headerUnit={unit}
           values={values}
           valuesYoY={valuesYoY}
+          valuesPct={valuesPct}
           xLabels={months}
           showYoY={showInfYoY}
           showAverage={showInfAvg}

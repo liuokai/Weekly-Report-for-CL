@@ -160,6 +160,19 @@ const queryRegistry = {
     sql: loadSql('repurchase_reate_store_weekly_yoy.sql'),
     description: '门店维度项目回头率统计'
   },
+  // 活跃会员数相关
+  getActiveUserMonthlyYoy: {
+    sql: loadSql('active_user_monthly_yoy.sql'),
+    description: '按月统计活跃会员数（含去年同期与同比），取最近12个月'
+  },
+  getActiveUserCityMonthlyYoy: {
+    sql: loadSql('active_user_city_monthly_yoy.sql'),
+    description: '按月、城市维度统计活跃会员数（含去年同期与同比）'
+  },
+  getActiveUserStoreMonthlyYoy: {
+    sql: loadSql('active_user_store_monthly_yoy.sql'),
+    description: '按月、城市、门店维度统计活跃会员数（含去年同期与同比）'
+  },
   // 新员工回头率达标率相关
   getNewEmpReturnComplianceAnnual: {
     sql: loadSql('staff_return_compliance_annual.sql'),
