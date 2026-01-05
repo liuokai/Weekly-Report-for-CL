@@ -4,13 +4,24 @@ WITH weekly_city_sales AS (
     SELECT
         b.statistics_city_name,
         YEARWEEK(a.off_clock_time, 1)                                                                      AS year_week_key,
-        YEAR(a.off_clock_time)                                                                             AS sales_year,
-        WEEK(a.off_clock_time, 1)                                                                          AS sales_week,
+
+        -- ✅ ISO 年 / ISO 周：统一从 week_start 派生
+        YEAR(
+            STR_TO_DATE(CONCAT(YEARWEEK(a.off_clock_time, 1), ' Monday'), '%x%v %W')
+        )                                                                                                  AS sales_year,
+        WEEK(
+            STR_TO_DATE(CONCAT(YEARWEEK(a.off_clock_time, 1), ' Monday'), '%x%v %W'),
+            1
+        )                                                                                                  AS sales_week,
+
+        -- 周一
         STR_TO_DATE(CONCAT(YEARWEEK(a.off_clock_time, 1), ' Monday'), '%x%v %W')                           AS week_start,
+        -- 周日
         DATE_ADD(
             STR_TO_DATE(CONCAT(YEARWEEK(a.off_clock_time, 1), ' Monday'), '%x%v %W'),
             INTERVAL 6 DAY
         )                                                                                                  AS week_end,
+
         SUM(a.order_actual_payment)                                                                        AS weekly_revenue
     FROM data_warehouse.dwd_sales_order_detail a
     LEFT JOIN dm_city b
