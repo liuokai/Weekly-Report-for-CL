@@ -4,6 +4,7 @@ import DataTable from "../../components/Common/DataTable";
 import LineTrendChart from "../../components/Common/LineTrendChart";
 import useFetchData from "../../hooks/useFetchData";
 import { getTimeProgress } from "../../components/Common/TimeProgressUtils";
+import BusinessTargets from "../../config/businessTargets";
 
 // Static config removed as per user request (mock data is meaningless)
 
@@ -40,9 +41,11 @@ const RevenueDecompositionContainer = () => {
         // Fallback logic for city name if statistics_city_name is missing/null
         const city = item.statistics_city_name || item.city || '未知城市';
         
-        // Use actual_turnover and turnover_target from SQL
+        // Use actual_turnover from SQL；目标仅由配置控制
         const revenue = Number(item.actual_turnover) || 0;
-        const target = Number(item.turnover_target) || 0;
+        const configTargets = BusinessTargets?.turnover?.cityTargets || {};
+        const targetFromConfig = configTargets[city];
+        const target = targetFromConfig != null ? Number(targetFromConfig) : 0;
         
         // Budget data is not available in SQL yet, showing as missing per user request
         const budget = null;
