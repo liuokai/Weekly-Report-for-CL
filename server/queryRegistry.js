@@ -50,6 +50,11 @@ const queryRegistry = {
     sql: loadSql('profit_weekly.sql'),
     description: '获取月度利润及利润率趋势数据'
   },
+  // 门店月度利润明细（用于成本结构分析，支持按月份筛选）
+  getProfitStoreDetailMonthly: {
+    sql: loadSql('profit_store_detail_monthly.sql'),
+    description: '获取门店月度利润与成本明细（含城市信息）'
+  },
   getCityWeeklyAvgPriceYTD: {
     sql: loadSql('avg_order_value_city_weekly_ytd_yoy.sql'),
     description: '获取城市累计平均客单价及同比（周度粒度）'

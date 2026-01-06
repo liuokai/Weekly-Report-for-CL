@@ -1,9 +1,105 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import CostMapping from '../../config/costMapping';
+
+const MonthDropdown = ({ months, selectedMonth, onSelect }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [open]);
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="px-3 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-sm font-medium text-gray-700 flex items-center gap-2 min-w-[130px] justify-between"
+      >
+        <span>{selectedMonth || '选择月份'}</span>
+        <svg className={`w-4 h-4 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 max-h-60 overflow-y-auto bg-gray-100 border border-gray-200 rounded-lg shadow-lg z-10">
+          {[...months].sort((a, b) => b.localeCompare(a)).map(m => (
+            <button
+              key={m}
+              onClick={() => {
+                onSelect(m);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-2 hover:bg-gray-200 ${selectedMonth === m ? 'text-[#a40035] font-semibold' : 'text-gray-700'}`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CityDropdown = ({ options, selected, onSelect }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [open]);
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="px-3 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-sm font-medium text-gray-700 flex items-center gap-2 min-w-[130px] justify-between"
+      >
+        <span>{selected || '全部'}</span>
+        <svg className={`w-4 h-4 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 max-h-60 overflow-y-auto bg-gray-100 border border-gray-200 rounded-lg shadow-lg z-10">
+          {options.map(opt => (
+            <button
+              key={opt}
+              onClick={() => {
+                onSelect(opt);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-2 hover:bg-gray-200 ${selected === opt ? 'text-[#a40035] font-semibold' : 'text-gray-700'}`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CostStructureContainer = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [allRows, setAllRows] = useState([]);
+  const [months, setMonths] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState('');
   const [viewMode, setViewMode] = useState('city'); // 'city' or 'store'
   const [selectedCityFilter, setSelectedCityFilter] = useState('全部'); // New filter for store view
   const [error, setError] = useState(null);
@@ -12,15 +108,34 @@ const CostStructureContainer = () => {
   useEffect(() => {
     fetchData();
   }, []);
+  
+  useEffect(() => {
+    if (detailModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [detailModal]);
 
   const fetchData = async () => {
     try {
-      const response = await axios.get('/api/cost-structure');
-      if (response.data.status === 'success') {
-        const processedData = processData(response.data.data);
+      const res = await axios.post('/api/fetch-data', {
+        queryKey: 'getProfitStoreDetailMonthly'
+      });
+      if (res.data && res.data.status === 'success' && Array.isArray(res.data.data)) {
+        const rows = res.data.data;
+        setAllRows(rows);
+        const ms = Array.from(new Set(rows.map(r => r['统计月份']))).sort((a, b) => a.localeCompare(b));
+        setMonths(ms);
+        const latest = ms[ms.length - 1] || '';
+        setSelectedMonth(latest);
+        const processedData = processRows(rows, latest);
         setData(processedData);
       } else {
-        setError(response.data.message);
+        setError('数据返回失败');
       }
     } catch (err) {
       setError(err.message);
@@ -29,68 +144,101 @@ const CostStructureContainer = () => {
     }
   };
 
-  const processData = (apiData) => {
-    if (!apiData) return null;
-    const { categories, city_dimension, store_dimension } = apiData;
+  const processRows = (rows, month) => {
+    const monthRows = rows.filter(r => r['统计月份'] === month);
+    if (monthRows.length === 0) return null;
 
-    // 1. Update Categories List
-    // Remove Masseur and Manager, insert Artificial Cost
-    const newCategories = categories.filter(c => c !== '推拿师成本' && c !== '客户经理成本');
-    // Find index to insert "人工成本" to maintain relative order (usually after Service Fee)
-    // If "推拿师成本" was present, use its index.
-    const insertIndex = categories.indexOf('推拿师成本');
-    if (insertIndex !== -1) {
-      newCategories.splice(insertIndex, 0, '人工成本');
-    } else {
-      newCategories.push('人工成本');
-    }
-
-    // 2. Transform Rows
-    const transformRow = (row) => {
-      const masseur = row.costs.find(c => c.name === '推拿师成本');
-      const manager = row.costs.find(c => c.name === '客户经理成本');
-      
-      const artificialValue = (masseur?.value || 0) + (manager?.value || 0);
-      
-      const artificialItem = {
-        name: '人工成本',
-        value: artificialValue,
-        // Store sub-categories for the modal
-        subCategories: [
-          { 
-            name: '推拿师成本', 
-            value: masseur?.value || 0, 
-            details: masseur?.details || [] 
-          },
-          { 
-            name: '客户经理成本', 
-            value: manager?.value || 0, 
-            details: manager?.details || [] 
-          }
-        ]
-      };
-
-      // Remove old items, add new item
-      const newCosts = row.costs.filter(c => c.name !== '推拿师成本' && c.name !== '客户经理成本');
-      newCosts.push(artificialItem);
-
-      return {
-        ...row,
-        costs: newCosts
-      };
+    const toCostItems = (row) => {
+      return CostMapping.categories.map(cat => {
+        if (cat.subCategories && Array.isArray(cat.subCategories)) {
+          const subCategories = cat.subCategories.map(sub => {
+            const subValue = sub.columns.reduce((sum, col) => sum + (Number(row[col]) || 0), 0);
+            const subDetails = sub.columns.map(col => ({ name: col, value: Number(row[col]) || 0 }));
+            return { name: sub.name, value: subValue, details: subDetails };
+          });
+          const total = subCategories.reduce((sum, s) => sum + s.value, 0);
+          return { name: cat.name, value: total, subCategories };
+        } else {
+          const value = cat.columns.reduce((sum, col) => sum + (Number(row[col]) || 0), 0);
+          const details = cat.columns.map(col => ({ name: col, value: Number(row[col]) || 0 }));
+          return { name: cat.name, value, details };
+        }
+      });
     };
 
+    const store_dimension = monthRows.map(r => ({
+      name: r['门店名称'],
+      store: r['门店名称'],
+      storeCode: r['门店编码'],
+      city: r['城市名称'],
+      revenue: Number(r[CostMapping.revenueColumn]) || 0,
+      netProfit: Number(r[CostMapping.netProfitColumn]) || 0,
+      costs: toCostItems(r)
+    }));
+
+    const cityMap = {};
+    store_dimension.forEach(s => {
+      const key = s.city || '未知城市';
+      if (!cityMap[key]) {
+        cityMap[key] = {
+          name: key,
+          revenue: 0,
+          netProfit: 0,
+          costs: CostMapping.categories.map(cat => {
+            if (cat.subCategories && Array.isArray(cat.subCategories)) {
+              return {
+                name: cat.name,
+                value: 0,
+                subCategories: cat.subCategories.map(sub => ({
+                  name: sub.name,
+                  value: 0,
+                  details: sub.columns.map(col => ({ name: col, value: 0 }))
+                }))
+              };
+            } else {
+              return {
+                name: cat.name,
+                value: 0,
+                details: cat.columns.map(col => ({ name: col, value: 0 }))
+              };
+            }
+          })
+        };
+      }
+      const agg = cityMap[key];
+      agg.revenue += s.revenue;
+      agg.netProfit += s.netProfit;
+      s.costs.forEach((c, idx) => {
+        agg.costs[idx].value += c.value;
+        if (c.subCategories && agg.costs[idx].subCategories) {
+          c.subCategories.forEach((sub, subIdx) => {
+            const targetSub = agg.costs[idx].subCategories[subIdx];
+            targetSub.value += sub.value;
+            sub.details.forEach((d, didx) => {
+              targetSub.details[didx].value += d.value;
+            });
+          });
+        } else if (c.details && agg.costs[idx].details) {
+          c.details.forEach((d, didx) => {
+            agg.costs[idx].details[didx].value += d.value;
+          });
+        }
+      });
+    });
+
+    const city_dimension = Object.values(cityMap);
+
     return {
-      categories: newCategories,
-      city_dimension: city_dimension.map(transformRow),
-      store_dimension: store_dimension.map(transformRow)
+      categories: CostMapping.categories.map(c => c.name),
+      city_dimension,
+      store_dimension
     };
   };
 
   if (loading) return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center space-y-4 mb-6">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a40035]"></div>
-      <p className="text-gray-500 text-sm">正在通过 DeepSeek 分析成本结构...</p>
+      <p className="text-gray-500 text-sm">正在加载成本结构数据...</p>
     </div>
   );
 
@@ -188,8 +336,6 @@ const CostStructureContainer = () => {
   const summaryRow = getSummaryRow(currentData);
   const displayData = summaryRow ? [summaryRow, ...currentData] : currentData;
 
-  // Helper to calculate percentage based on "ServiceFee + Artificial + Variable"
-  // Note: We need to sum these specific categories.
   const targetCategories = ['服务费', '人工成本', '变动成本'];
   
   const calculateCostStructureBase = (costs) => {
@@ -203,10 +349,8 @@ const CostStructureContainer = () => {
   };
 
   const handleCellClick = (rowName, costItem) => {
-    // Only show modal for complex categories
     const complexCategories = ['人工成本', '变动成本'];
     if (!complexCategories.includes(costItem.name)) return;
-
     setDetailModal({
       title: `${rowName} - ${costItem.name}明细`,
       costItem: costItem,
@@ -231,11 +375,9 @@ const CostStructureContainer = () => {
     );
 
     let content;
-
-    if (costItem.name === '人工成本') {
-      // Nested Display
+    if (costItem.name === '人工成本' && costItem.subCategories) {
       content = (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {costItem.subCategories.map(sub => (
             <div key={sub.name} className="space-y-2">
                <div className="flex items-center justify-between bg-gray-100 p-2 rounded-lg">
@@ -247,7 +389,7 @@ const CostStructureContainer = () => {
                    </span>
                  </div>
                </div>
-               <div className="pl-2 border-l-2 border-gray-100 space-y-1">
+               <div className="space-y-1">
                  {sub.details.sort((a, b) => b.value - a.value).map(detail => renderDetailItem(detail, sub.value))}
                </div>
             </div>
@@ -255,7 +397,6 @@ const CostStructureContainer = () => {
         </div>
       );
     } else {
-      // Flat Display (e.g. Variable Cost)
       content = (
         <div className="space-y-3">
            {costItem.details.sort((a, b) => b.value - a.value).map(item => renderDetailItem(item, total))}
@@ -265,14 +406,14 @@ const CostStructureContainer = () => {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setDetailModal(null)}>
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
              <h3 className="font-bold text-gray-800">{detailModal.title}</h3>
              <button onClick={() => setDetailModal(null)} className="text-gray-400 hover:text-gray-600">
                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
              </button>
           </div>
-          <div className="max-h-[60vh] overflow-y-auto p-4">
+          <div className="max-h-[70vh] overflow-y-auto p-4">
             {content}
           </div>
           <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
@@ -290,22 +431,26 @@ const CostStructureContainer = () => {
         <div>
           <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
-            成本结构分析
+            城市维度成本结构分析
           </h3>
-          <p className="text-xs text-gray-500 mt-1 ml-3">基于 DeepSeek 智能分类解析</p>
         </div>
         
         <div className="flex items-center gap-3">
+          <MonthDropdown
+              months={months}
+              selectedMonth={selectedMonth}
+              onSelect={(m) => {
+                setSelectedMonth(m);
+                const processedData = processRows(allRows, m);
+                setData(processedData);
+              }}
+            />
           {viewMode === 'store' && (
-            <select 
-              value={selectedCityFilter}
-              onChange={(e) => setSelectedCityFilter(e.target.value)}
-              className="text-sm border-gray-200 rounded-lg focus:ring-[#a40035] focus:border-[#a40035]"
-            >
-              {cityOptions.map(city => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
+            <CityDropdown
+              options={cityOptions}
+              selected={selectedCityFilter}
+              onSelect={(city) => setSelectedCityFilter(city)}
+            />
           )}
 
           <div className="flex bg-gray-200 rounded-lg p-1 text-sm">

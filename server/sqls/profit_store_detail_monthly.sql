@@ -88,5 +88,6 @@ select
     cost_variance                        as `推拿师成本差异`
 
 from dws_profit_store_detail_monthly
-where month = '2025-12'
-  and length(store_code) = 6
+where month >= '2025-01'
+AND month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
+and length(store_code) = 6;

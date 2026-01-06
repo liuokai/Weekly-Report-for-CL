@@ -199,89 +199,7 @@ const CostAndProfitTab = () => {
   const trendConfig = useMemo(() => generateTrendData(activeMetric, false), [activeMetric, trendRows]);
   const modalTrendConfig = useMemo(() => generateTrendData(modalActiveMetric, true), [modalActiveMetric, selectedCity]);
 
-  // --- City Table Data ---
-  const cityTableData = useMemo(() => {
-    if (!costData || !costData.city_dimension) return [];
-    return costData.city_dimension.map((row, index) => {
-      const revenue = Number(row.revenue) || 0;
-      const netProfit = Number(row.netProfit) || 0;
-      const mgmt = row.costs.find(c => c.name === '服务费');
-      const labor = row.costs.find(c => c.name === '人工成本') || row.costs.find(c => c.name === '推拿师成本') || row.costs.find(c => c.name === '客户经理成本');
-      const mgmtFee = mgmt ? Number(mgmt.value) || 0 : 0;
-      const laborCost = labor ? Number(labor.value) || 0 : 0;
-      const variableCost = revenue - netProfit - mgmtFee - laborCost;
-      const profitRate = revenue ? (netProfit / revenue) * 100 : 0;
-      return {
-        key: index,
-        city: row.name,
-        revenue,
-        mgmtFee,
-        laborCost,
-        variableCost,
-        profit: netProfit,
-        profitRate
-      };
-    });
-  }, [costData]);
-
-  const cityColumns = [
-    { 
-      key: 'city', 
-      title: '城市', 
-      dataIndex: 'city',
-      render: (text) => (
-        <span 
-          className="text-[#a40035] cursor-pointer hover:underline font-medium"
-          onClick={() => setSelectedCity(text)}
-        >
-          {text}
-        </span>
-      )
-    },
-    { 
-      key: 'revenue', 
-      title: '营业额', 
-      dataIndex: 'revenue',
-      render: (val) => val.toLocaleString('zh-CN', { maximumFractionDigits: 0 })
-    },
-    { 
-      key: 'mgmtFee', 
-      title: '管理费', 
-      dataIndex: 'mgmtFee',
-      render: (val) => val.toLocaleString('zh-CN', { maximumFractionDigits: 0 })
-    },
-    { 
-      key: 'laborCost', 
-      title: '人工成本', 
-      dataIndex: 'laborCost',
-      render: (val) => val.toLocaleString('zh-CN', { maximumFractionDigits: 0 })
-    },
-    { 
-      key: 'variableCost', 
-      title: '变动成本', 
-      dataIndex: 'variableCost',
-      render: (val) => val.toLocaleString('zh-CN', { maximumFractionDigits: 0 })
-    },
-    { 
-      key: 'profit', 
-      title: '利润', 
-      dataIndex: 'profit',
-      render: (val) => val.toLocaleString('zh-CN', { maximumFractionDigits: 0 })
-    },
-    { 
-      key: 'profitRate', 
-      title: '利润率', 
-      dataIndex: 'profitRate',
-      render: (val) => {
-        const isHigh = val > 6.0;
-        return (
-          <span className={`font-medium ${isHigh ? 'text-red-600' : 'text-gray-700'}`}>
-            {val.toFixed(2)}%
-          </span>
-        );
-      }
-    }
-  ];
+  // 已移除城市利润明细数据与列定义
 
   const renderCityModal = () => {
     if (!selectedCity) return null;
@@ -589,12 +507,6 @@ const CostAndProfitTab = () => {
           yAxisFormatter={trendConfig.formatter}
           height={320}
         />
-      </div>
-
-      {/* NEW SECTION: City Data Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">城市利润明细</h3>
-        <DataTable data={cityTableData} columns={cityColumns} />
       </div>
 
       {/* Cost Structure Analysis */}
