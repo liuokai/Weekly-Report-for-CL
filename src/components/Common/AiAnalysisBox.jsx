@@ -120,7 +120,34 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
         workflowId
       });
       
-      const resultText = response.data.answer || response.data.data?.answer || JSON.stringify(response.data);
+      // Extract result based on Dify response structure (Chat vs Workflow)
+      let resultText = '';
+      const resData = response.data;
+
+      if (resData.data && resData.data.outputs && resData.data.outputs.result) {
+        // Workflow App mode: data.outputs.result
+        resultText = resData.data.outputs.result;
+      } else if (resData.answer) {
+        // Chat App mode: answer
+        resultText = resData.answer;
+      } else if (resData.data && resData.data.answer) {
+        // Nested data structure
+        resultText = resData.data.answer;
+      } else {
+        // Fallback: Try to find any text output in outputs
+        if (resData.data && resData.data.outputs) {
+           const values = Object.values(resData.data.outputs);
+           if (values.length > 0 && typeof values[0] === 'string') {
+             resultText = values[0];
+           }
+        }
+      }
+      
+      // Final fallback to JSON string if nothing found
+      if (!resultText) {
+        resultText = JSON.stringify(resData);
+      }
+
       setLocalAnalysis(resultText);
     } catch (err) {
       setLocalError(err.response?.data?.message || err.message || '分析请求失败');

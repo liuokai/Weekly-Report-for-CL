@@ -397,8 +397,16 @@ app.post('/api/dify/run-workflow', async (req, res) => {
   const { inputs, user } = req.body;
 
   try {
+    // Construct full URL by appending endpoint if not present
+    let baseUrl = process.env.DIFY_BASE_URL || 'https://api.dify.ai/v1';
+    if (!baseUrl.endsWith('/')) baseUrl += '/';
+    // Remove /workflows/run if already present to avoid duplication, then append it fresh
+    // Or simpler: just ensure we append if it's a base URL.
+    // User requested: Env has base URL (e.g. .../v1), we append /workflows/run
+    const fullUrl = baseUrl.endsWith('workflows/run') ? baseUrl : `${baseUrl}workflows/run`;
+
     const response = await axios.post(
-      process.env.DIFY_BASE_URL,
+      fullUrl,
       {
         inputs: inputs || {},
         response_mode: 'blocking',
@@ -484,8 +492,13 @@ app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
 
     console.log('Sending request to Dify:', JSON.stringify(requestBody, null, 2));
 
+    // Construct full URL by appending endpoint if not present
+    let baseUrl = process.env.DIFY_BASE_URL || 'https://api.dify.ai/v1';
+    if (!baseUrl.endsWith('/')) baseUrl += '/';
+    const fullUrl = baseUrl.endsWith('workflows/run') ? baseUrl : `${baseUrl}workflows/run`;
+
     const response = await axios.post(
-      process.env.DIFY_BASE_URL,
+      fullUrl,
       requestBody,
       {
         headers: {
