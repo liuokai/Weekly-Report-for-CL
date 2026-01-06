@@ -41,6 +41,15 @@ const queryRegistry = {
     sql: loadSql('turnover_weekly_avg_per_day_yoy.sql'),
     description: '获取周度营业额日均数据'
   },
+  // 年度利润概览（按年统计：营收、利润、利润率、去年利润率、同比）
+  getProfitYearly: {
+    sql: loadSql('profit_yearly.sql'),
+    description: '年度利润统计（含利润率、去年利润率、同比增长）'
+  },
+  getProfitTrend: {
+    sql: loadSql('profit_weekly.sql'),
+    description: '获取月度利润及利润率趋势数据'
+  },
   getCityWeeklyAvgPriceYTD: {
     sql: loadSql('avg_order_value_city_weekly_ytd_yoy.sql'),
     description: '获取城市累计平均客单价及同比（周度粒度）'

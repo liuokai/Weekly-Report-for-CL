@@ -8,24 +8,66 @@ import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 import CostStructureContainer from '../CashFlow/CostStructureContainer';
 
 const CostAndProfitTab = () => {
-  // Constants from requirements
-  const currentProfit = 32067186.09;
-  const currentProfitRate = 8.2;
   const targetProfitRate = BusinessTargets.profit.annualTargetRate;
-  
-  // Mocked/Derived data
-  const profitGrowthRate = 2.2; // YoY Growth
-  const targetAnnualProfit = 28000000; // Mock target to show completion > 100%
+  const [yearlyRows, setYearlyRows] = useState([]);
+  const [loadingYearly, setLoadingYearly] = useState(true);
+  const latestRow = yearlyRows?.[0] || null;
+  const prevRow = yearlyRows?.[1] || null;
+  const currentProfit = latestRow ? Number(latestRow.total_profit) || 0 : 0;
+  const lastYearProfit = prevRow ? Number(prevRow.total_profit) || 0 : 0;
+  const currentProfitRate = latestRow ? Number(latestRow.profit_rate) || 0 : 0;
+  const lastYearProfitRate = latestRow ? Number(latestRow.last_year_profit_rate) || 0 : 0;
+  const profitGrowthRate = latestRow && latestRow.yoy_growth != null ? Number(latestRow.yoy_growth) || 0 : 0;
   
   // Time Progress Calculation
   const timeProgress = getTimeProgress();
   
-  // Profit Target Completion
-  const profitCompletion = (currentProfit / targetAnnualProfit) * 100;
+  // Profit Target Completion（以利润率达成度为准）
+  const profitCompletion = targetProfitRate > 0 ? (currentProfitRate / targetProfitRate) * 100 : 0;
 
   const formatCurrency = (val) => {
     return val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
+
+  // 获取年度利润数据
+  useEffect(() => {
+    const fetchYearlyProfit = async () => {
+      setLoadingYearly(true);
+      try {
+        const res = await axios.post('/api/fetch-data', {
+          queryKey: 'getProfitYearly',
+          params: []
+        });
+        if (res.data && res.data.status === 'success' && Array.isArray(res.data.data)) {
+          setYearlyRows(res.data.data);
+        } else {
+          setYearlyRows([]);
+        }
+      } catch (e) {
+        setYearlyRows([]);
+      } finally {
+        setLoadingYearly(false);
+      }
+    };
+    fetchYearlyProfit();
+  }, []);
+
+  const [trendRows, setTrendRows] = useState([]);
+  useEffect(() => {
+    const fetchTrend = async () => {
+      try {
+        const res = await axios.post('/api/fetch-data', {
+          queryKey: 'getProfitTrend'
+        });
+        if (res.data && res.data.status === 'success' && Array.isArray(res.data.data)) {
+          setTrendRows(res.data.data);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchTrend();
+  }, []);
 
   // --- Trend Chart Logic ---
   const [activeMetric, setActiveMetric] = useState('monthly_profit');
@@ -71,9 +113,42 @@ const CostAndProfitTab = () => {
   
   // Data Simulation Helper
   const generateTrendData = (metric, isCityLevel = false) => {
+    // Main Chart Logic (Real Data)
+    if (!isCityLevel) {
+      // 1. Sort and Filter Data (Last 12 months)
+      const sortedData = [...trendRows].sort((a, b) => a.stat_month.localeCompare(b.stat_month));
+      const recentData = sortedData.slice(-12);
+      const xLabels = recentData.map(d => d.stat_month);
+
+      // 2. Map Metric
+      if (metric === 'monthly_profit') {
+        const values = recentData.map(d => Number(d.total_profit) || 0);
+        return { 
+          title: '月度利润金额', 
+          unit: '元', 
+          values, 
+          valuesYoY: [], // No YoY in current SQL
+          xLabels,
+          formatter: (v) => (v/10000).toFixed(2) + '万'
+        };
+      } else if (metric === 'profit_rate') {
+        const values = recentData.map(d => Number(d.profit_rate) || 0);
+        return { 
+          title: '利润率', 
+          unit: '%', 
+          values, 
+          valuesYoY: [], 
+          xLabels,
+          formatter: (v) => v.toFixed(2) + '%'
+        };
+      }
+      return { title: '', unit: '', values: [], valuesYoY: [], xLabels: [], formatter: (v) => v };
+    }
+
+    // City Modal Logic (Mock Data)
     // 1. Monthly Profit: Avg ~2.67M (National) or ~200k (City)
     if (metric === 'monthly_profit') {
-      const base = isCityLevel ? 200000 : 2670000;
+      const base = 200000;
       const values = months.map(() => base + (Math.random() - 0.5) * base * 0.4); 
       const valuesYoY = values.map(v => v * (0.9 + Math.random() * 0.2)); 
       return { 
@@ -81,13 +156,14 @@ const CostAndProfitTab = () => {
         unit: '元', 
         values, 
         valuesYoY,
+        xLabels: months,
         formatter: (v) => (v/10000).toFixed(2) + '万'
       };
     }
     // 2. Cumulative Profit
     else if (metric === 'cumulative_profit') {
       let acc = 0;
-      const base = isCityLevel ? 200000 : 2670000;
+      const base = 200000;
       const values = months.map((_, i) => {
         const monthly = base + (i > 8 ? base * 0.2 : 0) + (Math.random() - 0.5) * base * 0.2;
         acc += monthly;
@@ -99,6 +175,7 @@ const CostAndProfitTab = () => {
         unit: '元', 
         values, 
         valuesYoY,
+        xLabels: months,
         formatter: (v) => (v/10000).toFixed(2) + '万'
       };
     }
@@ -113,12 +190,13 @@ const CostAndProfitTab = () => {
         unit: '%', 
         values, 
         valuesYoY,
+        xLabels: months,
         formatter: (v) => v.toFixed(2) + '%'
       };
     }
   };
 
-  const trendConfig = useMemo(() => generateTrendData(activeMetric, false), [activeMetric]);
+  const trendConfig = useMemo(() => generateTrendData(activeMetric, false), [activeMetric, trendRows]);
   const modalTrendConfig = useMemo(() => generateTrendData(modalActiveMetric, true), [modalActiveMetric, selectedCity]);
 
   // --- City Table Data ---
@@ -354,7 +432,7 @@ const CostAndProfitTab = () => {
             {/* Bottom: Store Table */}
             <div>
               <h4 className="text-sm font-bold text-gray-600 mb-4 border-l-4 border-[#a40035] pl-2">门店数据明细</h4>
-              <DataTable data={storeData} columns={storeColumns} />
+              <DataTable data={rows} columns={storeColumns} />
             </div>
           </div>
         </div>
@@ -366,69 +444,89 @@ const CostAndProfitTab = () => {
     <div className="space-y-6">
       {/* Unified Profit Dashboard Container */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        
-        {/* TOP SECTION: 3 Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100 bg-gradient-to-b from-white to-gray-50/30">
-          
-          {/* Annual Profit Value */}
-          <div className="p-6 flex flex-col items-center justify-center text-center">
-            <h3 className="text-gray-500 text-sm font-medium mb-2">年度利润值 (元)</h3>
-            <div className="text-3xl font-bold text-gray-900 mb-2">
-              {formatCurrency(currentProfit)}
-            </div>
-            <div className="flex items-center text-sm bg-red-50 px-3 py-1 rounded-full">
-              <span className="text-gray-500 mr-2">同比去年</span>
-              <span className="text-red-600 font-bold flex items-center">
-                +{profitGrowthRate}%
-                <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </span>
-            </div>
-          </div>
-
-          {/* Annual Profit Rate */}
-          <div className="p-6 flex flex-col items-center justify-center text-center">
-            <h3 className="text-gray-500 text-sm font-medium mb-2">年度利润率</h3>
-            <div className="text-3xl font-bold text-gray-900 mb-2">
-              {currentProfitRate}%
-            </div>
-            <div className="flex items-center text-sm">
-              <span className="text-gray-400 mr-2">目标值 {targetProfitRate}%</span>
-              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">
-                超额达成
-              </span>
-            </div>
-          </div>
-
-          {/* Profit Growth Rate */}
-          <div className="p-6 flex flex-col items-center justify-center text-center">
-            <h3 className="text-gray-500 text-sm font-medium mb-2">利润增长率</h3>
-            <div className="text-3xl font-bold text-gray-900 mb-2">
-              {profitGrowthRate}%
-            </div>
-            <div className="h-6"></div> {/* Spacer to align with others since description is removed */}
-          </div>
+        {/* Header */}
+        <div className="px-8 pt-6 pb-4 bg-white">
+          <h3 className="text-lg font-bold text-gray-800 border-l-4 border-[#a40035] pl-3">年度利润概览</h3>
         </div>
+        
+        {/* NEW LAYOUT: Split Top (Left/Right) & Bottom Progress */}
+        <div className="flex flex-col">
+          {/* Top Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 border-t border-b border-gray-100">
+            {/* LEFT SIDE: Amounts */}
+            <div className="p-8 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-gray-100 bg-gray-50/30">
+              <div className="mb-4">
+                 <p className="text-sm text-gray-500 font-medium mb-1">年度利润值 (元)</p>
+                 <div className="flex items-baseline gap-2">
+                   <span className="text-4xl font-bold text-gray-900 tracking-tight">
+                     {loadingYearly ? '...' : formatCurrency(currentProfit)}
+                   </span>
+                 </div>
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm">
+                 <span className="text-gray-400">去年利润值:</span>
+                 <span className="font-semibold text-gray-700 font-mono">
+                   {loadingYearly ? '...' : formatCurrency(lastYearProfit)}
+                 </span>
+              </div>
+            </div>
 
-        {/* BOTTOM SECTION: Merged Progress Bar */}
-        <div className="p-8 border-t border-gray-100 bg-white">
-           <div className="mb-4">
-              <h4 className="text-sm font-bold text-gray-600 border-l-4 border-[#a40035] pl-2">利润目标完成进度</h4>
-           </div>
-           <UnifiedProgressBar
-             label="目标完成率"
-             value={profitCompletion}
-             timeProgress={timeProgress}
-           />
-           <div className="mt-4 flex items-center justify-between">
-              <div className="text-xs text-gray-400">
-                 注：当实际进度超越时间进度时显示为主题色，反之显示为绿色。
-              </div>
-              <div className={`text-sm font-bold ${profitCompletion >= timeProgress ? 'text-[#a40035]' : 'text-green-600'}`}>
-                {profitCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
-              </div>
-           </div>
+            {/* RIGHT SIDE: Ratios */}
+            <div className="p-8 flex items-center justify-around bg-white">
+               {/* Profit Rate */}
+               <div className="flex flex-col items-center">
+                  <span className="text-sm text-gray-500 mb-2">年度利润率</span>
+                  <span className={`text-3xl font-bold ${currentProfitRate >= targetProfitRate ? 'text-[#a40035]' : 'text-gray-900'}`}>
+                     {loadingYearly ? '...' : `${currentProfitRate}%`}
+                  </span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      目标 {targetProfitRate}%
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      去年 {lastYearProfitRate}%
+                    </span>
+                  </div>
+               </div>
+
+               {/* Divider */}
+               <div className="w-px h-12 bg-gray-100"></div>
+
+               {/* Growth Rate */}
+               <div className="flex flex-col items-center">
+                  <span className="text-sm text-gray-500 mb-2">利润增长率</span>
+                  <div className="flex items-center">
+                     <span className={`text-3xl font-bold ${profitGrowthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {loadingYearly ? '...' : (profitGrowthRate > 0 ? `+${profitGrowthRate}` : profitGrowthRate)}%
+                     </span>
+                     {profitGrowthRate !== 0 && (
+                        <span className={`ml-1 text-lg ${profitGrowthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {profitGrowthRate >= 0 ? '↑' : '↓'}
+                        </span>
+                     )}
+                  </div>
+                  <span className="text-xs text-gray-400 mt-1">
+                    同比去年
+                  </span>
+               </div>
+            </div>
+          </div>
+
+          {/* Bottom Section: Progress Bar (No Title) */}
+          <div className="px-8 py-6 bg-white">
+             <UnifiedProgressBar
+               label="目标达成率"
+               value={profitCompletion}
+               timeProgress={timeProgress}
+               height="h-3"
+             />
+             <div className="mt-2 flex items-center justify-end">
+                <span className={`text-xs font-medium px-2 py-0.5 rounded ${profitCompletion >= timeProgress ? 'bg-red-50 text-[#a40035]' : 'bg-green-50 text-green-600'}`}>
+                  {profitCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
+                </span>
+             </div>
+          </div>
         </div>
       </div>
 
@@ -445,12 +543,6 @@ const CostAndProfitTab = () => {
                onClick={() => setActiveMetric('monthly_profit')}
              >
                月度利润金额
-             </button>
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeMetric === 'cumulative_profit' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setActiveMetric('cumulative_profit')}
-             >
-               年度累计利润金额
              </button>
              <button 
                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeMetric === 'profit_rate' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
@@ -489,7 +581,7 @@ const CostAndProfitTab = () => {
           headerUnit={trendConfig.unit}
           values={trendConfig.values}
           valuesYoY={trendConfig.valuesYoY}
-          xLabels={months}
+          xLabels={trendConfig.xLabels || months}
           showYoY={showYoY}
           showAverage={showAvg}
           showExtremes={showExtremes}
