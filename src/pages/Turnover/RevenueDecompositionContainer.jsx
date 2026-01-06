@@ -253,8 +253,14 @@ const RevenueDecompositionContainer = () => {
       const labels = [];
       const series = { [selectedMetricKey]: [] };
       const seriesLY = { [selectedMetricKey]: [] };
-      
-      const sortedAll = [...currentData].sort((a, b) => a.week - b.week);
+      const sortedAll = [...currentData].sort((a, b) => {
+        const ya = Number(a.year || a.s_year || 0);
+        const yb = Number(b.year || b.s_year || 0);
+        if (ya !== yb) return ya - yb;
+        const wa = Number(a.week || a.s_week || 0);
+        const wb = Number(b.week || b.s_week || 0);
+        return wa - wb;
+      });
       const recent12 = sortedAll.slice(-12);
       
       recent12.forEach(row => {

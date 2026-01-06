@@ -75,5 +75,5 @@ WHERE curr.sales_year >= 2025
 AND curr.statistics_city_name = ?
 ORDER BY
     curr.statistics_city_name,
-    curr.statistics_city_name,
-    curr.sales_week DESC;
+    curr.sales_year,
+    curr.sales_week;
