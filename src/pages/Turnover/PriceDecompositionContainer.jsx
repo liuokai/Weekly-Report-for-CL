@@ -623,19 +623,24 @@ const PriceDecompositionContainer = () => {
         { key: 'repurchaseOrders', title: '回头客订单数量', dataIndex: 'repurchaseOrders' },
         { key: 'value', title: '项目回头率', dataIndex: 'value', 
           render: (val) => {
-             const num = parseFloat(String(val).replace('%','')) || 0;
-             const target = 30;
-             const isHigh = num >= target;
-             return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+            const num = parseFloat(String(val).replace('%','')) || 0;
+            const target = 30;
+            const isHigh = num >= target;
+            return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{`${num.toFixed(2)}%`}</span>;
           }
         },
-        { key: 'prevValue', title: '去年项目回头率', dataIndex: 'prevValue' },
+        { key: 'prevValue', title: '去年项目回头率', dataIndex: 'prevValue',
+          render: (val) => {
+            const num = parseFloat(String(val).replace('%','')) || 0;
+            return `${num.toFixed(2)}%`;
+          }
+        },
         { key: 'yoy', title: '同比', dataIndex: 'yoy',
           render: (val) => {
              const num = Number(val);
              const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
              const sign = num > 0 ? '+' : '';
-             return <span className={cls}>{sign}{num}%</span>;
+             return <span className={cls}>{sign}{num.toFixed(2)}%</span>;
           }
         },
         { key: 'status', title: '是否达标', dataIndex: 'status',
@@ -663,8 +668,8 @@ const PriceDecompositionContainer = () => {
           city: d.city_name,
           totalOrders: d.total_orders,
           repurchaseOrders: d.repurchase_orders,
-          value: `${d.repurchase_rate}%`,
-          prevValue: `${d.prev_year_rate}%`,
+          value: `${Number(d.repurchase_rate).toFixed(2)}%`,
+          prevValue: `${Number(d.prev_year_rate).toFixed(2)}%`,
           yoy: d.yoy_change_pct,
           target: '30%',
           status: Number(d.repurchase_rate) >= 30 ? '达标' : '未达标'
@@ -1049,7 +1054,7 @@ const PriceDecompositionContainer = () => {
           setStoreRows([]);
        }
 
-    } else if (procMetric === 'returnRate' && selectedCity) {
+    } else if (procMetric === 'returnRate' && selectedCity && !isPriceDecompositionModal) {
          // --- Upper Part: Trend (City Level, Last 12 Weeks) ---
          if (repurchaseCityWeekly && repurchaseCityWeekly.length > 0) {
              const cityData = repurchaseCityWeekly.filter(d => d.city_name === selectedCity);
@@ -1063,17 +1068,17 @@ const PriceDecompositionContainer = () => {
              // Take last 12 weeks
              const sliced = sorted.slice(-12);
              
-             const processedWeeks = sliced.map(d => ({
-                label: `第${String(d.s_week).padStart(2, '0')}周`,
-                weekNo: d.s_week,
-                year: d.s_year,
-                fullLabel: d.week_date_range ? `日期范围：${d.week_date_range}` : null
-              }));
-             
-             setWeeks(processedWeeks);
-              setWeeklyPrice(sliced.map(d => Number(d.repurchase_rate)));
-              setWeeklyPriceLY(sliced.map(d => Number(d.prev_year_rate)));
-              setWeeklyYoYRates(sliced.map(d => Number(d.yoy_change_pct)));
+         const processedWeeks = sliced.map(d => ({
+            label: `第${String(d.s_week).padStart(2, '0')}周`,
+            weekNo: d.s_week,
+            year: d.s_year,
+            fullLabel: d.week_date_range ? `日期范围：${d.week_date_range}` : null
+          }));
+         
+         setWeeks(processedWeeks);
+          setWeeklyPrice(sliced.map(d => Number(d.repurchase_rate)));
+          setWeeklyPriceLY(sliced.map(d => Number(d.prev_year_rate)));
+          setWeeklyYoYRates(sliced.map(d => Number(d.yoy_change_pct)));
          } else {
              setWeeks([]);
              setWeeklyPrice([]);
@@ -1106,7 +1111,7 @@ const PriceDecompositionContainer = () => {
                  storeCode: d.store_code,
                  lastYearPrice: d.prev_year_rate_ytd != null ? parseFloat(d.prev_year_rate_ytd) : null,
                  currentPrice: parseFloat(d.repurchase_rate_ytd || 0),
-                 yoyRate: d.yoy_change_pct != null ? `${d.yoy_change_pct}%` : null,
+                yoyRate: d.yoy_change_pct != null ? `${Number(d.yoy_change_pct).toFixed(2)}%` : null,
                  laborCost: null,
                  recruitTrainCost: null,
                  totalCost: null,
@@ -1145,34 +1150,34 @@ const PriceDecompositionContainer = () => {
          }
 
       } else {
-       // Process City Trend Data (Upper Part)
-       if (cityWeeklyData && cityWeeklyData.length > 0 && selectedCity) {
-          const cityData = cityWeeklyData.filter(d => d.city_name === selectedCity);
-          // Sort by year and week
-          const sorted = [...cityData].sort((a, b) => {
-             if (a.sales_year !== b.sales_year) return a.sales_year - b.sales_year;
-             return a.sales_week - b.sales_week;
-          });
-          // Take last 12 weeks
-          const sliced = sorted.slice(-12);
-          
-          const processedWeeks = sliced.map(d => ({
-             label: `第${d.sales_week}周`,
-             weekNo: d.sales_week,
-             year: d.sales_year,
-             fullLabel: d.week_date_range // Optional extra info
-          }));
-          
-          setWeeks(processedWeeks);
-          setWeeklyPrice(sliced.map(d => Number(d.current_year_cumulative_aov)));
-          setWeeklyPriceLY(sliced.map(d => Number(d.last_year_cumulative_aov)));
-          setWeeklyYoYRates(sliced.map(d => Number(d.cumulative_aov_yoy_pct)));
-       } else {
-           setWeeks([]);
-           setWeeklyPrice([]);
-           setWeeklyPriceLY([]);
-           setWeeklyYoYRates([]);
-       }
+      // Process City Trend Data (Upper Part)
+      if (cityWeeklyData && cityWeeklyData.length > 0 && selectedCity) {
+         const cityData = cityWeeklyData.filter(d => d.city_name === selectedCity);
+         // Sort by year and week
+         const sorted = [...cityData].sort((a, b) => {
+            if (a.sales_year !== b.sales_year) return a.sales_year - b.sales_year;
+            return a.sales_week - b.sales_week;
+         });
+         // Take last 12 weeks from SQL result
+         const filtered = sorted.slice(-12);
+         
+         const processedWeeks = filtered.map(d => ({
+            label: `第${d.sales_week}周`,
+            weekNo: d.sales_week,
+            year: d.sales_year,
+            fullLabel: d.week_date_range
+         }));
+         
+         setWeeks(processedWeeks);
+         setWeeklyPrice(filtered.map(d => Number(d.current_year_cumulative_aov)));
+         setWeeklyPriceLY(filtered.map(d => Number(d.last_year_cumulative_aov)));
+         setWeeklyYoYRates(filtered.map(d => Number(d.cumulative_aov_yoy_pct)));
+      } else {
+          setWeeks([]);
+          setWeeklyPrice([]);
+          setWeeklyPriceLY([]);
+          setWeeklyYoYRates([]);
+      }
 
        // Process Store List Data (Lower Part)
        let processedStores = [];
@@ -1455,14 +1460,14 @@ const PriceDecompositionContainer = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="text-xs text-gray-500 mb-1">当前值</div>
-              <div className="text-xl font-bold text-[#a40035]">
-                {(() => {
-                  const actual = impactInfos[procMetric]?.actual;
-                  const unit = impactInfos[procMetric]?.unit;
-                  if (actual === null || actual === undefined) return '—';
-                  return unit === '%' ? `${Number(actual).toFixed((procMetric === 'newEmpReturn' || procMetric === 'therapistYield') ? 2 : 0)}%` : `${actual}`;
-                })()}
-              </div>
+                <div className="text-xl font-bold text-[#a40035]">
+                  {(() => {
+                    const actual = impactInfos[procMetric]?.actual;
+                    const unit = impactInfos[procMetric]?.unit;
+                    if (actual === null || actual === undefined) return '—';
+                    return unit === '%' ? `${Number(actual).toFixed(2)}%` : `${actual}`;
+                  })()}
+                </div>
               <div className="mt-2 text-xs text-gray-500">
                 <div className="mb-1">
                   目标：
@@ -1480,8 +1485,8 @@ const PriceDecompositionContainer = () => {
                       const l = Number(impactInfos[procMetric]?.last);
                       const hasLast = impactInfos[procMetric]?.last !== null && impactInfos[procMetric]?.last !== undefined;
                       if (hasLast) {
-                        const base = impactInfos[procMetric]?.unit === '%' 
-                          ? `${Number(impactInfos[procMetric]?.last).toFixed((procMetric === 'newEmpReturn' || procMetric === 'therapistYield') ? 2 : 0)}%` 
+                      const base = impactInfos[procMetric]?.unit === '%' 
+                          ? `${Number(impactInfos[procMetric]?.last).toFixed(2)}%` 
                           : `${impactInfos[procMetric]?.last}`;
                         const yoy = l ? ((a - l) / l) * 100 : 0;
                         const sign = yoy > 0 ? '+' : '';
@@ -1700,12 +1705,12 @@ const PriceDecompositionContainer = () => {
             showYoY={procShowYoY}
             showTrend={procShowTrend}
             showExtremes={procShowExtremes}
-            yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : `${Math.round(v)}%`}
+            yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : `${Number(v).toFixed(2)}%`}
             valueFormatter={(v) => {
               if (procMetric === 'configRatio') return `${Number(v).toFixed(2)}`;
               if (procMetric === 'newEmpReturn') return `${Number(v).toFixed(2)}%`;
               if (procMetric === 'therapistYield') return `${Number(v).toFixed(2)}%`;
-              return `${Number(v).toFixed(1)}%`;
+              return `${Number(v).toFixed(2)}%`;
             }}
             colorPrimary="#a40035"
             colorYoY="#2563eb"
@@ -1763,19 +1768,23 @@ const PriceDecompositionContainer = () => {
                 </button>
               </div>
               <LineTrendChart
-                headerTitle={procMetric === 'configRatio' ? '城市床位人员配置比变化趋势' : procMetric === 'therapistYield' ? '城市推拿师产值达标率趋势' : procMetric === 'returnRate' ? '城市项目回头率变化趋势' : procMetric === 'newEmpReturn' ? '城市新员工回头率达标率趋势' : '城市平均客单价变化趋势'}
-                headerUnit={procMetric === 'configRatio' ? '人/床' : procMetric === 'therapistYield' ? '%' : procMetric === 'returnRate' ? '%' : '元/人次'}
+                headerTitle={isPriceDecompositionModal ? '城市平均客单价变化趋势' : (procMetric === 'configRatio' ? '城市床位人员配置比变化趋势' : procMetric === 'therapistYield' ? '城市推拿师产值达标率趋势' : procMetric === 'returnRate' ? '城市项目回头率变化趋势' : procMetric === 'newEmpReturn' ? '城市新员工回头率达标率趋势' : '城市平均客单价变化趋势')}
+                headerUnit={isPriceDecompositionModal ? '元/人次' : (procMetric === 'configRatio' ? '人/床' : procMetric === 'therapistYield' ? '%' : procMetric === 'returnRate' ? '%' : '元/人次')}
                 values={weeklyPrice}
                 valuesYoY={weeklyPriceLY}
-                xLabels={procMetric === 'newEmpReturn' || procMetric === 'therapistYield'
+                xLabels={(procMetric === 'newEmpReturn' || procMetric === 'therapistYield' || isPriceDecompositionModal)
                   ? weeks.map(w => w.label)
-                  : weeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)
-                }
+                  : weeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)}
                 showYoY={showYoY}
                 showTrend={showTrend}
                 showExtremes={showExtremes}
-                yAxisFormatter={(v) => procMetric === 'configRatio' ? Number(v).toFixed(2) : (procMetric === 'therapistYield' || procMetric === 'returnRate' || procMetric === 'newEmpReturn' ? Math.round(v) : Number(v).toFixed(1))}
+                yAxisFormatter={(v) => {
+                  if (procMetric === 'configRatio') return Number(v).toFixed(2);
+                  if (procMetric === 'returnRate' || procMetric === 'newEmpReturn' || procMetric === 'therapistYield') return Math.round(v);
+                  return Number(v).toFixed(2);
+                }}
                 valueFormatter={(v) => {
+                  if (isPriceDecompositionModal) return `¥ ${Number(v).toFixed(2)}`;
                   if (procMetric === 'configRatio') return `${Number(v).toFixed(2)}`;
                   if (procMetric === 'newEmpReturn') return `${Number(v).toFixed(2)}%`;
                   if (procMetric === 'therapistYield' || procMetric === 'returnRate') return `${Number(v).toFixed(1)}%`;
