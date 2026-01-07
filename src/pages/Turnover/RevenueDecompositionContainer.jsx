@@ -5,6 +5,7 @@ import LineTrendChart from "../../components/Common/LineTrendChart";
 import useFetchData from "../../hooks/useFetchData";
 import { getTimeProgress } from "../../components/Common/TimeProgressUtils";
 import BusinessTargets from "../../config/businessTargets";
+import useTableSorting from "../../components/Common/useTableSorting";
 
 // Static config removed as per user request (mock data is meaningless)
 
@@ -19,7 +20,6 @@ const RevenueDecompositionContainer = () => {
   const [showYoY, setShowYoY] = useState(false);
   const [showTrend, setShowTrend] = useState(true);
   const [showExtremes, setShowExtremes] = useState(true);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   
   const { data: fetchedData, loading, fetchData } = useFetchData('getCityTurnover');
   const { data: storeWeeklyData, loading: storeWeeklyLoading, fetchData: fetchStoreWeeklyData } = useFetchData('getCityStoreWeeklyTurnover', [], [], { manual: true });
@@ -402,63 +402,8 @@ const RevenueDecompositionContainer = () => {
     },
   ];
 
-  const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const sortedRows = useMemo(() => {
-    let sortableItems = [...rows];
-    if (sortConfig.key) {
-      const column = columns.find(c => c.key === sortConfig.key);
-      const dataIndex = column ? column.dataIndex : sortConfig.key;
-
-      sortableItems.sort((a, b) => {
-        let aValue = a[dataIndex];
-        let bValue = b[dataIndex];
-
-        const cleanValue = (val) => {
-             if (val == null) return -Infinity;
-             if (typeof val === 'number') return val;
-             if (typeof val === 'string') {
-                 // Check if string contains only non-numeric characters (like Chinese)
-                 // If so, return as string for localeCompare
-                 if (/^[^0-9]+$/.test(val) && val !== '-Infinity' && val !== 'Infinity') {
-                     return val;
-                 }
-                 
-                 // Try parsing percent or number with comma
-                 const cleanStr = val.replace(/,/g, '').replace('%', '');
-                 const num = parseFloat(cleanStr);
-                 if (!isNaN(num)) return num;
-                 return val;
-             }
-             return val;
-        };
-
-        const aClean = cleanValue(aValue);
-        const bClean = cleanValue(bValue);
-
-        if (typeof aClean === 'string' && typeof bClean === 'string') {
-            return sortConfig.direction === 'asc' 
-                ? aClean.localeCompare(bClean, 'zh-CN') 
-                : bClean.localeCompare(aClean, 'zh-CN');
-        }
-
-        if (aClean < bClean) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (aClean > bClean) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableItems;
-  }, [rows, sortConfig, columns]);
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, rows);
+  const { sortedData: sortedStoreRows, sortConfig: storeSortConfig, handleSort: handleStoreSort } = useTableSorting(columnsForStore, storeRows);
 
   const renderContent = () => {
     const { series, seriesLY, labels, rawData } = buildCitySeries();
@@ -466,7 +411,7 @@ const RevenueDecompositionContainer = () => {
     return (
       <div className="space-y-4">
         <DataTable 
-          data={sortedRows} 
+          data={sortedData} 
           columns={columns} 
           onSort={handleSort}
           sortConfig={sortConfig}
@@ -565,7 +510,7 @@ const RevenueDecompositionContainer = () => {
                     {storeRows.length === 0 ? (
                       <div className="p-3 text-sm text-gray-500">该城市当前无在营门店数据</div>
                     ) : (
-                      <DataTable data={storeRows} columns={columnsForStore} stickyHeader={false} />
+                      <DataTable data={sortedStoreRows} columns={columnsForStore} stickyHeader={false} onSort={handleStoreSort} sortConfig={storeSortConfig} />
                     )}
                   </div>
                 </div>

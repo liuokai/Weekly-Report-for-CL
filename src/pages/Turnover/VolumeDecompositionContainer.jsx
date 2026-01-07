@@ -4,6 +4,7 @@ import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import useFetchData from '../../hooks/useFetchData';
 import BusinessTargets from '../../config/businessTargets';
+import useTableSorting from '../../components/Common/useTableSorting';
 
 const VolumeDecompositionContainer = () => {
   // 保持空数据状态，去掉填充的数据
@@ -98,6 +99,8 @@ const VolumeDecompositionContainer = () => {
       }
     }
   ];
+
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, tableData);
 
   const renderHQOverview = () => {
     let currentVolume = null, lastYearVolume = null, yoyRate = null;
@@ -1178,7 +1181,7 @@ const VolumeDecompositionContainer = () => {
       {renderHQOverview()}
       {renderTrendChart()}
       {renderInfluenceAnalysisChart()}
-      <DataTable data={tableData} columns={columns} hideNoDataMessage={true} />
+      <DataTable data={sortedData} columns={columns} hideNoDataMessage={true} onSort={handleSort} sortConfig={sortConfig} />
     </div>
   );
 

@@ -8,6 +8,7 @@ import useFetchData from '../../hooks/useFetchData';
 import { generatePositionReminder } from '../../services/reminderService';
 import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 import BusinessTargets from '../../config/businessTargets';
+import useTableSorting from '../../components/Common/useTableSorting';
 
 const PriceDecompositionContainer = () => {
   // data state is no longer needed as we use priceGrowthData directly
@@ -59,6 +60,7 @@ const PriceDecompositionContainer = () => {
   const { data: newEmpCityMonthly } = useFetchData('getNewEmpReturnComplianceCityMonthly');
   const { data: newEmpStoreAnnual } = useFetchData('getNewEmpReturnComplianceStoreAnnual');
 
+  
   // Bed Staff Ratio Data (Added for configRatio metric)
   const { data: bedStaffRatioAnnual } = useFetchData('getBedStaffRatioAnnual');
   const { data: bedStaffRatioWeekly } = useFetchData('getBedStaffRatioWeekly');
@@ -472,6 +474,11 @@ const PriceDecompositionContainer = () => {
       } 
     },
   ];
+  
+  const cityColumnsComputed = useMemo(() => (procColumnsDyn.length ? procColumnsDyn : procColumnsDefault), [procColumnsDyn, procColumnsDefault]);
+  const { sortedData: sortedProcCityRows, sortConfig: procSortConfig, handleSort: handleProcSort } = useTableSorting(cityColumnsComputed, procCityRows);
+  const modalColumnsComputed = useMemo(() => (modalColumns.length > 0 ? modalColumns : columnsForStore), [modalColumns, columnsForStore]);
+  const { sortedData: sortedStoreRows, sortConfig: storeSortConfig, handleSort: handleStoreSort } = useTableSorting(modalColumnsComputed, storeRows);
 
   const getISOWeek = (date) => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -1724,7 +1731,7 @@ const PriceDecompositionContainer = () => {
           <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">
               {procMetric === 'returnRate' ? '城市维度项目回头率统计' : '城市维度数据统计'}
           </h4>
-          <DataTable data={procCityRows} columns={procColumnsDyn.length ? procColumnsDyn : procColumnsDefault} />
+          <DataTable data={sortedProcCityRows} columns={cityColumnsComputed} onSort={handleProcSort} sortConfig={procSortConfig} />
         </div>
       </div>
       {isModalOpen && (
@@ -1746,7 +1753,7 @@ const PriceDecompositionContainer = () => {
                 </svg>
               </button>
             </div>
-            <div className="space-y-4">
+              <div className="space-y-4">
               <div className="flex gap-2 mb-2">
                 <button
                   onClick={() => setShowYoY(!showYoY)}
@@ -1800,7 +1807,7 @@ const PriceDecompositionContainer = () => {
                 <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">
                   {procMetric === 'newEmpReturn' ? '技术副总负责门店新员工回头率统计' : procMetric === 'therapistYield' ? '门店产值达标率统计' : '门店维度统计'}
                 </h4>
-                <DataTable data={storeRows} columns={modalColumns.length > 0 ? modalColumns : columnsForStore} />
+                <DataTable data={sortedStoreRows} columns={modalColumnsComputed} onSort={handleStoreSort} sortConfig={storeSortConfig} />
               </div>
             </div>
           </div>
