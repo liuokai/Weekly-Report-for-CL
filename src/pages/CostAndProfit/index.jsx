@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import LineTrendChart from '../../components/Common/LineTrendChart';
+import LineTrendStyle from '../../components/Common/LineTrendStyleConfig';
 import DataTable from '../../components/Common/DataTable';
 import UnifiedProgressBar from '../../components/Common/UnifiedProgressBar';
 import BusinessTargets from '../../config/businessTargets';
@@ -308,42 +309,34 @@ const CostAndProfitTab = () => {
                       ))}
                    </div>
 
-                   {/* Row 2: Display Options (Left Aligned) */}
+                   {/* Row 2: Display Options (Unified Aux Controls) */}
                    <div className="flex flex-wrap items-center gap-3">
-                      <button 
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${modalShowYoY ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                        onClick={() => setModalShowYoY(!modalShowYoY)}
-                      >
-                        显示同比
-                      </button>
-                      <button 
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${modalShowAvg ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                        onClick={() => setModalShowAvg(!modalShowAvg)}
-                      >
-                        显示均值
-                      </button>
-                      <button 
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${modalShowExtremes ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                        onClick={() => setModalShowExtremes(!modalShowExtremes)}
-                      >
-                        显示极值
-                      </button>
+                     {LineTrendStyle.renderAuxControls({
+                       showYoY: modalShowYoY,
+                       setShowYoY: () => setModalShowYoY(!modalShowYoY),
+                       showTrend: modalShowAvg,
+                       setShowTrend: () => setModalShowAvg(!modalShowAvg),
+                       showExtremes: modalShowExtremes,
+                       setShowExtremes: () => setModalShowExtremes(!modalShowExtremes)
+                     })}
                    </div>
                  </div>
               </div>
 
+              {LineTrendStyle.renderHeader(modalTrendConfig.title, modalTrendConfig.unit)}
               <LineTrendChart
-                headerTitle={modalTrendConfig.title}
-                headerUnit={modalTrendConfig.unit}
                 values={modalTrendConfig.values}
                 valuesYoY={modalTrendConfig.valuesYoY}
                 xLabels={months}
                 showYoY={modalShowYoY}
-                showAverage={modalShowAvg}
+                showTrend={modalShowAvg}
                 showExtremes={modalShowExtremes}
                 valueFormatter={modalTrendConfig.formatter}
                 yAxisFormatter={modalTrendConfig.formatter}
-                height={300}
+                height={LineTrendStyle.DIMENSIONS.height}
+                width={LineTrendStyle.DIMENSIONS.width}
+                colorPrimary={LineTrendStyle.COLORS.primary}
+                colorYoY={LineTrendStyle.COLORS.yoy}
               />
             </div>
 
@@ -452,60 +445,37 @@ const CostAndProfitTab = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">成本与利润趋势分析</h3>
         
-        {/* Controls Container */}
-        <div className="space-y-4 mb-6">
-          {/* Row 1: Metric Selectors */}
-          <div className="flex flex-wrap items-center gap-3">
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeMetric === 'monthly_profit' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setActiveMetric('monthly_profit')}
-             >
-               月度利润金额
-             </button>
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeMetric === 'profit_rate' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setActiveMetric('profit_rate')}
-             >
-               利润率
-             </button>
-          </div>
-          
-          {/* Row 2: Display Options */}
-          <div className="flex flex-wrap items-center gap-3">
-             <button 
-               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showYoY ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setShowYoY(!showYoY)}
-             >
-               显示同比
-             </button>
-             <button 
-               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showAvg ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setShowAvg(!showAvg)}
-             >
-               显示均值
-             </button>
-             <button 
-               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showExtremes ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setShowExtremes(!showExtremes)}
-             >
-               显示极值
-             </button>
-          </div>
-        </div>
+        {LineTrendStyle.renderMetricSwitch(
+          [
+            { key: 'monthly_profit', label: '月度利润金额' },
+            { key: 'profit_rate', label: '利润率' }
+          ],
+          activeMetric,
+          setActiveMetric
+        )}
+        {LineTrendStyle.renderAuxControls({
+          showYoY,
+          setShowYoY: () => setShowYoY(!showYoY),
+          showTrend: showAvg,
+          setShowTrend: () => setShowAvg(!showAvg),
+          showExtremes,
+          setShowExtremes: () => setShowExtremes(!showExtremes)
+        })}
 
         {/* Chart Component */}
         <LineTrendChart
-          headerTitle={trendConfig.title}
-          headerUnit={trendConfig.unit}
           values={trendConfig.values}
           valuesYoY={trendConfig.valuesYoY}
           xLabels={trendConfig.xLabels || months}
           showYoY={showYoY}
-          showAverage={showAvg}
+          showTrend={showAvg}
           showExtremes={showExtremes}
           valueFormatter={trendConfig.formatter}
           yAxisFormatter={trendConfig.formatter}
-          height={320}
+          height={LineTrendStyle.DIMENSIONS.height}
+          width={LineTrendStyle.DIMENSIONS.width}
+          colorPrimary={LineTrendStyle.COLORS.primary}
+          colorYoY={LineTrendStyle.COLORS.yoy}
         />
       </div>
 

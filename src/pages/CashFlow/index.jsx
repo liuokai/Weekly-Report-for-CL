@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
+import LineTrendStyle from '../../components/Common/LineTrendStyleConfig';
 import useFetchData from '../../hooks/useFetchData';
 
 const CashFlowTab = () => {
@@ -251,42 +252,34 @@ const CashFlowTab = () => {
                       ))}
                    </div>
 
-                   {/* Row 2: Display Options (Left Aligned) */}
-                   <div className="flex flex-wrap items-center gap-3">
-                      <button 
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${modalShowYoY ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                        onClick={() => setModalShowYoY(!modalShowYoY)}
-                      >
-                        显示同比
-                      </button>
-                      <button 
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${modalShowAvg ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                        onClick={() => setModalShowAvg(!modalShowAvg)}
-                      >
-                        显示均值
-                      </button>
-                      <button 
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${modalShowExtremes ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                        onClick={() => setModalShowExtremes(!modalShowExtremes)}
-                      >
-                        显示极值
-                      </button>
-                   </div>
+                  {/* Row 2: Display Options (Unified Aux Controls) */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {LineTrendStyle.renderAuxControls({
+                      showYoY: modalShowYoY,
+                      setShowYoY: () => setModalShowYoY(!modalShowYoY),
+                      showTrend: modalShowAvg,
+                      setShowTrend: () => setModalShowAvg(!modalShowAvg),
+                      showExtremes: modalShowExtremes,
+                      setShowExtremes: () => setModalShowExtremes(!modalShowExtremes)
+                    })}
+                  </div>
                  </div>
               </div>
 
+              {LineTrendStyle.renderHeader(modalTrendConfig.title, modalTrendConfig.unit)}
               <LineTrendChart
-                headerTitle={modalTrendConfig.title}
-                headerUnit={modalTrendConfig.unit}
                 values={modalTrendConfig.values}
                 valuesYoY={modalTrendConfig.valuesYoY}
                 xLabels={months}
                 showYoY={modalShowYoY}
-                showAverage={modalShowAvg}
+                showTrend={modalShowAvg}
                 showExtremes={modalShowExtremes}
                 valueFormatter={modalTrendConfig.formatter}
                 yAxisFormatter={modalTrendConfig.formatter}
-                height={300}
+                height={LineTrendStyle.DIMENSIONS.height}
+                width={LineTrendStyle.DIMENSIONS.width}
+                colorPrimary={LineTrendStyle.COLORS.primary}
+                colorYoY={LineTrendStyle.COLORS.yoy}
               />
             </div>
 
@@ -354,38 +347,28 @@ const CashFlowTab = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">资金结余趋势分析</h3>
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${fundsShowYoY ? 'bg-[#a40035] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              onClick={() => setFundsShowYoY(!fundsShowYoY)}
-            >
-              显示同比
-            </button>
-            <button
-              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${fundsShowAvg ? 'bg-[#a40035] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              onClick={() => setFundsShowAvg(!fundsShowAvg)}
-            >
-              显示均值
-            </button>
-            <button
-              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${fundsShowExtremes ? 'bg-[#a40035] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              onClick={() => setFundsShowExtremes(!fundsShowExtremes)}
-            >
-              显示极值
-            </button>
-          </div>
+          {LineTrendStyle.renderHeader(fundsTrendConfig.title, fundsTrendConfig.unit)}
+          {LineTrendStyle.renderAuxControls({
+            showYoY: fundsShowYoY,
+            setShowYoY: () => setFundsShowYoY(!fundsShowYoY),
+            showTrend: fundsShowAvg,
+            setShowTrend: () => setFundsShowAvg(!fundsShowAvg),
+            showExtremes: fundsShowExtremes,
+            setShowExtremes: () => setFundsShowExtremes(!fundsShowExtremes)
+          })}
           <LineTrendChart
-            headerTitle={fundsTrendConfig.title}
-            headerUnit={fundsTrendConfig.unit}
             values={fundsTrendConfig.values}
             valuesYoY={fundsTrendConfig.valuesYoY}
             xLabels={months}
             showYoY={fundsShowYoY}
-            showAverage={fundsShowAvg}
+            showTrend={fundsShowAvg}
             showExtremes={fundsShowExtremes}
             valueFormatter={fundsTrendConfig.formatter}
             yAxisFormatter={fundsTrendConfig.formatter}
-            height={320}
+            height={LineTrendStyle.DIMENSIONS.height}
+            width={LineTrendStyle.DIMENSIONS.width}
+            colorPrimary={LineTrendStyle.COLORS.primary}
+            colorYoY={LineTrendStyle.COLORS.yoy}
           />
         </div>
       </div>

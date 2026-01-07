@@ -4,6 +4,7 @@ import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
 import HQMetricsTrendChart from './HQMetricsTrendChart';
 import LineTrendChart from '../../components/Common/LineTrendChart';
+import LineTrendStyle from '../../components/Common/LineTrendStyleConfig';
 import useFetchData from '../../hooks/useFetchData';
 import { generatePositionReminder } from '../../services/reminderService';
 import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
@@ -479,6 +480,7 @@ const PriceDecompositionContainer = () => {
   const { sortedData: sortedProcCityRows, sortConfig: procSortConfig, handleSort: handleProcSort } = useTableSorting(cityColumnsComputed, procCityRows);
   const modalColumnsComputed = useMemo(() => (modalColumns.length > 0 ? modalColumns : columnsForStore), [modalColumns, columnsForStore]);
   const { sortedData: sortedStoreRows, sortConfig: storeSortConfig, handleSort: handleStoreSort } = useTableSorting(modalColumnsComputed, storeRows);
+  const { sortedData: sortedTableData, sortConfig: tableSortConfig, handleSort: handleTableSort } = useTableSorting(columns, tableData);
 
   const getISOWeek = (date) => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -1427,7 +1429,7 @@ const PriceDecompositionContainer = () => {
       <HQMetricsTrendChart />
       <div>
         <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">城市维度客单价对比</h4>
-        <DataTable data={tableData} columns={columns} />
+        <DataTable data={sortedTableData} columns={columns} onSort={handleTableSort} sortConfig={tableSortConfig} />
       </div>
       <div>
         <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">客单价·影响指标分析</h4>
@@ -1676,36 +1678,22 @@ const PriceDecompositionContainer = () => {
           </div>
         </div>
         <div className="flex flex-col mb-4">
-          <div className="flex items-center justify-between mb-2">
-             <h4 className="text-base font-semibold text-gray-700 pl-2 border-l-4 border-[#a40035]">
-                {procMetric === 'returnRate' ? '项目回头率趋势表现' : procMetric === 'newEmpReturn' ? '新员工回头率达标率趋势表现' : '指标趋势（近12周）'}
-             </h4>
-          </div>
-          <div className="flex gap-2">
-          <button
-            onClick={() => setProcShowYoY(!procShowYoY)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${procShowYoY ? 'bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
-          >
-            显示同比
-          </button>
-          <button
-            onClick={() => setProcShowTrend(!procShowTrend)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${procShowTrend ? 'bg-[#a40035]/10 text-[#a40035] border-[#a40035]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
-          >
-            显示均线
-          </button>
-          <button
-            onClick={() => setProcShowExtremes(!procShowExtremes)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${procShowExtremes ? 'bg-[#a40035]/10 text-[#a40035] border-[#a40035]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
-          >
-            显示极值
-          </button>
-        </div>
+          {LineTrendStyle.renderHeader(
+            procMetric === 'returnRate' ? '项目回头率趋势表现' :
+            procMetric === 'newEmpReturn' ? '新员工回头率达标率趋势表现' : '指标趋势（近12周）',
+            procMetric === 'returnRate' ? '' : '%'
+          )}
+          {LineTrendStyle.renderAuxControls({
+            showYoY: procShowYoY,
+            setShowYoY: () => setProcShowYoY(!procShowYoY),
+            showTrend: procShowTrend,
+            setShowTrend: () => setProcShowTrend(!procShowTrend),
+            showExtremes: procShowExtremes,
+            setShowExtremes: () => setProcShowExtremes(!procShowExtremes)
+          })}
         </div>
         {procValues.length >= 2 ? (
           <LineTrendChart
-            headerTitle="" 
-            headerUnit={procMetric === 'returnRate' ? '' : (procMetric === 'configRatio' ? '人/床' : '%')}
             values={procValues}
             valuesYoY={procValuesLY}
             xLabels={procMetric === 'newEmpReturn' ? procWeeks.map(w => w.label) : procWeeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)}
@@ -1719,8 +1707,10 @@ const PriceDecompositionContainer = () => {
               if (procMetric === 'therapistYield') return `${Number(v).toFixed(2)}%`;
               return `${Number(v).toFixed(2)}%`;
             }}
-            colorPrimary="#a40035"
-            colorYoY="#2563eb"
+            colorPrimary={LineTrendStyle.COLORS.primary}
+            colorYoY={LineTrendStyle.COLORS.yoy}
+            width={LineTrendStyle.DIMENSIONS.width}
+            height={LineTrendStyle.DIMENSIONS.height}
             getHoverTitle={(idx) => procWeeks[idx]?.label || ''}
             getHoverSubtitle={() => ''}
           />
@@ -1754,29 +1744,29 @@ const PriceDecompositionContainer = () => {
               </button>
             </div>
               <div className="space-y-4">
-              <div className="flex gap-2 mb-2">
-                <button
-                  onClick={() => setShowYoY(!showYoY)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showYoY ? 'bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
-                >
-                  显示同比
-                </button>
-                <button
-                  onClick={() => setShowTrend(!showTrend)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showTrend ? 'bg-[#a40035]/10 text-[#a40035] border-[#a40035]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
-                >
-                  显示均线
-                </button>
-                <button
-                  onClick={() => setShowExtremes(!showExtremes)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showExtremes ? 'bg-[#a40035]/10 text-[#a40035] border-[#a40035]' : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'}`}
-                >
-                  显示极值
-                </button>
-              </div>
+              {LineTrendStyle.renderHeader(
+                isPriceDecompositionModal
+                  ? '城市平均客单价变化趋势'
+                  : (procMetric === 'configRatio'
+                    ? '城市床位人员配置比变化趋势'
+                    : procMetric === 'therapistYield'
+                      ? '城市推拿师产值达标率趋势'
+                      : procMetric === 'returnRate'
+                        ? '城市项目回头率变化趋势'
+                        : procMetric === 'newEmpReturn'
+                          ? '城市新员工回头率达标率趋势'
+                          : '城市平均客单价变化趋势'),
+                isPriceDecompositionModal ? '元/人次' : (procMetric === 'configRatio' ? '人/床' : procMetric === 'therapistYield' ? '%' : procMetric === 'returnRate' ? '%' : '元/人次')
+              )}
+              {LineTrendStyle.renderAuxControls({
+                showYoY,
+                setShowYoY: () => setShowYoY(!showYoY),
+                showTrend,
+                setShowTrend: () => setShowTrend(!showTrend),
+                showExtremes,
+                setShowExtremes: () => setShowExtremes(!showExtremes)
+              })}
               <LineTrendChart
-                headerTitle={isPriceDecompositionModal ? '城市平均客单价变化趋势' : (procMetric === 'configRatio' ? '城市床位人员配置比变化趋势' : procMetric === 'therapistYield' ? '城市推拿师产值达标率趋势' : procMetric === 'returnRate' ? '城市项目回头率变化趋势' : procMetric === 'newEmpReturn' ? '城市新员工回头率达标率趋势' : '城市平均客单价变化趋势')}
-                headerUnit={isPriceDecompositionModal ? '元/人次' : (procMetric === 'configRatio' ? '人/床' : procMetric === 'therapistYield' ? '%' : procMetric === 'returnRate' ? '%' : '元/人次')}
                 values={weeklyPrice}
                 valuesYoY={weeklyPriceLY}
                 xLabels={(procMetric === 'newEmpReturn' || procMetric === 'therapistYield' || isPriceDecompositionModal)
@@ -1797,11 +1787,14 @@ const PriceDecompositionContainer = () => {
                   if (procMetric === 'therapistYield' || procMetric === 'returnRate') return `${Number(v).toFixed(1)}%`;
                   return `¥ ${Number(v).toFixed(2)}`;
                 }}
-                colorPrimary="#a40035"
-                colorYoY="#2563eb"
+                colorPrimary={LineTrendStyle.COLORS.primary}
+                colorYoY={LineTrendStyle.COLORS.yoy}
+                width={LineTrendStyle.DIMENSIONS.width}
+                height={LineTrendStyle.DIMENSIONS.height}
                 valuesPct={weeklyYoYRates}
                 getHoverTitle={(idx) => weeks[idx] ? `${weeks[idx].year}年第${weeks[idx].weekNo}周` : ''}
                 getHoverSubtitle={(idx) => weeks[idx]?.fullLabel ? `日期范围：${weeks[idx].fullLabel.replace(/-/g, '/').replace(' ~ ', ' ～ ')}` : ''}
+                includeLastPointInTrend={LineTrendStyle.computeIncludeLastPointInTrend(weeks && weeks.length ? weeks[weeks.length - 1]?.fullLabel : null)}
               />
               <div>
                 <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">

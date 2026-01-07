@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
+import LineTrendStyle from '../../components/Common/LineTrendStyleConfig';
 import useFetchData from '../../hooks/useFetchData';
 import BusinessTargets from '../../config/businessTargets';
 import useTableSorting from '../../components/Common/useTableSorting';
@@ -287,58 +288,37 @@ const VolumeDecompositionContainer = () => {
 
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mt-6">
-        <div className="mb-6 space-y-4">
-          {/* Row 1: Metrics */}
-          <div className="flex flex-wrap items-center gap-3">
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${trendMetric === 'daily' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setTrendMetric('daily')}
-             >
-               天均客次量
-             </button>
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${trendMetric === 'cumulative' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setTrendMetric('cumulative')}
-             >
-               年度累计客次量
-             </button>
-          </div>
-          
-          {/* Row 2: Options */}
-          <div className="flex flex-wrap items-center gap-3">
-             <button 
-               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showYoY ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setShowYoY(!showYoY)}
-             >
-               显示同比
-             </button>
-             <button 
-               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showAvg ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setShowAvg(!showAvg)}
-             >
-               显示均值
-             </button>
-             <button 
-               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showExtremes ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setShowExtremes(!showExtremes)}
-             >
-               显示极值
-             </button>
-          </div>
-        </div>
+        {LineTrendStyle.renderHeader(title, unit)}
+        {LineTrendStyle.renderMetricSwitch(
+          [
+            { key: 'daily', label: '天均客次量' },
+            { key: 'cumulative', label: '年度累计客次量' }
+          ],
+          trendMetric,
+          setTrendMetric
+        )}
+        {LineTrendStyle.renderAuxControls({
+          showYoY,
+          setShowYoY: () => setShowYoY(!showYoY),
+          showTrend: showAvg,
+          setShowTrend: () => setShowAvg(!showAvg),
+          showExtremes,
+          setShowExtremes: () => setShowExtremes(!showExtremes)
+        })}
 
         <LineTrendChart
-          headerTitle={title}
-          headerUnit={unit}
           values={values}
           valuesYoY={valuesYoY}
           xLabels={months}
           showYoY={showYoY}
-          showAverage={showAvg}
+          showTrend={showAvg}
           showExtremes={showExtremes}
           currentLabel="2025年"
           lastLabel="2024年"
-          height={350}
+          height={LineTrendStyle.DIMENSIONS.height}
+          width={LineTrendStyle.DIMENSIONS.width}
+          colorPrimary={LineTrendStyle.COLORS.primary}
+          colorYoY={LineTrendStyle.COLORS.yoy}
           yAxisFormatter={yAxisFormatter}
           valueFormatter={(v) => Math.round(v).toLocaleString()}
         />
@@ -663,12 +643,14 @@ const VolumeDecompositionContainer = () => {
                 </button>
               </div>
               <LineTrendChart
-                headerTitle={`${metricNameMap[influenceMetric]}趋势`}
                 values={trendValues}
                 valuesYoY={trendValuesYoY}
                 valuesPct={trendValuesPct}
                 xLabels={monthsAsc}
-                height={300}
+                height={LineTrendStyle.DIMENSIONS.height}
+                width={LineTrendStyle.DIMENSIONS.width}
+                colorPrimary={LineTrendStyle.COLORS.primary}
+                colorYoY={LineTrendStyle.COLORS.yoy}
                 valueFormatter={(v) => {
                    const num = Number(v);
                    if (!Number.isFinite(num)) return '—';
@@ -677,7 +659,7 @@ const VolumeDecompositionContainer = () => {
                    return influenceMetric === 'utilization' ? num.toFixed(2) : `${num.toFixed(2)}%`;
                 }}
                 showYoY={showInfYoY}
-                showAverage={showInfAvg}
+                showTrend={showInfAvg}
                 showExtremes={showInfExtremes}
               />
             </div>
@@ -1076,96 +1058,48 @@ const VolumeDecompositionContainer = () => {
 
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mt-6">
-        <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-gray-800">客次量·影响指标分析</h3>
-        </div>
+        {LineTrendStyle.renderHeader('客次量·影响指标分析', unit)}
 
         <div className="mb-6 space-y-4">
           {/* Row 1: Metrics */}
-          <div className="flex flex-wrap items-center gap-3">
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${influenceMetric === 'duration' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setInfluenceMetric('duration')}
-             >
-               推拿师天均服务时长
-             </button>
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${influenceMetric === 'compliance' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setInfluenceMetric('compliance')}
-             >
-               推拿师天均服务时长不达标占比
-             </button>
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${influenceMetric === 'utilization' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setInfluenceMetric('utilization')}
-             >
-               床位利用率
-             </button>
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${influenceMetric === 'active_members' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setInfluenceMetric('active_members')}
-             >
-               活跃会员数
-             </button>
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${influenceMetric === 'churn_rate' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setInfluenceMetric('churn_rate')}
-             >
-               会员流失率
-             </button>
-             <button 
-               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${influenceMetric === 'review_rate' ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setInfluenceMetric('review_rate')}
-             >
-               主动评价率
-             </button>
-          </div>
+          {LineTrendStyle.renderMetricSwitch(
+            [
+              { key: 'duration', label: '推拿师天均服务时长' },
+              { key: 'compliance', label: '推拿师天均服务时长不达标占比' },
+              { key: 'utilization', label: '床位利用率' },
+              { key: 'active_members', label: '活跃会员数' },
+              { key: 'churn_rate', label: '会员流失率' },
+              { key: 'review_rate', label: '主动评价率' }
+            ],
+            influenceMetric,
+            setInfluenceMetric
+          )}
           
           {/* Row 2: Options */}
-          <div className="flex flex-wrap items-center gap-3">
-             <button 
-               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showInfYoY ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setShowInfYoY(!showInfYoY)}
-             >
-               <span className="inline-flex items-center gap-1">
-                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 7-7" stroke="currentColor" strokeWidth="2" /></svg>
-                 显示同比
-               </span>
-             </button>
-             <button 
-               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showInfAvg ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setShowInfAvg(!showInfAvg)}
-             >
-               <span className="inline-flex items-center gap-1">
-                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12h16" stroke="currentColor" strokeWidth="2" /></svg>
-                 显示均值
-               </span>
-             </button>
-             <button 
-               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showInfExtremes ? 'bg-[#a40035] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-               onClick={() => setShowInfExtremes(!showInfExtremes)}
-             >
-               <span className="inline-flex items-center gap-1">
-                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6 .5-4.5 4 1.5 6-6-3.5-6 3.5 1.5-6L3 8.5l6-.5 3-6z" stroke="currentColor" strokeWidth="1.5" fill="none"/></svg>
-                 显示极值
-               </span>
-             </button>
-          </div>
+          {LineTrendStyle.renderAuxControls({
+            showYoY: showInfYoY,
+            setShowYoY: () => setShowInfYoY(!showInfYoY),
+            showTrend: showInfAvg,
+            setShowTrend: () => setShowInfAvg(!showInfAvg),
+            showExtremes: showInfExtremes,
+            setShowExtremes: () => setShowInfExtremes(!showInfExtremes)
+          })}
         </div>
 
         <LineTrendChart
-          headerTitle={title}
-          headerUnit={unit}
           values={values}
           valuesYoY={valuesYoY}
           valuesPct={valuesPct}
           xLabels={months}
           showYoY={showInfYoY}
-          showAverage={showInfAvg}
+          showTrend={showInfAvg}
           showExtremes={showInfExtremes}
           currentLabel="2025年"
           lastLabel="2024年"
-          height={350}
+          height={LineTrendStyle.DIMENSIONS.height}
+          width={LineTrendStyle.DIMENSIONS.width}
+          colorPrimary={LineTrendStyle.COLORS.primary}
+          colorYoY={LineTrendStyle.COLORS.yoy}
           yAxisFormatter={yAxisFormatter}
           valueFormatter={valueFormatter}
         />

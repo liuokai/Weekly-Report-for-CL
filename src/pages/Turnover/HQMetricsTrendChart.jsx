@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import LineTrendChart from '../../components/Common/LineTrendChart';
+import LineTrendStyle from '../../components/Common/LineTrendStyleConfig';
 import useFetchData from "../../hooks/useFetchData";
 
 const METRICS = {
@@ -45,7 +46,7 @@ const HQMetricsTrendChart = () => {
   const [activeMetric, setActiveMetric] = useState('annualAvgPrice');
   const [controls, setControls] = useState({
     showYoY: true,
-    showAverage: true,
+    showTrend: true,
     showExtremes: true
   });
 
@@ -94,12 +95,13 @@ const HQMetricsTrendChart = () => {
   const weeksMeta = useMemo(() => {
     const src = activeMetric === 'annualAvgPrice' ? annualYtdData : weeklyData;
     if (!src || src.length === 0) return [];
-    const sorted = [...src].slice(0, 12).reverse();
+    const sorted = [...src].slice(-12);
     return sorted.map(item => ({
       year: Number(item.sales_year) || 0,
       week: Number(item.sales_week) || 0,
       startStr: String((item.week_date_range || '').split('~')[0] || '').trim().replace(/-/g, '/').slice(2).replace(/\//g, '').replace(/^(\d{2})(\d{2})(\d{2}).*$/, '$1$2$3'),
-      endStr: String((item.week_date_range || '').split('~')[1] || '').trim().replace(/-/g, '/').slice(2).replace(/\//g, '').replace(/^(\d{2})(\d{2})(\d{2}).*$/, '$1$2$3')
+      endStr: String((item.week_date_range || '').split('~')[1] || '').trim().replace(/-/g, '/').slice(2).replace(/\//g, '').replace(/^(\d{2})(\d{2})(\d{2}).*$/, '$1$2$3'),
+      rangeRaw: String(item.week_date_range || '')
     }));
   }, [activeMetric, annualYtdData, weeklyData]);
 
@@ -115,71 +117,37 @@ const HQMetricsTrendChart = () => {
 
   return (
     <div className="mb-6">
-      <div className="flex flex-col gap-4 px-2 mb-4">
-        <div className="inline-flex" role="group" aria-label="price metric toggle">
-          <button
-            onClick={() => setActiveMetric('annualAvgPrice')}
-            className={`px-4 py-1.5 text-xs font-medium border ${activeMetric === 'annualAvgPrice' ? 'bg-[#a40035] text-white border-[#a40035]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'} rounded-l-full`}
-          >
-            年度平均客单价
-          </button>
-          <button
-            onClick={() => setActiveMetric('weeklyAvgPrice')}
-            className={`px-4 py-1.5 text-xs font-medium border ${activeMetric === 'weeklyAvgPrice' ? 'bg-[#a40035] text-white border-[#a40035]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'} -ml-px rounded-r-full`}
-          >
-            周度平均客单价
-          </button>
-        </div>
-        {/* Controls Row */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => toggleControl('showYoY')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
-              controls.showYoY
-                ? 'bg-[#a40035]/10 text-[#a40035] border-[#a40035]'
-                : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            显示同比
-          </button>
-          <button
-            onClick={() => toggleControl('showAverage')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
-              controls.showAverage
-                ? 'bg-[#a40035]/10 text-[#a40035] border-[#a40035]'
-                : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            显示均值
-          </button>
-          <button
-            onClick={() => toggleControl('showExtremes')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
-              controls.showExtremes
-                ? 'bg-[#a40035]/10 text-[#a40035] border-[#a40035]'
-                : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            显示极值
-          </button>
-        </div>
-      </div>
+      {LineTrendStyle.renderHeader(currentMetricConfig.label + '趋势', currentMetricConfig.unit)}
+      {LineTrendStyle.renderMetricSwitch(
+        [
+          { key: 'annualAvgPrice', label: '年度平均客单价' },
+          { key: 'weeklyAvgPrice', label: '周度平均客单价' }
+        ],
+        activeMetric,
+        setActiveMetric
+      )}
+      {LineTrendStyle.renderAuxControls({
+        showYoY: controls.showYoY,
+        setShowYoY: () => toggleControl('showYoY'),
+        showTrend: controls.showTrend,
+        setShowTrend: () => toggleControl('showTrend'),
+        showExtremes: controls.showExtremes,
+        setShowExtremes: () => toggleControl('showExtremes')
+      })}
 
       <LineTrendChart
         key={activeMetric}
-        headerTitle={currentMetricConfig.label}
-        headerUnit={currentMetricConfig.unit}
         values={currentMetricConfig.data}
         valuesYoY={currentMetricConfig.dataYoY}
         valuesPct={currentMetricConfig.dataPct}
         xLabels={weeksMeta.map(w => `第${String(w.week).padStart(2, '0')}周`)}
         showYoY={controls.showYoY}
-        showTrend={controls.showAverage}
+        showTrend={controls.showTrend}
         showExtremes={controls.showExtremes}
-        width={1000}
-        height={320}
-        colorPrimary="#a40035"
-        colorYoY="#2563eb"
+        width={LineTrendStyle.DIMENSIONS.width}
+        height={LineTrendStyle.DIMENSIONS.height}
+        colorPrimary={LineTrendStyle.COLORS.primary}
+        colorYoY={LineTrendStyle.COLORS.yoy}
         yAxisFormatter={(v) => {
           if (isPercentMetric) return `${v.toFixed(1)}%`;
           if (isPriceMetric) return `¥${v.toFixed(2)}`;
@@ -193,6 +161,9 @@ const HQMetricsTrendChart = () => {
         currentLabel="本周"
         lastLabel="去年同期"
         yoyLabel="同比"
+        includeLastPointInTrend={LineTrendStyle.computeIncludeLastPointInTrend(
+          weeksMeta && weeksMeta.length ? weeksMeta[weeksMeta.length - 1]?.rangeRaw : null
+        )}
         getHoverTitle={(idx) => {
           const wm = weeksMeta[idx] || {};
           return `周数： ${wm.year || ''} 年第 ${wm.week || ''} 周`;

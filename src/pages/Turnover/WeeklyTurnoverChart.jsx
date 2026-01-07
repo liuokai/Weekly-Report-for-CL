@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import LineTrendChart from "../../components/Common/LineTrendChart";
+import LineTrendStyle from "../../components/Common/LineTrendStyleConfig";
 import useFetchData from "../../hooks/useFetchData";
 
 const WeeklyTurnoverChart = () => {
@@ -88,75 +89,29 @@ const WeeklyTurnoverChart = () => {
 
   const includeLastPoint = shouldIncludeLastPointInTrend();
 
-  // 图表尺寸配置
-  const width = 800;
-  const height = 320;
-  const padding = { top: 40, right: 40, bottom: 60, left: 45 };
+  const width = LineTrendStyle.DIMENSIONS.width;
+  const height = LineTrendStyle.DIMENSIONS.height;
+  const padding = LineTrendStyle.DIMENSIONS.padding;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">{currentMetric.label}趋势</h3>
-        <p className="text-sm text-gray-500">单位：{currentMetric.unit}</p>
-      </div>
+      {LineTrendStyle.renderHeader(`${currentMetric.label}趋势`, currentMetric.unit)}
 
-      {/* 指标选择区域 */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {METRICS.map((metric) => (
-          <button
-            key={metric.key}
-            onClick={() => setSelectedMetricKey(metric.key)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              selectedMetricKey === metric.key
-                ? "bg-[#a40035]/10 text-[#a40035]"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-            }`}
-          >
-            {metric.label}
-          </button>
-        ))}
-      </div>
+      {LineTrendStyle.renderMetricSwitch(METRICS, selectedMetricKey, setSelectedMetricKey)}
 
-      {/* 图表辅助展示控制区域 */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setShowYoY(!showYoY)}
-          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
-            showYoY
-              ? "bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]"
-              : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"
-          }`}
-        >
-          显示同比
-        </button>
-        <button
-          onClick={() => setShowTrend(!showTrend)}
-          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
-            showTrend
-              ? "bg-[#a40035]/10 text-[#a40035] border-[#a40035]"
-              : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"
-          }`}
-        >
-          显示趋势
-        </button>
-        <button
-          onClick={() => setShowExtremes(!showExtremes)}
-          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
-            showExtremes
-              ? "bg-[#a40035]/10 text-[#a40035] border-[#a40035]"
-              : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"
-          }`}
-        >
-          显示极值
-        </button>
-      </div>
+      {LineTrendStyle.renderAuxControls({
+        showYoY,
+        setShowYoY,
+        showTrend,
+        setShowTrend,
+        showExtremes,
+        setShowExtremes
+      })}
       
       {loading ? (
         <div className="flex justify-center items-center h-[320px] text-gray-400">加载中...</div>
       ) : chartData.length > 0 ? (
         <LineTrendChart
-          headerTitle={`${currentMetric.label}趋势`}
-          headerUnit={currentMetric.unit}
           values={currentDataValues}
           valuesYoY={lastYearDataValues}
           xLabels={chartData.map(d => d.weekLabel)}
@@ -168,9 +123,11 @@ const WeeklyTurnoverChart = () => {
           width={width}
           height={height}
           padding={padding}
-          colorPrimary="#a40035"
-          colorYoY="#2563eb"
-          includeLastPointInTrend={includeLastPoint}
+          colorPrimary={LineTrendStyle.COLORS.primary}
+          colorYoY={LineTrendStyle.COLORS.yoy}
+          includeLastPointInTrend={LineTrendStyle.computeIncludeLastPointInTrend(
+            chartData[chartData.length - 1]?.dateRange
+          )}
           getHoverTitle={(i) => chartData[i] ? chartData[i].fullWeekLabel : ''}
           getHoverSubtitle={(i) => {
              if (!chartData[i]) return '';

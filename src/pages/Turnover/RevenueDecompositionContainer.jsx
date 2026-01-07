@@ -2,10 +2,14 @@ import React, { useMemo, useState, useEffect } from "react";
 import DataContainer from "../../components/Common/DataContainer";
 import DataTable from "../../components/Common/DataTable";
 import LineTrendChart from "../../components/Common/LineTrendChart";
+import LineTrendStyle from "../../components/Common/LineTrendStyleConfig";
 import useFetchData from "../../hooks/useFetchData";
 import { getTimeProgress } from "../../components/Common/TimeProgressUtils";
 import BusinessTargets from "../../config/businessTargets";
 import useTableSorting from "../../components/Common/useTableSorting";
+
+// 统一的城市名称规范化（去除“市”后缀与空格）
+const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
 
 // Static config removed as per user request (mock data is meaningless)
 
@@ -132,7 +136,6 @@ const RevenueDecompositionContainer = () => {
     fetchModalCumData([cityName]);
     fetchModalAvgDayData([cityName]);
 
-    const normalizeCity = (n) => String(n || "").replace(/市$/, "").trim();
     const city = fetchedData ? fetchedData.find(c => normalizeCity(c.statistics_city_name || c.city) === normalizeCity(cityName)) : null;
 
     if (city) {
@@ -161,47 +164,48 @@ const RevenueDecompositionContainer = () => {
 
   useEffect(() => {
     if (selectedCity && storeWeeklyData && Array.isArray(storeWeeklyData) && storeWeeklyData.length > 0) {
+      // 仅保留当前选中城市的数据
+      const cityStoresAll = storeWeeklyData.filter(
+        item => normalizeCity(item.statistics_city_name) === normalizeCity(selectedCity)
+      );
+      if (cityStoresAll.length === 0) {
+        setStoreRows([]);
+        return;
+      }
+      // 计算该城市的最新年/周
       let maxYear = 0;
       let maxWeek = 0;
-      
-      // Map to store accumulated annual revenue
-      const storeAnnualRevenueMap = new Map();
-
-      storeWeeklyData.forEach(item => {
-          if (item.year > maxYear) {
-              maxYear = item.year;
-              maxWeek = item.week;
-          } else if (item.year === maxYear && item.week > maxWeek) {
-              maxWeek = item.week;
-          }
-      });
-      
-      // Calculate annual revenue for maxYear
-      storeWeeklyData.forEach(item => {
-        if (item.year === maxYear) {
-           const currentTotal = storeAnnualRevenueMap.get(item.store_name) || 0;
-           storeAnnualRevenueMap.set(item.store_name, currentTotal + (Number(item.current_value) || 0));
+      cityStoresAll.forEach(item => {
+        if (item.year > maxYear) {
+          maxYear = item.year;
+          maxWeek = item.week;
+        } else if (item.year === maxYear && item.week > maxWeek) {
+          maxWeek = item.week;
         }
       });
-
-      const latestData = storeWeeklyData.filter(item => item.year === maxYear && item.week === maxWeek);
-      const timeProgressVal = getTimeProgress();
-
-      const stores = latestData.map(item => {
-        return {
-          城市名称: item.store_name,
-          本周营业额: Math.round(Number(item.current_value) || 0),
-          本周营业额同比: item.yoy_change !== null ? `${item.yoy_change}%` : '-',
-          年度营业额: Math.round(storeAnnualRevenueMap.get(item.store_name) || 0),
-          营业额目标: null,
-          时间进度: `${timeProgressVal}%`,
-          营业额完成率: null,
-          预算金额: null,
-          预算花费金额: null,
-          预算消耗率: null,
-        };
+      // 累计年度营业额（仅统计最新年份）
+      const storeAnnualRevenueMap = new Map();
+      cityStoresAll.forEach(item => {
+        if (item.year === maxYear) {
+          const currentTotal = storeAnnualRevenueMap.get(item.store_name) || 0;
+          storeAnnualRevenueMap.set(item.store_name, currentTotal + (Number(item.current_value) || 0));
+        }
       });
-      
+      // 取该城市最新周的数据
+      const latestData = cityStoresAll.filter(item => item.year === maxYear && item.week === maxWeek);
+      const timeProgressVal = getTimeProgress();
+      const stores = latestData.map(item => ({
+        城市名称: item.store_name,
+        本周营业额: Math.round(Number(item.current_value) || 0),
+        本周营业额同比: item.yoy_change !== null ? `${item.yoy_change}%` : '-',
+        年度营业额: Math.round(storeAnnualRevenueMap.get(item.store_name) || 0),
+        营业额目标: null,
+        时间进度: `${timeProgressVal}%`,
+        营业额完成率: null,
+        预算金额: null,
+        预算花费金额: null,
+        预算消耗率: null,
+      }));
       stores.sort((a, b) => b.本周营业额 - a.本周营业额);
       setStoreRows(stores);
     } else {
@@ -437,38 +441,16 @@ const RevenueDecompositionContainer = () => {
               </div>
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {METRICS.map((metric) => (
-                      <button
-                        key={metric.key}
-                        onClick={() => setSelectedMetricKey(metric.key)}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedMetricKey === metric.key ? "bg-[#a40035]/10 text-[#a40035]" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
-                      >
-                        {metric.label}
-                      </button>
-                    ))}
-                  </div>
+                  {LineTrendStyle.renderMetricSwitch(METRICS, selectedMetricKey, setSelectedMetricKey)}
                   
-                  <div className="flex gap-2 mb-4">
-                    <button
-                      onClick={() => setShowYoY(!showYoY)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showYoY ? "bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]" : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"}`}
-                    >
-                      显示同比
-                    </button>
-                    <button
-                      onClick={() => setShowTrend(!showTrend)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showTrend ? "bg-[#a40035]/10 text-[#a40035] border-[#a40035]" : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"}`}
-                    >
-                      显示趋势
-                    </button>
-                    <button
-                      onClick={() => setShowExtremes(!showExtremes)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${showExtremes ? "bg-[#a40035]/10 text-[#a40035] border-[#a40035]" : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"}`}
-                    >
-                      显示极值
-                    </button>
-                  </div>
+                  {LineTrendStyle.renderAuxControls({
+                    showYoY,
+                    setShowYoY,
+                    showTrend,
+                    setShowTrend,
+                    showExtremes,
+                    setShowExtremes
+                  })}
 
                   <div className="min-h-[300px] w-full bg-gray-50 rounded-lg p-4 flex items-center justify-center">
                     {(modalLoading || modalCumLoading || modalAvgDayLoading) ? (
@@ -482,22 +464,22 @@ const RevenueDecompositionContainer = () => {
                         </div>
                     ) : (
                       <LineTrendChart
-                        headerTitle={`${(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).label}趋势`}
-                        headerUnit={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).unit}
                         values={(series[selectedMetricKey] || [])}
                         valuesYoY={(seriesLY[selectedMetricKey] || [])}
                         xLabels={labels}
                         showYoY={showYoY}
                         showTrend={showTrend}
                         showExtremes={showExtremes}
-                        includeLastPointInTrend={calculateTrendLineLogic(series[selectedMetricKey], rawData)}
+                        includeLastPointInTrend={LineTrendStyle.computeIncludeLastPointInTrend(
+                          rawData && rawData.length ? rawData[Math.min(rawData.length - 1, (series[selectedMetricKey] || []).length - 1)]?.date_range : null
+                        )}
                         yAxisFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).axisFormat}
                         valueFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).format}
-                        width={800}
+                        width={LineTrendStyle.DIMENSIONS.width}
                         height={280}
-                        padding={{ top: 40, right: 40, bottom: 60, left: 45 }}
-                        colorPrimary="#a40035"
-                        colorYoY="#2563eb"
+                        padding={LineTrendStyle.DIMENSIONS.padding}
+                        colorPrimary={LineTrendStyle.COLORS.primary}
+                        colorYoY={LineTrendStyle.COLORS.yoy}
                       />
                     )}
                   </div>
