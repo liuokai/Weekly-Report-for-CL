@@ -235,21 +235,21 @@ const TurnoverReport = () => {
                     {/* 竖线分隔 - 改为左边框视觉分割 */}
                     <div className="flex flex-col gap-2 pl-6 border-l border-gray-200 py-1">
                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-500 whitespace-nowrap">目标值</span>
-                          <span className="text-lg font-bold text-gray-800">
-                            {revenueMetrics.target.toLocaleString()} <span className="text-xs font-normal text-gray-500">万元</span>
-                          </span>
-                       </div>
-                       <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-500 whitespace-nowrap">去年同期</span>
+                          <span className="text-sm text-gray-500 whitespace-nowrap">去年同期营业额</span>
                           <span className="text-lg font-bold text-gray-800">
                             {revenueMetrics.lastYearSamePeriod?.toLocaleString() ?? 0} <span className="text-xs font-normal text-gray-500">万元</span>
                           </span>
                        </div>
                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-500 whitespace-nowrap">同比</span>
+                          <span className="text-sm text-gray-500 whitespace-nowrap">同比增长</span>
                           <span className={`text-lg font-bold ${revenueMetrics.yoy >= 0 ? 'text-[#a40035]' : 'text-green-600'}`}>
                              {revenueMetrics.yoy > 0 ? '+' : ''}{revenueMetrics.yoy?.toFixed(2)}%
+                          </span>
+                       </div>
+                       <div className="flex items-center gap-4">
+                          <span className="text-sm text-gray-500 whitespace-nowrap">今年目标值</span>
+                          <span className="text-lg font-bold text-gray-800">
+                            {revenueMetrics.target.toLocaleString()} <span className="text-xs font-normal text-gray-500">万元</span>
                           </span>
                        </div>
                     </div>

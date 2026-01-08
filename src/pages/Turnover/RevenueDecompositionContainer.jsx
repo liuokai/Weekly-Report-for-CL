@@ -39,9 +39,16 @@ const RevenueDecompositionContainer = () => {
   useEffect(() => {
     if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
       const timeProgressVal = getTimeProgress();
-      const totalRevenue = fetchedData.reduce((acc, curr) => acc + (Number(curr.actual_turnover) || 0), 0);
+      const years = fetchedData
+        .map(d => Number(d.year || d.s_year || 0))
+        .filter(n => Number.isFinite(n) && n > 0);
+      const maxYear = years.length ? Math.max(...years) : null;
+      const latestYearData = maxYear != null
+        ? fetchedData.filter(d => Number(d.year || d.s_year || 0) === maxYear)
+        : fetchedData;
+      const totalRevenue = latestYearData.reduce((acc, curr) => acc + (Number(curr.actual_turnover) || 0), 0);
 
-      const processedRows = fetchedData.map(item => {
+      const processedRows = latestYearData.map(item => {
         // Fallback logic for city name if statistics_city_name is missing/null
         const city = item.statistics_city_name || item.city || '未知城市';
         
@@ -136,7 +143,21 @@ const RevenueDecompositionContainer = () => {
     fetchModalCumData([cityName]);
     fetchModalAvgDayData([cityName]);
 
-    const city = fetchedData ? fetchedData.find(c => normalizeCity(c.statistics_city_name || c.city) === normalizeCity(cityName)) : null;
+    let city = null;
+    if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
+      const candidates = fetchedData.filter(
+        c => normalizeCity(c.statistics_city_name || c.city) === normalizeCity(cityName)
+      );
+      if (candidates.length > 0) {
+        const years = candidates
+          .map(d => Number(d.year || d.s_year || 0))
+          .filter(n => Number.isFinite(n) && n > 0);
+        const maxYear = years.length ? Math.max(...years) : null;
+        city = maxYear != null
+          ? candidates.find(d => Number(d.year || d.s_year || 0) === maxYear)
+          : candidates[0];
+      }
+    }
 
     if (city) {
       const weekRanges = buildLast12Weeks();

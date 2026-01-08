@@ -4,6 +4,7 @@ select
     case city_name
         when '德阳市' then '成都市'
         when '绵阳市' then '成都市'
+        when '广汉市' then '成都市'
     else city_name
     end                                   as `城市名称`,
     store_name                            as `门店名称`,

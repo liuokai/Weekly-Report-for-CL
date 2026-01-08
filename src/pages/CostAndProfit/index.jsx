@@ -85,18 +85,8 @@ const CostAndProfitTab = () => {
   const [modalShowExtremes, setModalShowExtremes] = useState(true);
 
   const [costData, setCostData] = useState(null);
-  useEffect(() => {
-    const fetchCost = async () => {
-      try {
-        const res = await axios.get('/api/cost-structure');
-        if (res.data && res.data.status === 'success') {
-          setCostData(res.data.data);
-        }
-      } catch (e) {
-      }
-    };
-    fetchCost();
-  }, []);
+  // Note: Cost structure data fetching has been moved to CostStructureContainer component
+  // which uses static configuration instead of server-side mapping.
 
   // Lock body scroll when modal is open
   useEffect(() => {
