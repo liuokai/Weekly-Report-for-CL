@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import axios from 'axios';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import LineTrendStyle from '../../components/Common/LineTrendStyleConfig';
 import DataTable from '../../components/Common/DataTable';
@@ -7,11 +6,12 @@ import UnifiedProgressBar from '../../components/Common/UnifiedProgressBar';
 import BusinessTargets from '../../config/businessTargets';
 import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 import CostStructureContainer from '../CashFlow/CostStructureContainer';
+import useFetchData from '../../hooks/useFetchData';
 
 const CostAndProfitTab = () => {
   const targetProfitRate = BusinessTargets.profit.annualTargetRate;
-  const [yearlyRows, setYearlyRows] = useState([]);
-  const [loadingYearly, setLoadingYearly] = useState(true);
+  const { data: yearlyRowsRaw, loading: loadingYearly } = useFetchData('getProfitYearly', [], []);
+  const yearlyRows = Array.isArray(yearlyRowsRaw) ? yearlyRowsRaw : [];
   const latestRow = yearlyRows?.[0] || null;
   const prevRow = yearlyRows?.[1] || null;
   const currentProfit = latestRow ? Number(latestRow.total_profit) || 0 : 0;
@@ -30,45 +30,8 @@ const CostAndProfitTab = () => {
     return val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  // 获取年度利润数据
-  useEffect(() => {
-    const fetchYearlyProfit = async () => {
-      setLoadingYearly(true);
-      try {
-        const res = await axios.post('/api/fetch-data', {
-          queryKey: 'getProfitYearly',
-          params: []
-        });
-        if (res.data && res.data.status === 'success' && Array.isArray(res.data.data)) {
-          setYearlyRows(res.data.data);
-        } else {
-          setYearlyRows([]);
-        }
-      } catch (e) {
-        setYearlyRows([]);
-      } finally {
-        setLoadingYearly(false);
-      }
-    };
-    fetchYearlyProfit();
-  }, []);
-
-  const [trendRows, setTrendRows] = useState([]);
-  useEffect(() => {
-    const fetchTrend = async () => {
-      try {
-        const res = await axios.post('/api/fetch-data', {
-          queryKey: 'getProfitTrend'
-        });
-        if (res.data && res.data.status === 'success' && Array.isArray(res.data.data)) {
-          setTrendRows(res.data.data);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchTrend();
-  }, []);
+  const { data: trendRowsRaw } = useFetchData('getProfitTrend', [], []);
+  const trendRows = Array.isArray(trendRowsRaw) ? trendRowsRaw : [];
 
   // --- Trend Chart Logic ---
   const [activeMetric, setActiveMetric] = useState('monthly_profit');

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
+import difyService from '../../services/difyService';
 
 // Global cache for configuration to prevent redundant fetches
 let globalConfigCache = null;
@@ -28,7 +29,7 @@ const fetchConfigGlobal = async () => {
   return globalConfigPromise;
 };
 
-const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentError, shouldAnalyze = false }) => {
+const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentError, shouldAnalyze = false, onAnalysisComplete }) => {
   const [showConfig, setShowConfig] = useState(false);
   const [configLoading, setConfigLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -115,40 +116,15 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
     setLocalAnalysis(null);
 
     try {
-      const response = await axios.post('/api/analysis/execute-smart-analysis', {
-        variableKeys,
-        workflowId
-      });
+      // Use difyService for deduplication and caching
+      const resultText = await difyService.executeSmartAnalysis(variableKeys, workflowId);
       
-      // Extract result based on Dify response structure (Chat vs Workflow)
-      let resultText = '';
-      const resData = response.data;
-
-      if (resData.data && resData.data.outputs && resData.data.outputs.result) {
-        // Workflow App mode: data.outputs.result
-        resultText = resData.data.outputs.result;
-      } else if (resData.answer) {
-        // Chat App mode: answer
-        resultText = resData.answer;
-      } else if (resData.data && resData.data.answer) {
-        // Nested data structure
-        resultText = resData.data.answer;
-      } else {
-        // Fallback: Try to find any text output in outputs
-        if (resData.data && resData.data.outputs) {
-           const values = Object.values(resData.data.outputs);
-           if (values.length > 0 && typeof values[0] === 'string') {
-             resultText = values[0];
-           }
-        }
-      }
-      
-      // Final fallback to JSON string if nothing found
-      if (!resultText) {
-        resultText = JSON.stringify(resData);
-      }
-
       setLocalAnalysis(resultText);
+      
+      // Notify parent
+      if (onAnalysisComplete) {
+        onAnalysisComplete(resultText);
+      }
     } catch (err) {
       setLocalError(err.response?.data?.message || err.message || '分析请求失败');
     } finally {
@@ -157,6 +133,7 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
   };
 
   const handleAnalyzeClick = () => {
+
     if (selectedVariables.length === 0) {
       alert('请至少选择一个数据变量');
       return;

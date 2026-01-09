@@ -1,7 +1,12 @@
 
 import { AI_CONFIG } from '../config/aiConfig';
+import axios from 'axios';
 
 class DifyService {
+  constructor() {
+    this.inflightSmartAnalysis = new Map();
+  }
+
   /**
    * Check if AI service is enabled globally
    */
@@ -24,6 +29,15 @@ class DifyService {
     const inputStr = JSON.stringify(sortedInputs);
     const prefix = AI_CONFIG.CACHE?.STORAGE_KEY_PREFIX || 'dify_cache_';
     return `${prefix}${workflowKey}_${inputStr}`;
+  }
+
+  /**
+   * Generate a unique cache key for smart analysis
+   */
+  _generateSmartAnalysisCacheKey(variableKeys, workflowId) {
+    const sortedVars = [...variableKeys].sort().join(',');
+    const prefix = AI_CONFIG.CACHE?.STORAGE_KEY_PREFIX || 'dify_cache_';
+    return `${prefix}smart_${workflowId}_${sortedVars}`;
   }
 
   /**
@@ -70,6 +84,78 @@ class DifyService {
       console.warn('[DifyService] Failed to save to cache', e);
     }
   }
+
+  /**
+   * Execute Smart Analysis with deduplication and caching
+   * @param {string[]} variableKeys 
+   * @param {string} workflowId 
+   */
+  async executeSmartAnalysis(variableKeys, workflowId) {
+    if (!this.isEnabled) {
+      throw new Error('AI service is disabled');
+    }
+
+    const cacheKey = this._generateSmartAnalysisCacheKey(variableKeys, workflowId);
+    
+    // 1. Check LocalStorage Cache
+    const cachedResult = this._getFromCache(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
+    }
+
+    // 2. Check In-flight Requests (Deduplication)
+    if (this.inflightSmartAnalysis.has(cacheKey)) {
+      console.log(`[DifyService] Reusing in-flight request for ${cacheKey}`);
+      return this.inflightSmartAnalysis.get(cacheKey);
+    }
+
+    // 3. Execute Request
+    const requestPromise = (async () => {
+      try {
+        const response = await axios.post('/api/analysis/execute-smart-analysis', {
+          variableKeys,
+          workflowId
+        });
+
+        // Parse result
+        let resultText = '';
+        const resData = response.data;
+
+        if (resData.data && resData.data.outputs && resData.data.outputs.result) {
+          resultText = resData.data.outputs.result;
+        } else if (resData.answer) {
+          resultText = resData.answer;
+        } else if (resData.data && resData.data.answer) {
+          resultText = resData.data.answer;
+        } else {
+          if (resData.data && resData.data.outputs) {
+             const values = Object.values(resData.data.outputs);
+             if (values.length > 0 && typeof values[0] === 'string') {
+               resultText = values[0];
+             }
+          }
+        }
+        
+        if (!resultText) {
+          resultText = JSON.stringify(resData);
+        }
+
+        // Save to cache
+        this._saveToCache(cacheKey, resultText);
+        
+        return resultText;
+      } catch (error) {
+        throw error;
+      } finally {
+        // Remove from inflight map
+        this.inflightSmartAnalysis.delete(cacheKey);
+      }
+    })();
+
+    this.inflightSmartAnalysis.set(cacheKey, requestPromise);
+    return requestPromise;
+  }
+
 
   /**
    * Run a Dify workflow via the backend proxy

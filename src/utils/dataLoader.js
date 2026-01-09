@@ -8,29 +8,48 @@ export const PRELOAD_QUERIES = [
   'getWeeklyTurnoverCum',
   'getWeeklyTurnoverAvgDay',
   'getCityTurnover',
-  // 新增：新员工回头率达标率相关
+  'getWeeklyAvgPriceYTD',
+  'getWeeklyAvgPrice',
+  'getCityAnnualAvgPrice',
+  'getAnnualAvgPrice',
+  'getCityWeeklyAvgPriceYTD',
+  'getStoreWeeklyAvgPriceYTD',
+  'getRepurchaseRateAnnual',
+  'getRepurchaseRateWeekly',
+  'getRepurchaseRateCityWeekly',
+  'getRepurchaseRateStoreWeekly',
+  'getCityStoreWeeklyTurnover',
+  'getProfitYearly',
+  'getProfitTrend',
   'getNewEmpReturnComplianceAnnual',
   'getNewEmpReturnComplianceMonthly',
   'getNewEmpReturnComplianceCityAnnual',
+  'getNewEmpReturnComplianceCityMonthly',
   'getNewEmpReturnComplianceStoreAnnual',
-  // 新增：推拿师产值达标率相关（月度/城市/月度门店）
   'getEmployeeOutputStandardRateMonthly',
   'getEmployeeOutputStandardRateCityMonthly',
-  'getEmployeeOutputStandardRateStoreMonthly'
-  ,
-  // 新增：推拿师天均服务时长（月度/城市/月度门店）
+  'getEmployeeOutputStandardRateStoreMonthly',
+  'getBedStaffRatioAnnual',
+  'getBedStaffRatioWeekly',
+  'getBedStaffRatioCityAnnual',
+  'getBedStaffRatioCityWeekly',
+  'getBedStaffRatioStoreAnnual',
+  'getUserVisitCountAnnual',
+  'getUserVisitCountDailyAvgMonthly',
+  'getUserVisitCountCumMonthly',
   'getStaffServiceDurationMonthly',
   'getStaffServiceDurationCityMonthly',
-  'getStaffServiceDurationStoreMonthly'
-  ,
-  // 新增：推拿师天均服务时长不达标占比（月度/城市月度）
   'getStaffServiceDurationBelowStandardMonthly',
-  'getStaffServiceDurationBelowStandardCityMonthly'
-  ,
-  // 新增：主动评价率（月度/城市/月度门店）
+  'getStaffServiceDurationBelowStandardCityMonthly',
+  'getActiveUserMonthlyYoy',
+  'getActiveUserCityMonthlyYoy',
+  'getMemberChurnRateMonthlyYoy',
+  'getMemberChurnRateCityMonthlyYoy',
   'getActiveReviewRateMonthlyYoy',
   'getActiveReviewRateCityMonthlyYoy',
-  'getActiveReviewRateStoreMonthlyYoy'
+  'getActiveReviewRateStoreMonthlyYoy',
+  'getActiveUserStoreMonthlyYoy',
+  'getMemberChurnRateStoreMonthlyYoy'
 ];
 
 class DataLoader {
@@ -39,13 +58,47 @@ class DataLoader {
     this.activeRequests = 0;
     this.MAX_CONCURRENT_REQUESTS = 6; // Optimized: Safe to increase concurrency as SQLs are optimized and backend pool is sufficient
     this.cacheManager = cacheManager;
+    this.memoryCache = new Map();
+    this.inflightRequests = new Map();
+  }
+
+  _buildCacheKey(queryKey, params) {
+    if (params == null) return queryKey;
+
+    if (Array.isArray(params)) {
+      if (params.length === 0) return queryKey;
+      return `${queryKey}_${JSON.stringify(params)}`;
+    }
+
+    if (typeof params === 'object') {
+      const keys = Object.keys(params);
+      if (keys.length === 0) return queryKey;
+      return `${queryKey}_${JSON.stringify(params)}`;
+    }
+
+    return `${queryKey}_${JSON.stringify(params)}`;
   }
 
   /**
    * Enqueue a request and process it when a slot is available
    */
   async fetchData(queryKey, params = []) {
-    return new Promise((resolve, reject) => {
+    const uniqueCacheKey = this._buildCacheKey(queryKey, params);
+
+    if (this.memoryCache.has(uniqueCacheKey)) {
+      return { status: 'success', data: this.memoryCache.get(uniqueCacheKey) };
+    }
+
+    const cached = cacheManager.get(uniqueCacheKey);
+    if (cached) {
+      this.memoryCache.set(uniqueCacheKey, cached);
+      return { status: 'success', data: cached };
+    }
+
+    const inflight = this.inflightRequests.get(uniqueCacheKey);
+    if (inflight) return inflight;
+
+    const inflightPromise = new Promise((resolve, reject) => {
       const task = async () => {
         try {
           // Attempt 1
@@ -68,6 +121,7 @@ class DataLoader {
           }
         } finally {
           this.activeRequests--;
+          this.inflightRequests.delete(uniqueCacheKey);
           this._processQueue();
         }
       };
@@ -75,6 +129,9 @@ class DataLoader {
       this.requestQueue.push(task);
       this._processQueue();
     });
+
+    this.inflightRequests.set(uniqueCacheKey, inflightPromise);
+    return inflightPromise;
   }
 
   _processQueue() {
@@ -88,15 +145,15 @@ class DataLoader {
   }
 
   async _executeRequest(queryKey, params) {
-    // Generate cache key
-    let uniqueCacheKey = queryKey;
-    if (params && params.length > 0) {
-      uniqueCacheKey += `_${JSON.stringify(params)}`;
+    const uniqueCacheKey = this._buildCacheKey(queryKey, params);
+
+    if (this.memoryCache.has(uniqueCacheKey)) {
+      return { status: 'success', data: this.memoryCache.get(uniqueCacheKey) };
     }
 
-    // Check cache
     const cached = cacheManager.get(uniqueCacheKey);
     if (cached) {
+      this.memoryCache.set(uniqueCacheKey, cached);
       return { status: 'success', data: cached };
     }
 
@@ -129,6 +186,7 @@ class DataLoader {
       }
 
       // Cache the result
+      this.memoryCache.set(uniqueCacheKey, result.data);
       cacheManager.set(uniqueCacheKey, result.data);
 
       return result;

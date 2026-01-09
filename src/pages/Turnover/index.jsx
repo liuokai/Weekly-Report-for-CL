@@ -59,6 +59,13 @@ const TurnoverReport = () => {
   // State to control AI analysis triggering
   const [shouldTriggerAi, setShouldTriggerAi] = useState(false);
 
+  // Handle AI analysis completion to update cache
+  const handleAnalysisComplete = (result) => {
+    setAiAnalysis(result);
+    sessionCache.aiAnalysis = result;
+    sessionCache.aiFetched = true;
+  };
+
   // Fetch data and AI analysis from backend
   useEffect(() => {
     let isMounted = true; // Flag to prevent state updates if unmounted
@@ -305,6 +312,7 @@ const TurnoverReport = () => {
               isLoading={loading} 
               error={aiError} 
               shouldAnalyze={shouldTriggerAi}
+              onAnalysisComplete={handleAnalysisComplete}
             />
           </div>
         )}
