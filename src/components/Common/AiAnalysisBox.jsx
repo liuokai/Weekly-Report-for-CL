@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import difyService from '../../services/difyService';
 import { AnalysisModules } from '../../config/businessTargets';
+import { getTimeProgress } from './TimeProgressUtils';
 
 // Global cache for configuration to prevent redundant fetches
 let globalConfigCache = null;
@@ -139,8 +140,20 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
         }
       });
 
+      const timeProgress = parseFloat(getTimeProgress());
+      const fixedStaticData = {
+        time_progress: {
+          percent: Number.isFinite(timeProgress) ? timeProgress : getTimeProgress(),
+          as_of_date: new Date().toISOString().slice(0, 10)
+        }
+      };
+
       // Use difyService for deduplication and caching
-      const resultText = await difyService.executeSmartAnalysis(variableKeys, workflowId, staticData);
+      const resultText = await difyService.executeSmartAnalysis(
+        variableKeys,
+        workflowId,
+        { ...staticData, ...fixedStaticData }
+      );
       
       setLocalAnalysis(resultText);
       
@@ -156,11 +169,6 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
   };
 
   const handleAnalyzeClick = () => {
-
-    if (selectedVariables.length === 0) {
-      alert('请至少选择一个数据变量');
-      return;
-    }
     if (!selectedWorkflow) {
       alert('请选择一个工作流');
       return;

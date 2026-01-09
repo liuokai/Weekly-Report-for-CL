@@ -236,10 +236,6 @@ app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
   const hasVariables = variableKeys && Array.isArray(variableKeys) && variableKeys.length > 0;
   const hasStaticData = staticData && typeof staticData === 'object' && Object.keys(staticData).length > 0;
 
-  console.log('[SmartAnalysis] Incoming workflowId:', workflowId);
-  console.log('[SmartAnalysis] Incoming variableKeys:', hasVariables ? variableKeys : []);
-  console.log('[SmartAnalysis] Incoming staticData keys:', hasStaticData ? Object.keys(staticData) : []);
-
   if (!hasVariables && !hasStaticData) {
     return res.status(400).json({ status: 'error', message: 'No data variables or static data selected' });
   }
@@ -272,8 +268,6 @@ app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
     if (hasStaticData) {
       Object.assign(dataContext, staticData);
     }
-
-    console.log('[SmartAnalysis] Merged context keys:', Object.keys(dataContext));
 
     // 3. Call Dify
     // We pass the aggregated data as a JSON string in the 'context_data' input

@@ -36,7 +36,7 @@ export const BusinessTargets = {
       
       // 实际已消耗预算金额（单位：万元）
       // 注：此处为手动录入值，如后续接入自动统计接口，可废弃此字段
-      used: 130
+      used: 45
     },
 
     // 客单价拆解 (Price Decomposition)
