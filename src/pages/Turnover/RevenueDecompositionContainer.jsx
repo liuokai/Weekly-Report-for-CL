@@ -33,10 +33,6 @@ const RevenueDecompositionContainer = () => {
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
     if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
       const timeProgressVal = getTimeProgress();
       const years = fetchedData

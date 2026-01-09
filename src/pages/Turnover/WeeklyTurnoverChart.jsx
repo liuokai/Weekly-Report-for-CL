@@ -22,10 +22,6 @@ const WeeklyTurnoverChart = () => {
   const { data: fetchedData, loading, fetchData } = useFetchData(currentMetric.queryKey);
 
   useEffect(() => {
-    fetchData();
-  }, [selectedMetricKey, fetchData]);
-
-  useEffect(() => {
     if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
       // Process fetched data - standardize fields
       // Requirement: Only show last 12 weeks, ordered by week number ascending (oldest to newest)
