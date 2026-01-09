@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import difyService from '../../services/difyService';
+import { AnalysisModules } from '../../config/businessTargets';
 
 // Global cache for configuration to prevent redundant fetches
 let globalConfigCache = null;
@@ -15,8 +16,15 @@ const fetchConfigGlobal = async () => {
     axios.get('/api/analysis/variables'),
     axios.get('/api/analysis/workflows')
   ]).then(([varsRes, wfsRes]) => {
+    // Merge SQL variables with Static Modules
+    const sqlVars = varsRes.data.data || [];
+    const staticVars = AnalysisModules.map(m => ({
+      ...m,
+      type: 'static'
+    }));
+
     globalConfigCache = {
-      vars: varsRes.data.data || [],
+      vars: [...sqlVars, ...staticVars],
       wfs: wfsRes.data.data || []
     };
     globalConfigPromise = null;
@@ -69,9 +77,9 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
       setWorkflows(wfs);
       
       // Set defaults for UI
-      const defaultVarKey = 'turnover_overview';
-      const hasDefaultVar = vars.some(v => v.key === defaultVarKey);
-      if (hasDefaultVar) setSelectedVariables([defaultVarKey]);
+      const defaults = ['turnover_overview', 'static_budget'];
+
+      if (defaults.length > 0) setSelectedVariables(defaults);
       if (wfs.length > 0) setSelectedWorkflow(wfs[0].id);
       
     } catch (err) {
@@ -90,18 +98,18 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
       setWorkflows(wfs);
 
       // Determine defaults
-      const defaultVarKey = 'turnover_overview';
-      const hasDefaultVar = vars.some(v => v.key === defaultVarKey);
+      const defaults = ['turnover_overview', 'static_budget'];
+
       const defaultWorkflowId = wfs.length > 0 ? wfs[0].id : null;
 
       // Set State
-      if (hasDefaultVar) setSelectedVariables([defaultVarKey]);
+      if (defaults.length > 0) setSelectedVariables(defaults);
       if (defaultWorkflowId) setSelectedWorkflow(defaultWorkflowId);
 
       // Auto Analyze
-      if (hasDefaultVar && defaultWorkflowId) {
+      if (defaults.length > 0 && defaultWorkflowId) {
         setAutoAnalyzed(true);
-        await executeAnalysis([defaultVarKey], defaultWorkflowId);
+        await executeAnalysis(defaults, defaultWorkflowId);
       }
     } catch (err) {
       console.error('Failed to init analysis:', err);
@@ -110,14 +118,29 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
     }
   };
 
-  const executeAnalysis = async (variableKeys, workflowId) => {
+  const executeAnalysis = async (selectedKeys, workflowId) => {
     setAnalyzing(true);
     setLocalError(null);
     setLocalAnalysis(null);
 
     try {
+      // Split selected keys into SQL variables and Static Data
+      const variableKeys = [];
+      const staticData = {};
+
+      selectedKeys.forEach(key => {
+        // Check if it's a static module
+        const staticModule = AnalysisModules.find(m => m.key === key);
+        if (staticModule) {
+          staticData[key] = staticModule.value;
+        } else {
+          // Assume it's a SQL variable
+          variableKeys.push(key);
+        }
+      });
+
       // Use difyService for deduplication and caching
-      const resultText = await difyService.executeSmartAnalysis(variableKeys, workflowId);
+      const resultText = await difyService.executeSmartAnalysis(variableKeys, workflowId, staticData);
       
       setLocalAnalysis(resultText);
       
@@ -263,7 +286,10 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
                           className="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                         />
                         <div>
-                          <div className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{v.name}</div>
+                          <div className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
+                            {v.name}
+                            {v.type === 'static' && <span className="ml-2 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200">静态配置</span>}
+                          </div>
                           <div className="text-xs text-gray-400 font-mono">{v.key}</div>
                         </div>
                       </label>

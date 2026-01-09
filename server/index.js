@@ -231,10 +231,17 @@ app.get('/api/analysis/workflows', (req, res) => {
 
 // Execute Smart Analysis (Fetch Data + Call Dify)
 app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
-  const { variableKeys, workflowId, user } = req.body;
+  const { variableKeys, staticData, workflowId, user } = req.body;
 
-  if (!variableKeys || !Array.isArray(variableKeys) || variableKeys.length === 0) {
-    return res.status(400).json({ status: 'error', message: 'No data variables selected' });
+  const hasVariables = variableKeys && Array.isArray(variableKeys) && variableKeys.length > 0;
+  const hasStaticData = staticData && typeof staticData === 'object' && Object.keys(staticData).length > 0;
+
+  console.log('[SmartAnalysis] Incoming workflowId:', workflowId);
+  console.log('[SmartAnalysis] Incoming variableKeys:', hasVariables ? variableKeys : []);
+  console.log('[SmartAnalysis] Incoming staticData keys:', hasStaticData ? Object.keys(staticData) : []);
+
+  if (!hasVariables && !hasStaticData) {
+    return res.status(400).json({ status: 'error', message: 'No data variables or static data selected' });
   }
 
   // 1. Find Workflow
@@ -246,17 +253,27 @@ app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
   try {
     // 2. Fetch Data for all variables
     const dataContext = {};
-    for (const key of variableKeys) {
-      try {
-        const rows = await variableService.executeVariableQuery(key, pool);
-        // Find metadata for readable name
-        const metadata = variableService.getAvailableVariables().find(v => v.key === key);
-        dataContext[metadata ? metadata.name : key] = rows;
-      } catch (err) {
-        console.warn(`Failed to fetch data for ${key}:`, err.message);
-        dataContext[key] = { error: 'Failed to load data' };
+    
+    if (hasVariables) {
+      for (const key of variableKeys) {
+        try {
+          const rows = await variableService.executeVariableQuery(key, pool);
+          // Find metadata for readable name
+          const metadata = variableService.getAvailableVariables().find(v => v.key === key);
+          dataContext[metadata ? metadata.name : key] = rows;
+        } catch (err) {
+          console.warn(`Failed to fetch data for ${key}:`, err.message);
+          dataContext[key] = { error: 'Failed to load data' };
+        }
       }
     }
+
+    // Merge static data if provided
+    if (hasStaticData) {
+      Object.assign(dataContext, staticData);
+    }
+
+    console.log('[SmartAnalysis] Merged context keys:', Object.keys(dataContext));
 
     // 3. Call Dify
     // We pass the aggregated data as a JSON string in the 'context_data' input

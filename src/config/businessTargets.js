@@ -32,11 +32,11 @@ export const BusinessTargets = {
     // 预算相关配置
     budget: {
       // 年度总预算金额（单位：万元）
-      total: 4567,
+      total: 4500,
       
       // 实际已消耗预算金额（单位：万元）
       // 注：此处为手动录入值，如后续接入自动统计接口，可废弃此字段
-      used: 4321
+      used: 130
     },
 
     // 客单价拆解 (Price Decomposition)
@@ -110,5 +110,60 @@ export const BusinessTargets = {
     }
   }
 };
+
+/**
+ * 智能分析模块化配置定义
+ * 用于在前端 UI 中展示可选的静态配置数据模块
+ * 
+ * 结构说明：
+ * - key: 唯一标识符，建议以 static_ 开头
+ * - name: 显示名称
+ * - description: 描述信息
+ * - value: 对应的数据对象（直接引用 BusinessTargets 中的子节点）
+ */
+export const AnalysisModules = [
+  {
+    key: 'static_turnover_targets',
+    name: '营业额目标配置',
+    description: '包含年度营业额目标及各城市目标分解',
+    value: BusinessTargets.turnover
+  },
+  {
+    key: 'static_budget',
+    name: '预算配置数据',
+    description: '包含年度总预算及已使用预算情况',
+    value: BusinessTargets.turnover.budget
+  },
+  {
+    key: 'static_price_decomposition',
+    name: '客单价拆解配置',
+    description: '包含去年平均客单价及增长率目标',
+    value: BusinessTargets.turnover.priceDecomposition
+  },
+  {
+    key: 'static_volume_decomposition',
+    name: '客次量拆解配置',
+    description: '包含年度累计客次量目标',
+    value: BusinessTargets.turnover.volumeDecomposition
+  },
+  {
+    key: 'static_impact_analysis',
+    name: '影响指标分析配置',
+    description: '包含项目回头率、人员配置比等各项指标的目标与预算',
+    value: BusinessTargets.turnover.impactAnalysis
+  },
+  {
+    key: 'static_profit_targets',
+    name: '利润目标配置',
+    description: '包含年度利润率目标值',
+    value: BusinessTargets.profit
+  },
+  {
+    key: 'static_store_targets',
+    name: '门店拓展目标',
+    description: '包含年度新店目标及预算',
+    value: BusinessTargets.store
+  }
+];
 
 export default BusinessTargets;

@@ -34,10 +34,16 @@ class DifyService {
   /**
    * Generate a unique cache key for smart analysis
    */
-  _generateSmartAnalysisCacheKey(variableKeys, workflowId) {
+  _generateSmartAnalysisCacheKey(variableKeys, workflowId, staticData = {}) {
     const sortedVars = [...variableKeys].sort().join(',');
+    // Generate a stable string for static data
+    const staticDataStr = JSON.stringify(Object.keys(staticData).sort().reduce((obj, key) => {
+        obj[key] = staticData[key];
+        return obj;
+    }, {}));
+    
     const prefix = AI_CONFIG.CACHE?.STORAGE_KEY_PREFIX || 'dify_cache_';
-    return `${prefix}smart_${workflowId}_${sortedVars}`;
+    return `${prefix}smart_${workflowId}_${sortedVars}_${staticDataStr}`;
   }
 
   /**
@@ -89,13 +95,14 @@ class DifyService {
    * Execute Smart Analysis with deduplication and caching
    * @param {string[]} variableKeys 
    * @param {string} workflowId 
+   * @param {Object} staticData - Optional static configuration data
    */
-  async executeSmartAnalysis(variableKeys, workflowId) {
+  async executeSmartAnalysis(variableKeys, workflowId, staticData = {}) {
     if (!this.isEnabled) {
       throw new Error('AI service is disabled');
     }
 
-    const cacheKey = this._generateSmartAnalysisCacheKey(variableKeys, workflowId);
+    const cacheKey = this._generateSmartAnalysisCacheKey(variableKeys, workflowId, staticData);
     
     // 1. Check LocalStorage Cache
     const cachedResult = this._getFromCache(cacheKey);
@@ -114,6 +121,7 @@ class DifyService {
       try {
         const response = await axios.post('/api/analysis/execute-smart-analysis', {
           variableKeys,
+          staticData,
           workflowId
         });
 
