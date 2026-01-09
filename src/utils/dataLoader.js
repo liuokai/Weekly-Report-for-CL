@@ -60,6 +60,13 @@ class DataLoader {
     this.cacheManager = cacheManager;
     this.memoryCache = new Map();
     this.inflightRequests = new Map();
+    this.isUnloading = false;
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', () => {
+        this.isUnloading = true;
+      });
+    }
   }
 
   _buildCacheKey(queryKey, params) {
@@ -106,7 +113,12 @@ class DataLoader {
           resolve(result);
         } catch (error) {
           // Retry logic for 504 or network errors
-          if (error.message.includes('504') || error.message.includes('timeout') || error.message.includes('Network Error')) {
+          if (
+            error.message.includes('504') ||
+            error.message.includes('timeout') ||
+            error.message.includes('Network Error') ||
+            error.message.includes('Failed to fetch')
+          ) {
             console.warn(`[DataLoader] Retry ${queryKey} due to error: ${error.message}`);
             try {
               // Wait 1 second before retry
@@ -206,9 +218,11 @@ class DataLoader {
     console.log('Starting data prefetch...');
     // Simply delegate to the queue-managed fetchData
     const promises = PRELOAD_QUERIES.map(queryKey => 
-      this.fetchData(queryKey, []).catch(err => 
-        console.error(`[Prefetch] Error for ${queryKey}:`, err)
-      )
+      this.fetchData(queryKey, []).catch(err => {
+        if (this.isUnloading) return null;
+        console.error(`[Prefetch] Error for ${queryKey}:`, err);
+        return null;
+      })
     );
     
     await Promise.allSettled(promises);
