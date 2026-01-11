@@ -96,8 +96,9 @@ class DifyService {
    * @param {string[]} variableKeys 
    * @param {string} workflowId 
    * @param {Object} staticData - Optional static configuration data
+   * @param {AbortSignal} signal - Optional signal to abort the request
    */
-  async executeSmartAnalysis(variableKeys, workflowId, staticData = {}) {
+  async executeSmartAnalysis(variableKeys, workflowId, staticData = {}, signal = null) {
     if (!this.isEnabled) {
       throw new Error('AI service is disabled');
     }
@@ -111,6 +112,9 @@ class DifyService {
     }
 
     // 2. Check In-flight Requests (Deduplication)
+    // Note: If a signal is provided, we might want to bypass deduplication or handle it carefully.
+    // For now, we assume if deduplication hits, the original request's promise is returned.
+    // If the new caller aborts, it won't abort the original shared request (which is correct behavior).
     if (this.inflightSmartAnalysis.has(cacheKey)) {
       console.log(`[DifyService] Reusing in-flight request for ${cacheKey}`);
       return this.inflightSmartAnalysis.get(cacheKey);
@@ -123,6 +127,8 @@ class DifyService {
           variableKeys,
           staticData,
           workflowId
+        }, {
+          signal // Pass the signal to axios
         });
 
         // Parse result

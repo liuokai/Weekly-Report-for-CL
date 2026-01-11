@@ -99,11 +99,13 @@ const CostStructureContainer = () => {
   const [data, setData] = useState(null);
   const [allRows, setAllRows] = useState([]);
   const [months, setMonths] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const [startMonth, setStartMonth] = useState('');
+  const [endMonth, setEndMonth] = useState('');
   const [viewMode, setViewMode] = useState('city'); // 'city' or 'store'
   const [selectedCityFilter, setSelectedCityFilter] = useState('全部'); // New filter for store view
   const [error, setError] = useState(null);
   const [detailModal, setDetailModal] = useState(null); // { title: string, items: Array, total: number }
+  const [sortState, setSortState] = useState({ key: null, order: null });
 
   useEffect(() => {
     fetchData();
@@ -131,8 +133,9 @@ const CostStructureContainer = () => {
         const ms = Array.from(new Set(rows.map(r => r['统计月份']))).sort((a, b) => a.localeCompare(b));
         setMonths(ms);
         const latest = ms[ms.length - 1] || '';
-        setSelectedMonth(latest);
-        const processedData = processRows(rows, latest);
+        setStartMonth(latest);
+        setEndMonth(latest);
+        const processedData = processRows(rows, latest, latest);
         setData(processedData);
       } else {
         setError('数据返回失败');
@@ -144,8 +147,18 @@ const CostStructureContainer = () => {
     }
   };
 
-  const processRows = (rows, month) => {
-    const monthRows = rows.filter(r => r['统计月份'] === month);
+  const processRows = (rows, rawStartMonth, rawEndMonth) => {
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    if (!rawStartMonth || !rawEndMonth) return null;
+
+    const start = rawStartMonth <= rawEndMonth ? rawStartMonth : rawEndMonth;
+    const end = rawStartMonth <= rawEndMonth ? rawEndMonth : rawStartMonth;
+
+    const monthRows = rows.filter(r => {
+      const m = r['统计月份'];
+      if (!m) return false;
+      return m.localeCompare(start) >= 0 && m.localeCompare(end) <= 0;
+    });
     if (monthRows.length === 0) return null;
 
     const toCostItems = (row) => {
@@ -166,17 +179,87 @@ const CostStructureContainer = () => {
       });
     };
 
-    const store_dimension = monthRows.map(r => ({
-      name: r['门店名称'],
-      store: r['门店名称'],
-      storeCode: r['门店编码'],
-      city: r['城市名称'],
-      revenue: Number(r[CostMapping.revenueColumn]) || 0,
-      netProfit: Number(r[CostMapping.netProfitColumn]) || 0,
-      costs: toCostItems(r)
-    }));
+    const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+    const mergeCosts = (targetCosts, deltaCosts) => {
+      deltaCosts.forEach((c, idx) => {
+        const t = targetCosts[idx];
+        if (!t) return;
+        t.value += (c.value || 0);
+        if (c.subCategories && t.subCategories) {
+          c.subCategories.forEach((sub, subIdx) => {
+            const ts = t.subCategories[subIdx];
+            if (!ts) return;
+            ts.value += (sub.value || 0);
+            if (sub.details && ts.details) {
+              sub.details.forEach((d, didx) => {
+                if (!ts.details[didx]) ts.details[didx] = { name: d.name, value: 0 };
+                ts.details[didx].value += (d.value || 0);
+              });
+            }
+          });
+        } else if (c.details && t.details) {
+          c.details.forEach((d, didx) => {
+            if (!t.details[didx]) t.details[didx] = { name: d.name, value: 0 };
+            t.details[didx].value += (d.value || 0);
+          });
+        }
+      });
+    };
+
+    const storeMap = {};
+    monthRows.forEach(r => {
+      const key = r['门店编码'] || r['门店名称'];
+      if (!key) return;
+
+      const revenue = Number(r[CostMapping.revenueColumn]) || 0;
+      const netProfit = Number(r[CostMapping.netProfitColumn]) || 0;
+      const costs = toCostItems(r);
+
+      if (!storeMap[key]) {
+        storeMap[key] = {
+          name: r['门店名称'],
+          store: r['门店名称'],
+          storeCode: r['门店编码'],
+          city: r['城市名称'],
+          revenue: 0,
+          netProfit: 0,
+          costs: deepClone(costs)
+        };
+      } else {
+        mergeCosts(storeMap[key].costs, costs);
+      }
+
+      storeMap[key].revenue += revenue;
+      storeMap[key].netProfit += netProfit;
+    });
+
+    const store_dimension = Object.values(storeMap);
 
     const cityMap = {};
+    const resetCosts = (costs) => {
+      return costs.map(c => {
+        if (c.subCategories) {
+          return {
+            name: c.name,
+            value: 0,
+            subCategories: c.subCategories.map(sub => ({
+              name: sub.name,
+              value: 0,
+              details: Array.isArray(sub.details) ? sub.details.map(d => ({ name: d.name, value: 0 })) : []
+            }))
+          };
+        }
+        if (c.details) {
+          return {
+            name: c.name,
+            value: 0,
+            details: Array.isArray(c.details) ? c.details.map(d => ({ name: d.name, value: 0 })) : []
+          };
+        }
+        return { name: c.name, value: 0 };
+      });
+    };
+
     store_dimension.forEach(s => {
       const key = s.city || '未知城市';
       if (!cityMap[key]) {
@@ -184,25 +267,7 @@ const CostStructureContainer = () => {
           name: key,
           revenue: 0,
           netProfit: 0,
-          costs: CostMapping.categories.map(cat => {
-            if (cat.subCategories && Array.isArray(cat.subCategories)) {
-              return {
-                name: cat.name,
-                value: 0,
-                subCategories: cat.subCategories.map(sub => ({
-                  name: sub.name,
-                  value: 0,
-                  details: sub.columns.map(col => ({ name: col, value: 0 }))
-                }))
-              };
-            } else {
-              return {
-                name: cat.name,
-                value: 0,
-                details: cat.columns.map(col => ({ name: col, value: 0 }))
-              };
-            }
-          })
+          costs: resetCosts(s.costs)
         };
       }
       const agg = cityMap[key];
@@ -334,7 +399,6 @@ const CostStructureContainer = () => {
   };
 
   const summaryRow = getSummaryRow(currentData);
-  const displayData = summaryRow ? [summaryRow, ...currentData] : currentData;
 
   const targetCategories = ['服务费', '人工成本', '变动成本'];
   
@@ -347,6 +411,84 @@ const CostStructureContainer = () => {
     });
     return sum;
   };
+
+  const pinyinCollator = new Intl.Collator('zh-Hans-u-co-pinyin', { sensitivity: 'base' });
+  const getSortType = (key) => {
+    if (key === 'name' || key === 'city') return 'string';
+    if (key === 'revenue' || key === 'netProfit') return 'number';
+    if (`${key}`.startsWith('cost:')) return 'number';
+    return 'string';
+  };
+
+  const handleSort = (key) => {
+    const type = getSortType(key);
+    setSortState(prev => {
+      if (prev.key === key) {
+        return { key, order: prev.order === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, order: type === 'string' ? 'asc' : 'desc' };
+    });
+  };
+
+  const getSortIndicator = (key) => {
+    const isActive = sortState.key === key;
+    if (!isActive) {
+      return (
+        <span className="text-xs text-gray-300 group-hover:text-gray-500">
+          ⇅
+        </span>
+      );
+    }
+    return (
+      <span className="text-xs text-[#a40035]">
+        {sortState.order === 'asc' ? '↑' : '↓'}
+      </span>
+    );
+  };
+
+  const getRowStringValue = (row, key) => {
+    if (key === 'name') {
+      return viewMode === 'city' ? (row.name || '') : (row.store || row.name || '');
+    }
+    if (key === 'city') return row.city || '';
+    return '';
+  };
+
+  const getRowNumberValue = (row, key) => {
+    if (key === 'revenue') return Number(row.revenue) || 0;
+    if (key === 'netProfit') return Number(row.netProfit) || 0;
+    if (`${key}`.startsWith('cost:')) {
+      const costName = `${key}`.slice('cost:'.length);
+      const item = Array.isArray(row.costs) ? row.costs.find(c => c.name === costName) : null;
+      return Number(item?.value) || 0;
+    }
+    return 0;
+  };
+
+  const sortedData = (() => {
+    const rows = Array.isArray(currentData) ? currentData : [];
+    if (!sortState.key || !sortState.order) return rows;
+    const type = getSortType(sortState.key);
+    const withIndex = rows.map((r, idx) => ({ r, idx }));
+    withIndex.sort((a, b) => {
+      let cmp = 0;
+      if (type === 'number') {
+        const av = getRowNumberValue(a.r, sortState.key);
+        const bv = getRowNumberValue(b.r, sortState.key);
+        cmp = av - bv;
+      } else {
+        const as = getRowStringValue(a.r, sortState.key);
+        const bs = getRowStringValue(b.r, sortState.key);
+        cmp = pinyinCollator.compare(as, bs);
+      }
+
+      if (cmp === 0) return a.idx - b.idx;
+      return sortState.order === 'asc' ? cmp : -cmp;
+    });
+    return withIndex.map(x => x.r);
+  })();
+
+  const displayData = summaryRow ? [summaryRow, ...sortedData] : sortedData;
 
   const handleCellClick = (rowName, costItem) => {
     const complexCategories = ['人工成本', '变动成本'];
@@ -375,7 +517,7 @@ const CostStructureContainer = () => {
     );
 
     let content;
-    if (costItem.name === '人工成本' && costItem.subCategories) {
+    if (['人工成本', '变动成本'].includes(costItem.name) && costItem.subCategories) {
       content = (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {costItem.subCategories.map(sub => (
@@ -436,15 +578,39 @@ const CostStructureContainer = () => {
         </div>
         
         <div className="flex items-center gap-3">
-          <MonthDropdown
-              months={months}
-              selectedMonth={selectedMonth}
-              onSelect={(m) => {
-                setSelectedMonth(m);
-                const processedData = processRows(allRows, m);
-                setData(processedData);
-              }}
-            />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">起</span>
+              <MonthDropdown
+                months={months}
+                selectedMonth={startMonth}
+                onSelect={(m) => {
+                  const nextStart = m;
+                  const nextEnd = !endMonth || endMonth.localeCompare(nextStart) < 0 ? nextStart : endMonth;
+                  setStartMonth(nextStart);
+                  setEndMonth(nextEnd);
+                  const processedData = processRows(allRows, nextStart, nextEnd);
+                  setData(processedData);
+                }}
+              />
+            </div>
+            <span className="text-sm text-gray-400">-</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">止</span>
+              <MonthDropdown
+                months={months}
+                selectedMonth={endMonth}
+                onSelect={(m) => {
+                  const nextEnd = m;
+                  const nextStart = !startMonth || startMonth.localeCompare(nextEnd) > 0 ? nextEnd : startMonth;
+                  setStartMonth(nextStart);
+                  setEndMonth(nextEnd);
+                  const processedData = processRows(allRows, nextStart, nextEnd);
+                  setData(processedData);
+                }}
+              />
+            </div>
+          </div>
           {viewMode === 'store' && (
             <CityDropdown
               options={cityOptions}
@@ -475,14 +641,52 @@ const CostStructureContainer = () => {
           <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 sticky left-0 bg-gray-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10">
-                {viewMode === 'city' ? '城市' : '门店'}
+                <button
+                  onClick={() => handleSort('name')}
+                  className="group w-full inline-flex items-center justify-start gap-1 text-left hover:text-gray-800"
+                >
+                  <span>{viewMode === 'city' ? '城市' : '门店'}</span>
+                  {getSortIndicator('name')}
+                </button>
               </th>
-              {viewMode === 'store' && <th className="px-6 py-4">所属城市</th>}
-              <th className="px-6 py-4 text-right">主营业务收入</th>
-              <th className="px-6 py-4 text-right text-gray-900 font-bold bg-gray-50/80">净利润</th>
+              {viewMode === 'store' && (
+                <th className="px-6 py-4">
+                  <button
+                    onClick={() => handleSort('city')}
+                    className="group w-full inline-flex items-center justify-start gap-1 text-left hover:text-gray-800"
+                  >
+                    <span>所属城市</span>
+                    {getSortIndicator('city')}
+                  </button>
+                </th>
+              )}
+              <th className="px-6 py-4 text-right">
+                <button
+                  onClick={() => handleSort('revenue')}
+                  className="group w-full inline-flex items-center justify-end gap-1 text-right hover:text-gray-800"
+                >
+                  <span>主营业务收入</span>
+                  {getSortIndicator('revenue')}
+                </button>
+              </th>
+              <th className="px-6 py-4 text-right text-gray-900 font-bold bg-gray-50/80">
+                <button
+                  onClick={() => handleSort('netProfit')}
+                  className="group w-full inline-flex items-center justify-end gap-1 text-right hover:text-gray-800"
+                >
+                  <span>净利润</span>
+                  {getSortIndicator('netProfit')}
+                </button>
+              </th>
               {categories.map(cat => (
                 <th key={cat} className="px-6 py-4 text-right min-w-[140px]">
-                  {cat}
+                  <button
+                    onClick={() => handleSort(`cost:${cat}`)}
+                    className="group w-full inline-flex items-center justify-end gap-1 text-right hover:text-gray-800"
+                  >
+                    <span>{cat}</span>
+                    {getSortIndicator(`cost:${cat}`)}
+                  </button>
                   <div className="text-xs font-normal text-gray-400 mt-0.5">数值 / 占比</div>
                 </th>
               ))}
@@ -494,7 +698,7 @@ const CostStructureContainer = () => {
               const isSummary = row.isSummary;
               
               return (
-                <tr key={idx} className={`hover:bg-gray-50/50 transition-colors group ${isSummary ? 'bg-gray-100/80 font-bold border-b-2 border-gray-200' : ''}`}>
+                <tr key={isSummary ? 'summary' : (row.storeCode || `${viewMode}:${row.name || row.store || idx}`)} className={`hover:bg-gray-50/50 transition-colors group ${isSummary ? 'bg-gray-100/80 font-bold border-b-2 border-gray-200' : ''}`}>
                   <td className={`px-6 py-4 font-medium sticky left-0 group-hover:bg-gray-50/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10 ${isSummary ? 'text-gray-900 bg-gray-100/80' : 'text-gray-800 bg-white'}`}>
                     {viewMode === 'city' ? row.name : (
                       <div>

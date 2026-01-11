@@ -78,7 +78,7 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
       setWorkflows(wfs);
       
       // Set defaults for UI
-      const defaults = ['turnover_overview', 'static_budget'];
+      const defaults = ['turnover_overview', 'static_budget', 'static_turnover_targets'];
 
       if (defaults.length > 0) setSelectedVariables(defaults);
       if (wfs.length > 0) setSelectedWorkflow(wfs[0].id);
@@ -99,7 +99,7 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
       setWorkflows(wfs);
 
       // Determine defaults
-      const defaults = ['turnover_overview', 'static_budget'];
+      const defaults = ['turnover_overview', 'static_budget', 'static_turnover_targets'];
 
       const defaultWorkflowId = wfs.length > 0 ? wfs[0].id : null;
 
@@ -119,23 +119,58 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
     }
   };
 
+
+
+  // We need to handle the isMounted logic properly. 
+  // Since executeAnalysis is an async function called from handlers/effects, 
+  // we can't simply return a cleanup function from it.
+  // Instead, we should use a ref for the component mount state.
+  
+  const isComponentMounted = React.useRef(true);
+  const activeRequestRef = React.useRef(null);
+  
+  useEffect(() => {
+    isComponentMounted.current = true;
+    return () => {
+      isComponentMounted.current = false;
+      // Abort any pending request on unmount
+      if (activeRequestRef.current) {
+        activeRequestRef.current.abort();
+      }
+    };
+  }, []);
+
   const executeAnalysis = async (selectedKeys, workflowId) => {
+    if (!isComponentMounted.current) return;
+    
     setAnalyzing(true);
     setLocalError(null);
     setLocalAnalysis(null);
 
+    // Create an AbortController for this specific request
+    const abortController = new AbortController();
+
+    // Store it in a ref or variable if we wanted to abort it manually, 
+    // but here we just need to abort it if the component unmounts or if a new request starts.
+    // However, executeAnalysis is async, so we can't return the abort function to useEffect directly here.
+    // The useEffect that calls this should ideally handle cleanup, but since this is called from multiple places,
+    // we'll rely on the isMounted check + AbortSignal.
+    
+    // Actually, we can attach the abort controller to the ref to cancel previous requests
+    if (activeRequestRef.current) {
+      activeRequestRef.current.abort();
+    }
+    activeRequestRef.current = abortController;
+
     try {
-      // Split selected keys into SQL variables and Static Data
       const variableKeys = [];
       const staticData = {};
 
       selectedKeys.forEach(key => {
-        // Check if it's a static module
         const staticModule = AnalysisModules.find(m => m.key === key);
         if (staticModule) {
           staticData[key] = staticModule.value;
         } else {
-          // Assume it's a SQL variable
           variableKeys.push(key);
         }
       });
@@ -148,23 +183,35 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
         }
       };
 
-      // Use difyService for deduplication and caching
       const resultText = await difyService.executeSmartAnalysis(
         variableKeys,
         workflowId,
-        { ...staticData, ...fixedStaticData }
+        { ...staticData, ...fixedStaticData },
+        abortController.signal
       );
       
-      setLocalAnalysis(resultText);
-      
-      // Notify parent
-      if (onAnalysisComplete) {
-        onAnalysisComplete(resultText);
+      if (isComponentMounted.current) {
+        setLocalAnalysis(resultText);
+        if (onAnalysisComplete) {
+          onAnalysisComplete(resultText);
+        }
       }
     } catch (err) {
-      setLocalError(err.response?.data?.message || err.message || '分析请求失败');
+      if (isComponentMounted.current) {
+        if (axios.isCancel(err) || err.name === 'AbortError') {
+          console.log('Request cancelled');
+        } else {
+          setLocalError(err.response?.data?.message || err.message || '分析请求失败');
+        }
+      }
     } finally {
-      setAnalyzing(false);
+      if (isComponentMounted.current) {
+        // Only set analyzing to false if this is still the active request
+        if (activeRequestRef.current === abortController) {
+             setAnalyzing(false);
+             activeRequestRef.current = null;
+        }
+      }
     }
   };
 
