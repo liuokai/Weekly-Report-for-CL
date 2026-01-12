@@ -490,6 +490,12 @@ const RevenueDecompositionContainer = () => {
                         includeLastPointInTrend={LineTrendStyle.computeIncludeLastPointInTrend(
                           rawData && rawData.length ? rawData[Math.min(rawData.length - 1, (series[selectedMetricKey] || []).length - 1)]?.date_range : null
                         )}
+                        getHoverSubtitle={(index) => {
+                          if (rawData && rawData[index] && rawData[index].date_range) {
+                            return `日期范围：${rawData[index].date_range}`;
+                          }
+                          return "";
+                        }}
                         yAxisFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).axisFormat}
                         valueFormatter={(METRICS.find(m => m.key === selectedMetricKey) || METRICS[0]).format}
                         width={LineTrendStyle.DIMENSIONS.width}

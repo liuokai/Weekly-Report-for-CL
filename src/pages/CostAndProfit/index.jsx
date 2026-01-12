@@ -6,6 +6,7 @@ import UnifiedProgressBar from '../../components/Common/UnifiedProgressBar';
 import BusinessTargets from '../../config/businessTargets';
 import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 import CostStructureContainer from '../CashFlow/CostStructureContainer';
+import AnnualCostAnalysis from './AnnualCostAnalysis';
 import useFetchData from '../../hooks/useFetchData';
 
 const CostAndProfitTab = () => {
@@ -306,6 +307,9 @@ const CostAndProfitTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Annual Cost Analysis (Moved to Top) */}
+      <AnnualCostAnalysis data={latestRow} />
+
       {/* Unified Profit Dashboard Container */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {/* Header */}
@@ -331,55 +335,42 @@ const CostAndProfitTab = () => {
               <div className="flex items-center gap-2 text-sm">
                  <span className="text-gray-400">去年利润值:</span>
                  <span className="font-semibold text-gray-700 font-mono">
-                   {loadingYearly ? '...' : formatCurrency(lastYearProfit)}
+                   {formatCurrency(lastYearProfit)}
+                 </span>
+                 <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${profitGrowthRate >= 0 ? 'bg-red-50 text-[#a40035]' : 'bg-green-50 text-green-600'}`}>
+                   {profitGrowthRate > 0 ? '+' : ''}{profitGrowthRate.toFixed(1)}%
                  </span>
               </div>
             </div>
 
-            {/* RIGHT SIDE: Ratios */}
-            <div className="p-8 flex items-center justify-around bg-white">
-               {/* Profit Rate */}
-               <div className="flex flex-col items-center">
-                  <span className="text-sm text-gray-500 mb-2">年度利润率</span>
-                  <span className={`text-3xl font-bold ${currentProfitRate >= targetProfitRate ? 'text-[#a40035]' : 'text-gray-900'}`}>
-                     {loadingYearly ? '...' : `${currentProfitRate}%`}
-                  </span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                      目标 {targetProfitRate}%
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      去年 {lastYearProfitRate}%
-                    </span>
-                  </div>
-               </div>
+            {/* RIGHT SIDE: Rates */}
+            <div className="p-8 flex flex-col justify-center">
+              <div className="mb-4">
+                 <p className="text-sm text-gray-500 font-medium mb-1">年度利润率</p>
+                 <div className="flex items-baseline gap-2">
+                   <span className={`text-4xl font-bold tracking-tight ${currentProfitRate >= targetProfitRate ? 'text-[#a40035]' : 'text-gray-900'}`}>
+                     {loadingYearly ? '...' : currentProfitRate.toFixed(2)}
+                     <span className="text-xl ml-1">%</span>
+                   </span>
+                 </div>
+              </div>
 
-               {/* Divider */}
-               <div className="w-px h-12 bg-gray-100"></div>
-
-               {/* Growth Rate */}
-               <div className="flex flex-col items-center">
-                  <span className="text-sm text-gray-500 mb-2">利润增长率</span>
-                  <div className="flex items-center">
-                     <span className={`text-3xl font-bold ${profitGrowthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {loadingYearly ? '...' : (profitGrowthRate > 0 ? `+${profitGrowthRate}` : profitGrowthRate)}%
-                     </span>
-                     {profitGrowthRate !== 0 && (
-                        <span className={`ml-1 text-lg ${profitGrowthRate >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {profitGrowthRate >= 0 ? '↑' : '↓'}
-                        </span>
-                     )}
-                  </div>
-                  <span className="text-xs text-gray-400 mt-1">
-                    同比去年
-                  </span>
-               </div>
+              <div className="flex items-center gap-2 text-sm">
+                 <span className="text-gray-400">去年同期:</span>
+                 <span className="font-semibold text-gray-700 font-mono">
+                   {lastYearProfitRate.toFixed(2)}%
+                 </span>
+                 <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${currentProfitRate >= lastYearProfitRate ? 'bg-red-50 text-[#a40035]' : 'bg-green-50 text-green-600'}`}>
+                   {currentProfitRate >= lastYearProfitRate ? '↑' : '↓'} 
+                   {Math.abs(currentProfitRate - lastYearProfitRate).toFixed(2)}%
+                 </span>
+              </div>
             </div>
           </div>
-
-          {/* Bottom Section: Progress Bar (No Title) */}
+          
+          {/* Bottom Section: Progress Bar */}
           <div className="px-8 py-6 bg-white">
-             <UnifiedProgressBar
+             <UnifiedProgressBar 
                label="目标达成率"
                value={profitCompletion}
                timeProgress={timeProgress}
@@ -393,6 +384,7 @@ const CostAndProfitTab = () => {
           </div>
         </div>
       </div>
+
 
       {/* NEW SECTION: Trend Analysis Chart */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
