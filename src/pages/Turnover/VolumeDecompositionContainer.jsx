@@ -16,7 +16,7 @@ const VolumeDecompositionContainer = () => {
   const [showExtremes, setShowExtremes] = useState(true);
 
   // Influence Analysis Chart State
-  const [influenceMetric, setInfluenceMetric] = useState('duration'); // 'duration' | 'compliance' | 'utilization'
+  const [influenceMetric, setInfluenceMetric] = useState('duration'); // 'duration' | 'compliance'
   const [showInfYoY, setShowInfYoY] = useState(true);
   const [showInfAvg, setShowInfAvg] = useState(true);
   const [showInfExtremes, setShowInfExtremes] = useState(true);
@@ -204,8 +204,9 @@ const VolumeDecompositionContainer = () => {
               <div className="text-sm text-gray-600">预算金额</div>
               {(() => {
                 const amount = BusinessTargets.turnover.volumeDecomposition.budget?.amount || 0;
-                const total = BusinessTargets.turnover.budget?.total || 1; // avoid division by zero
-                const ratio = (amount / total) * 100;
+                const priceBudget = BusinessTargets.turnover.priceDecomposition.budget?.amount || 0;
+                const total = amount + priceBudget;
+                const ratio = total > 0 ? (amount / total) * 100 : 0;
                 return <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#a40035]/10 text-[#a40035] font-medium">费用占比 {ratio.toFixed(1)}%</span>;
               })()}
             </div>
@@ -236,25 +237,6 @@ const VolumeDecompositionContainer = () => {
                       })()}
                     </span>
                   </div>
-                </div>
-              </div>
-              <div className="flex-1 max-w-[120px] flex flex-col justify-end">
-                <div className="flex justify-between text-xs text-gray-400 mb-1">
-                  <span>进度</span>
-                  {(() => {
-                    const amount = BusinessTargets.turnover.volumeDecomposition.budget?.amount || 0;
-                    const total = BusinessTargets.turnover.budget?.total || 1;
-                    const p = (amount / total) * 100;
-                    return <span>{p.toFixed(1)}%</span>;
-                  })()}
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full">
-                  {(() => {
-                    const amount = BusinessTargets.turnover.volumeDecomposition.budget?.amount || 0;
-                    const total = BusinessTargets.turnover.budget?.total || 1;
-                    const p = Math.max(0, Math.min(100, (amount / total) * 100));
-                    return <div className="h-2 bg-[#a40035]" style={{ width: `${p}%` }}></div>;
-                  })()}
                 </div>
               </div>
             </div>
@@ -341,7 +323,6 @@ const VolumeDecompositionContainer = () => {
     const metricNameMap = {
       duration: "推拿师天均服务时长",
       compliance: "推拿师天均服务时长不达标占比",
-      utilization: "床位利用率",
       active_members: "活跃会员数",
       churn_rate: "会员流失率",
       review_rate: "主动评价率"
@@ -569,7 +550,6 @@ const VolumeDecompositionContainer = () => {
        switch(influenceMetric) {
          case 'duration': return { title: '推拿师天均服务时长', unit: '分钟', isGood: v => v >= 300 };
          case 'compliance': return { title: '推拿师天均服务时长不达标占比', unit: '%', isGood: v => v <= 25 };
-         case 'utilization': return { title: '床位利用率', unit: '', isGood: v => v >= 3 };
          case 'active_members': return { title: '活跃会员数', unit: '人', isGood: () => false };
          case 'churn_rate': return { title: '会员流失率', unit: '%', isGood: v => v <= 5 };
          case 'review_rate': return { title: '主动评价率', unit: '%', isGood: v => v >= 70 };
@@ -592,8 +572,6 @@ const VolumeDecompositionContainer = () => {
                displayVal = Number(num).toFixed(2);
              } else if (influenceMetric === 'active_members') {
                displayVal = Math.round(num).toLocaleString();
-             } else if (influenceMetric === 'utilization') {
-               displayVal = num.toFixed(2);
              } else {
                displayVal = `${num.toFixed(2)}%`;
              }
@@ -665,7 +643,7 @@ const VolumeDecompositionContainer = () => {
                    if (!Number.isFinite(num)) return '—';
                    if (influenceMetric === 'duration') return Number(num).toFixed(2);
                    if (influenceMetric === 'active_members') return Math.round(num).toLocaleString();
-                   return influenceMetric === 'utilization' ? num.toFixed(2) : `${num.toFixed(2)}%`;
+                   return `${num.toFixed(2)}%`;
                 }}
                 showYoY={showInfYoY}
                 showTrend={showInfAvg}
@@ -799,7 +777,6 @@ const VolumeDecompositionContainer = () => {
        switch(influenceMetric) {
          case 'duration': return { title: '推拿师天均服务时长', unit: '分钟', isGood: v => v >= 300 };
          case 'compliance': return { title: '推拿师天均服务时长不达标占比', unit: '%', isGood: v => v <= 25 };
-         case 'utilization': return { title: '床位利用率', unit: '', isGood: v => v >= 3 };
          case 'active_members': return { title: '活跃会员数', unit: '人', isGood: () => false };
          case 'churn_rate': return { title: '会员流失率', unit: '%', isGood: v => v <= 5 };
          case 'review_rate': return { title: '主动评价率', unit: '%', isGood: v => v >= 70 };
@@ -837,8 +814,6 @@ const VolumeDecompositionContainer = () => {
                displayVal = Number(num).toFixed(2);
              } else if (influenceMetric === 'active_members') {
                displayVal = Math.round(num).toLocaleString();
-             } else if (influenceMetric === 'utilization') {
-               displayVal = num.toFixed(2);
              } else {
                displayVal = `${num.toFixed(2)}%`;
              }
@@ -904,17 +879,6 @@ const VolumeDecompositionContainer = () => {
       valueFormatter = (v) => {
         const num = Number(v);
         return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—';
-      };
-    } else if (influenceMetric === 'utilization') {
-      title = "床位利用率";
-      unit = "";
-      yAxisFormatter = (v) => {
-        const num = Number(v);
-        return Number.isFinite(num) ? Number(num.toFixed(2)) : '—';
-      };
-      valueFormatter = (v) => {
-        const num = Number(v);
-        return Number.isFinite(num) ? Number(num.toFixed(2)) : '—';
       };
     } else if (influenceMetric === 'active_members') {
       title = "活跃会员数";
@@ -1075,7 +1039,6 @@ const VolumeDecompositionContainer = () => {
             [
               { key: 'duration', label: '推拿师天均服务时长' },
               { key: 'compliance', label: '推拿师天均服务时长不达标占比' },
-              { key: 'utilization', label: '床位利用率' },
               { key: 'active_members', label: '活跃会员数' },
               { key: 'churn_rate', label: '会员流失率' },
               { key: 'review_rate', label: '主动评价率' }

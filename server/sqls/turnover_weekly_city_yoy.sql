@@ -1,4 +1,4 @@
--- 按城市、周维度统计营业额（ISO 年周口径）
+-- 按城市、周维度统计营业额
 
 WITH weekly_city_sales AS (
     SELECT

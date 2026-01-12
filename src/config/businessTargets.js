@@ -32,11 +32,11 @@ export const BusinessTargets = {
     // 预算相关配置
     budget: {
       // 年度总预算金额（单位：万元）
-      total: 4500,
+      total: 6678.8, 
       
       // 实际已消耗预算金额（单位：万元）
       // 注：此处为手动录入值，如后续接入自动统计接口，可废弃此字段
-      used: 45
+      used: 0
     },
 
     // 客单价拆解 (Price Decomposition)

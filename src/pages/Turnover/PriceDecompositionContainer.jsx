@@ -1352,7 +1352,15 @@ const PriceDecompositionContainer = () => {
           <div className="flex-1 z-10 flex flex-col justify-center">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm text-gray-600">预算金额</div>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#a40035]/10 text-[#a40035] font-medium">费用占比 1.8%</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#a40035]/10 text-[#a40035] font-medium">
+                费用占比 {(() => {
+                  const priceBudget = BusinessTargets.turnover.priceDecomposition.budget.amount || 0;
+                  const volumeBudget = BusinessTargets.turnover.volumeDecomposition.budget?.amount || 0;
+                  const total = priceBudget + volumeBudget;
+                  const ratio = total > 0 ? (priceBudget / total) * 100 : 0;
+                  return ratio.toFixed(1);
+                })()}%
+              </span>
             </div>
             
             <div className="flex items-center justify-between gap-6">
@@ -1374,16 +1382,6 @@ const PriceDecompositionContainer = () => {
                      </span>
                    </div>
                 </div>
-              </div>
-
-              <div className="flex-1 max-w-[120px] flex flex-col justify-end">
-                 <div className="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>进度</span>
-                    <span>1.8%</span>
-                 </div>
-                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full">
-                    <div className="h-2 bg-[#a40035]" style={{ width: '1.8%' }}></div>
-                 </div>
               </div>
             </div>
           </div>

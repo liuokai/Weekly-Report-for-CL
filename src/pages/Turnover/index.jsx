@@ -91,8 +91,9 @@ const TurnoverReport = () => {
         // 1. Fetch Turnover Overview (Critical for top metrics)
         const dataResult = await dataLoader.fetchData('getTurnoverOverview', []);
 
-        if (isMounted && dataResult.status === 'success') {
-          const newData = dataResult.data;
+        if (isMounted) {
+          if (dataResult.status === 'success') {
+            const newData = dataResult.data;
           setTurnoverData(newData);
           sessionCache.turnoverData = newData;
           sessionCache.dataFetched = true;
@@ -140,9 +141,10 @@ const TurnoverReport = () => {
             // Save to localStorage
             localStorage.setItem('revenueMetrics', JSON.stringify(newMetrics));
           }
-        } else if (isMounted) {
+        } else {
           setError(dataResult.message);
         }
+      }
 
         // 2. Prefetch other chart data (Optional but good for "Sequential" loading)
         // These are normally fetched by sub-components (WeeklyTurnoverChart, etc.)
