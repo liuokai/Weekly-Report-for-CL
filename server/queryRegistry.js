@@ -254,6 +254,10 @@ const queryRegistry = {
     sql: loadSql('store_cal_city.sql'),
     description: '城市维度门店数量与预算执行情况'
   },
+  getClosingStoreList: {
+    sql: loadSql('closing_store_list.sql'),
+    description: '闭店预警门店列表'
+  },
 };
 
 module.exports = queryRegistry;

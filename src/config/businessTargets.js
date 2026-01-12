@@ -105,8 +105,11 @@ export const BusinessTargets = {
   store: {
     // 年度新店目标
     newStore: {
-      target: 28, // 目标数量（家）
-      budget: 123, // 预算金额（万元）
+      target: 43, // 目标数量（家）
+      budget: 282.7, // 预算金额（万元）
+      cumulativeInvestment: 57, // 累计投资金额（万元）
+      newStoreInvestment: 57, // 新店投资金额（万元）
+      renovationInvestment: 0, // 重装投资金额（万元）
       // 各城市新开门店目标
       cityTargets: {
         '成都市': 3,

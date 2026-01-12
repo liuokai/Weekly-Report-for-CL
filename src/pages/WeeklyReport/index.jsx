@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import TurnoverReport from "../Turnover";
-import StoreTab from "../Store";
 import CostAndProfitTab from "../CostAndProfit";
 import CashFlowTab from "../CashFlow";
 import dataLoader from "../../utils/dataLoader";
@@ -27,8 +26,7 @@ const WeeklyReport = () => {
   const tabs = [
     "营业额",
     "成本与利润",
-    "现金流",
-    "门店"
+    "现金流"
   ];
 
   // 获取当前日期
@@ -97,8 +95,6 @@ const WeeklyReport = () => {
               {activeTab === 1 && <CostAndProfitTab />}
 
               {activeTab === 2 && <CashFlowTab />}
-              
-              {activeTab === 3 && <StoreTab />}
             </>
           )}
         </div>

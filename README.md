@@ -41,7 +41,7 @@
 ## 页面与数据
 
 ### WeeklyReport 总览
-- Tab 切换：营业额 / 成本与利润 / 现金流 / 门店
+- Tab 切换：营业额 / 成本与利润 / 现金流
 - 入口组件位置：[WeeklyReport/index.jsx](file:///Users/kailiu/AI-Project/ChangLe%20Operations%20Weekly/src/pages/WeeklyReport/index.jsx)
 
 ### 营业额模块（Turnover）
