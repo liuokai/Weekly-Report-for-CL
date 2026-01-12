@@ -45,13 +45,27 @@ export const BusinessTargets = {
       lastYearAveragePrice: 288.7,
       
       // 客单价增长率目标值（单位：百分比）
-      targetGrowthRate: 3
+      targetGrowthRate: 3,
+
+      // 预算相关配置
+      budget: {
+        amount: 1219.7, // 预算金额（单位：万元）
+        labor: 543.2, // 人工（单位：万元）
+        training: 676.5 // 招培（单位：万元）
+      }
     },
 
     // 客次量拆解 (Customer Volume Decomposition)
     volumeDecomposition: {
       // 年度累计客次量目标 (单位：万人次)
-      annualCumulativeTarget: 2500000
+      annualCumulativeTarget: 2500000,
+      
+      // 预算相关配置
+      budget: {
+        amount: 5459.09, // 预算金额（单位：万元）
+        labor: 682.63, // 人工成本（单位：万元）
+        cost: 4776.46 // 预算费用（单位：万元）
+      }
     },
 
     // 客单价·影响指标分析 (Price Impact Analysis)
@@ -96,7 +110,42 @@ export const BusinessTargets = {
   // =================================================================
   profit: {
     // 年度利润率目标值 (单位：%)
-    annualTargetRate: 6.3
+    annualTargetRate: 6.3,
+    
+    // 总部成本预算 (Headquarters Cost Budget)
+    headquartersBudget: {
+      financial_report: {
+        labor_costs: {
+          category: "人工成本",
+          items: [
+            { name: "人工成本-投融资管理", value: 5236512, ratio: "40.4%" },
+            { name: "人工成本-推拿之家", value: 5431538, ratio: "41.9%" },
+            { name: "人工成本-用户中心", value: 6826335, ratio: "52.7%" },
+            { name: "人工成本-IT中心", value: 7142000, ratio: "55.1%" }
+          ],
+          subtotal: { value: 24636385, ratio: "190.1%" }
+        },
+        fixed_costs: {
+          category: "固定成本",
+          items: [
+            { name: "房租费", value: 210252.93, ratio: "1.9%" },
+            { name: "折旧费", value: 47884.62, ratio: "0.4%" },
+            { name: "产品研发费", value: 2504710, ratio: "30.4%" },
+            { name: "招聘费", value: 1029371, ratio: "9.6%" },
+            { name: "办公费", value: 909462, ratio: "7.8%" },
+            { name: "水电费", value: 48000, ratio: "0.4%" },
+            { name: "服务器租赁", value: 1207900, ratio: "9.9%" },
+            { name: "手续费", value: 5000, ratio: "0.0%" },
+            { name: "税金", value: 891603, ratio: "7.4%" }
+          ],
+          subtotal: { value: 6854184, ratio: "67.8%" }
+        },
+        summary: {
+          total_expenditure: 31490569,
+          headquarters_profit: -18529427
+        }
+      }
+    }
   },
 
   // =================================================================

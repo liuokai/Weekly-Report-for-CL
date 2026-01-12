@@ -201,11 +201,11 @@ const VolumeDecompositionContainer = () => {
           <div className="hidden lg:block w-px bg-gray-200 self-stretch"></div>
           <div className="flex-1 z-10 flex flex-col justify-center">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">预算使用（2025年1-9月）</div>
+              <div className="text-sm text-gray-600">预算金额</div>
               {(() => {
-                const total = BusinessTargets.turnover.budget?.total || 0;
-                const used = BusinessTargets.turnover.budget?.used || 0;
-                const ratio = total > 0 ? (used / total) * 100 : 0;
+                const amount = BusinessTargets.turnover.volumeDecomposition.budget?.amount || 0;
+                const total = BusinessTargets.turnover.budget?.total || 1; // avoid division by zero
+                const ratio = (amount / total) * 100;
                 return <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#a40035]/10 text-[#a40035] font-medium">费用占比 {ratio.toFixed(1)}%</span>;
               })()}
             </div>
@@ -213,17 +213,26 @@ const VolumeDecompositionContainer = () => {
               <div className="flex flex-col min-w-0">
                 <div className="text-3xl xl:text-4xl font-bold text-[#a40035] whitespace-nowrap">
                   {(() => {
-                    const used = BusinessTargets.turnover.budget?.used || 0;
-                    return `¥${Number(used).toFixed(1)}万`;
+                    const amount = BusinessTargets.turnover.volumeDecomposition.budget?.amount || 0;
+                    return `¥${Number(amount).toFixed(1)}万`;
                   })()}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
                   <div className="flex items-center gap-1 whitespace-nowrap">
-                    <span>总预算:</span>
+                    <span>人工成本:</span>
                     <span className="font-semibold text-gray-700">
                       {(() => {
-                        const total = BusinessTargets.turnover.budget?.total || 0;
-                        return `¥${Number(total).toFixed(1)}万`;
+                        const labor = BusinessTargets.turnover.volumeDecomposition.budget?.labor || 0;
+                        return `¥${Number(labor).toFixed(1)}万`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 whitespace-nowrap">
+                    <span>预算费用:</span>
+                    <span className="font-semibold text-gray-700">
+                      {(() => {
+                        const cost = BusinessTargets.turnover.volumeDecomposition.budget?.cost || 0;
+                        return `¥${Number(cost).toFixed(1)}万`;
                       })()}
                     </span>
                   </div>
@@ -233,17 +242,17 @@ const VolumeDecompositionContainer = () => {
                 <div className="flex justify-between text-xs text-gray-400 mb-1">
                   <span>进度</span>
                   {(() => {
-                    const total = BusinessTargets.turnover.budget?.total || 0;
-                    const used = BusinessTargets.turnover.budget?.used || 0;
-                    const p = total > 0 ? (used / total) * 100 : 0;
+                    const amount = BusinessTargets.turnover.volumeDecomposition.budget?.amount || 0;
+                    const total = BusinessTargets.turnover.budget?.total || 1;
+                    const p = (amount / total) * 100;
                     return <span>{p.toFixed(1)}%</span>;
                   })()}
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full">
                   {(() => {
-                    const total = BusinessTargets.turnover.budget?.total || 0;
-                    const used = BusinessTargets.turnover.budget?.used || 0;
-                    const p = total > 0 ? Math.max(0, Math.min(100, (used / total) * 100)) : 0;
+                    const amount = BusinessTargets.turnover.volumeDecomposition.budget?.amount || 0;
+                    const total = BusinessTargets.turnover.budget?.total || 1;
+                    const p = Math.max(0, Math.min(100, (amount / total) * 100));
                     return <div className="h-2 bg-[#a40035]" style={{ width: `${p}%` }}></div>;
                   })()}
                 </div>

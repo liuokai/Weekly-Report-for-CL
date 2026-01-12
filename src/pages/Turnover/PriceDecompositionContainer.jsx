@@ -1351,21 +1351,27 @@ const PriceDecompositionContainer = () => {
           {/* Right: Budget Execution */}
           <div className="flex-1 z-10 flex flex-col justify-center">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">预算使用（2025年1-9月）</div>
+              <div className="text-sm text-gray-600">预算金额</div>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#a40035]/10 text-[#a40035] font-medium">费用占比 1.8%</span>
             </div>
             
             <div className="flex items-center justify-between gap-6">
               <div className="flex flex-col min-w-0">
-                <div className="text-3xl xl:text-4xl font-bold text-[#a40035] whitespace-nowrap">¥545.8万</div>
+                <div className="text-3xl xl:text-4xl font-bold text-[#a40035] whitespace-nowrap">
+                  ¥{BusinessTargets.turnover.priceDecomposition.budget.amount}万
+                </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
                    <div className="flex items-center gap-1 whitespace-nowrap">
                      <span>人工:</span>
-                     <span className="font-semibold text-gray-700">¥379.8万</span>
+                     <span className="font-semibold text-gray-700">
+                       ¥{BusinessTargets.turnover.priceDecomposition.budget.labor}万
+                     </span>
                    </div>
                    <div className="flex items-center gap-1 whitespace-nowrap">
                      <span>招培:</span>
-                     <span className="font-semibold text-gray-700">¥166万</span>
+                     <span className="font-semibold text-gray-700">
+                       ¥{BusinessTargets.turnover.priceDecomposition.budget.training}万
+                     </span>
                    </div>
                 </div>
               </div>

@@ -7,6 +7,7 @@ import BusinessTargets from '../../config/businessTargets';
 import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 import CostStructureContainer from '../CashFlow/CostStructureContainer';
 import AnnualCostAnalysis from './AnnualCostAnalysis';
+import HeadquartersCostBudget from './HeadquartersCostBudget';
 import useFetchData from '../../hooks/useFetchData';
 
 const CostAndProfitTab = () => {
@@ -423,6 +424,9 @@ const CostAndProfitTab = () => {
           colorYoY={LineTrendStyle.COLORS.yoy}
         />
       </div>
+
+      {/* Headquarters Cost Budget */}
+      <HeadquartersCostBudget />
 
       {/* Cost Structure Analysis */}
       <CostStructureContainer />
