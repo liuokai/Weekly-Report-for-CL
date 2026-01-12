@@ -22,12 +22,19 @@ const DataTable = ({
         <thead className={theadClass}>
           <tr>
             {columns.map(column => (
+              (() => {
+                const align = column.align || 'left';
+                const thAlignClass = align === 'right' ? 'text-right' : 'text-left';
+                const thBase = `px-6 py-3 ${thAlignClass} text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap group`;
+                const thInteractive = onSort ? 'cursor-pointer hover:bg-gray-100 select-none' : '';
+                const headerFlexClass = `flex items-center space-x-1 ${align === 'right' ? 'justify-end' : ''}`;
+                return (
               <th 
                 key={column.key} 
-                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap group ${onSort ? 'cursor-pointer hover:bg-gray-100 select-none' : ''}`}
+                className={`${thBase} ${thInteractive}`}
                 onClick={() => onSort && onSort(column.key)}
               >
-                <div className="flex items-center space-x-1">
+                <div className={headerFlexClass}>
                   <span>{column.title}</span>
                   {sortConfig && sortConfig.key === column.key && (
                     <span className="text-[#a40035]">
@@ -41,6 +48,8 @@ const DataTable = ({
                   )}
                 </div>
               </th>
+                );
+              })()
             ))}
           </tr>
         </thead>
@@ -48,7 +57,10 @@ const DataTable = ({
           {data.map((row, index) => (
             <tr key={getKey(row, index)}>
               {columns.map(column => (
-                <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td
+                  key={column.key}
+                  className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500 ${column.align === 'right' ? 'text-right' : 'text-left'}`}
+                >
                   {column.render ? column.render(row[column.dataIndex], row, index) : (row[column.dataIndex] || '-')}
                 </td>
               ))}

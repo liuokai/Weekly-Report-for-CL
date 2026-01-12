@@ -2,110 +2,86 @@ import React, { useState, useMemo, useEffect } from 'react';
 import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import LineTrendStyle from '../../components/Common/LineTrendStyleConfig';
+import useTableSorting from '../../components/Common/useTableSorting';
 import useFetchData from '../../hooks/useFetchData';
 
 const CashFlowTab = () => {
-  // Data Constants
-  const data = {
-    current: {
-      newStoreInvestment: 1816,
-      operatingCashFlow: 4790,
-      annualSurplus: 2974
-    },
-    lastYear: {
-      newStoreInvestment: 3308,
-      operatingCashFlow: 4798,
-      annualSurplus: 1490
-    }
-  };
+  const { data: cashFlowRows } = useFetchData('getCashFlowAndPaybackPeriod');
+  const { data: safetyLineRows } = useFetchData('getCapitalSafetyLine');
+  const { data: safetyLineCityRows } = useFetchData('getCapitalSafetyLineCity');
 
-  // City Cash Flow Data (from src/data/城市维度现金流.csv)
-  const cityCashFlowData = [
-    { city: "成都市", newStoreInvestment: 529, operatingCashFlow: 2839, annualSurplus: 2310, safetyLine: 2000 },
-    { city: "重庆市", newStoreInvestment: 116, operatingCashFlow: 649, annualSurplus: 533, safetyLine: 450 },
-    { city: "深圳市", newStoreInvestment: 449, operatingCashFlow: 618, annualSurplus: 169, safetyLine: 400 },
-    { city: "杭州市", newStoreInvestment: 129, operatingCashFlow: 155, annualSurplus: 26, safetyLine: 120 },
-    { city: "南京市", newStoreInvestment: 59, operatingCashFlow: 47, annualSurplus: -12, safetyLine: 40 },
-    { city: "宁波市", newStoreInvestment: 0, operatingCashFlow: -15, annualSurplus: -15, safetyLine: 0 },
-    { city: "广州市", newStoreInvestment: 65, operatingCashFlow: 115, annualSurplus: 50, safetyLine: 80 },
-    { city: "上海市", newStoreInvestment: 71, operatingCashFlow: 146, annualSurplus: 75, safetyLine: 100 },
-    { city: "北京市", newStoreInvestment: 397, operatingCashFlow: 236, annualSurplus: -161, safetyLine: 150 }
-  ];
+  const latestMonth = useMemo(() => {
+    if (!Array.isArray(cashFlowRows) || cashFlowRows.length === 0) return null;
+    const months = Array.from(new Set(cashFlowRows.map(r => r.month || r['month'])));
+    return months.sort((a, b) => a.localeCompare(b)).pop() || null;
+  }, [cashFlowRows]);
 
-  // Helper to calculate YoY
-  const calculateYoY = (current, last) => {
-    const value = ((current - last) / last) * 100;
-    return {
-      value: Math.abs(value).toFixed(2),
-      direction: value >= 0 ? 'up' : 'down',
-      sign: value >= 0 ? '+' : '-'
-    };
-  };
+  const operatingCashFlow = useMemo(() => {
+    if (!Array.isArray(cashFlowRows) || !latestMonth) return 0;
+    return cashFlowRows
+      .filter(r => (r.month || r['month']) === latestMonth)
+      .reduce((sum, r) => {
+        const v = Number(r['累计现金流']) || 0;
+        return sum + v;
+      }, 0);
+  }, [cashFlowRows, latestMonth]);
 
-  const metrics = [
-    {
-      key: 'newStoreInvestment',
-      label: '新店投资',
-      value: data.current.newStoreInvestment,
-      lastValue: data.lastYear.newStoreInvestment,
-      yoY: calculateYoY(data.current.newStoreInvestment, data.lastYear.newStoreInvestment)
-    },
-    {
-      key: 'operatingCashFlow',
-      label: '经营现金流',
-      value: data.current.operatingCashFlow,
-      lastValue: data.lastYear.operatingCashFlow,
-      yoY: calculateYoY(data.current.operatingCashFlow, data.lastYear.operatingCashFlow)
-    },
-    {
-      key: 'annualSurplus',
-      label: '年度结余',
-      value: data.current.annualSurplus,
-      lastValue: data.lastYear.annualSurplus,
-      yoY: calculateYoY(data.current.annualSurplus, data.lastYear.annualSurplus),
-      highlight: true // Special highlight for this metric
-    },
-    {
-      key: 'safetyLine',
-      label: '资金安全线',
-      value: 16000000,
-      unit: '(元)',
-      isStatic: true
-    }
-  ];
+  const capitalSafetyLine = useMemo(() => {
+    if (!Array.isArray(safetyLineRows) || safetyLineRows.length === 0) return 0;
+    const row = safetyLineRows[0] || {};
+    return Number(row['总和']) || 0;
+  }, [safetyLineRows]);
 
-  // Funds Trend (between overview and city table)
-  const [fundsShowYoY, setFundsShowYoY] = useState(false);
-  const [fundsShowAvg, setFundsShowAvg] = useState(true);
-  const [fundsShowExtremes, setFundsShowExtremes] = useState(true);
+  const availableFunds = useMemo(() => {
+    return operatingCashFlow - capitalSafetyLine;
+  }, [operatingCashFlow, capitalSafetyLine]);
+
+  const cityStats = useMemo(() => {
+    if (!Array.isArray(cashFlowRows) || !latestMonth) return [];
+    const safetyMap = new Map(
+      (Array.isArray(safetyLineCityRows) ? safetyLineCityRows : []).map(r => [r['统计城市'] || r.statistics_city_name, Number(r['资金安全线']) || 0])
+    );
+    return cashFlowRows
+      .filter(r => (r.month || r['month']) === latestMonth)
+      .map(r => {
+        const city = r.statistics_city_name || r['statistics_city_name'] || r.city;
+        return {
+          city,
+          totalDepreciation: Number(r['总折旧']) || 0,
+          cumulativeCashFlow: Number(r['累计现金流']) || 0,
+          cumulativePaybackPeriod: Number(r['累计投资回收期']) || 0,
+          safetyLine: safetyMap.get(city) || 0
+        };
+      });
+  }, [cashFlowRows, latestMonth, safetyLineCityRows]);
+
+  const metrics = useMemo(() => {
+    return [
+      {
+        key: 'operatingCashFlow',
+        label: '经营现金流',
+        value: operatingCashFlow,
+        isStatic: true,
+        highlight: false
+      },
+      {
+        key: 'capitalSafetyLine',
+        label: '资金安全线',
+        value: capitalSafetyLine,
+        isStatic: true,
+        highlight: false
+      },
+      {
+        key: 'availableFunds',
+        label: '自有资金可用金额',
+        value: availableFunds,
+        isStatic: true,
+        highlight: true
+      }
+    ];
+  }, [operatingCashFlow, capitalSafetyLine, availableFunds]);
+
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => `25年${i + 1}月`), []);
-
-  const generateCumulativeSeries = (total) => {
-    const parts = Array.from({ length: 12 }, () => Math.random() + 0.2);
-    const sum = parts.reduce((a, b) => a + b, 0);
-    const increments = parts.map(p => (total * p) / sum);
-    const cumulative = [];
-    let acc = 0;
-    for (let i = 0; i < increments.length; i++) {
-      acc += increments[i];
-      cumulative.push(acc);
-    }
-    return cumulative;
-  };
-
-  const fundsTrendConfig = useMemo(() => {
-    const currentTotal = data.current.annualSurplus; // 2974
-    const lastTotal = data.lastYear.annualSurplus;   // 1490
-    const values = generateCumulativeSeries(currentTotal);
-    const valuesYoY = generateCumulativeSeries(lastTotal);
-    return {
-      title: '现金流结余（月度累计）',
-      unit: '万元',
-      values,
-      valuesYoY,
-      formatter: (v) => Math.round(v).toString()
-    };
-  }, [data.current.annualSurplus, data.lastYear.annualSurplus]);
 
   // Modal State
   const [selectedCity, setSelectedCity] = useState(null);
@@ -185,6 +161,18 @@ const CashFlowTab = () => {
     });
   }, [selectedCity, storeWeeklyTurnover]);
 
+  const numberFormatter = useMemo(() => {
+    return new Intl.NumberFormat('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: true
+    });
+  }, []);
+
+  const formatNumber = (v) => numberFormatter.format(Number(v || 0));
+  const toWan = (v) => (Number(v || 0) / 10000);
+  const formatWan = (v) => numberFormatter.format(toWan(v));
+
   // Table Columns
   const cityColumns = [
     {
@@ -200,11 +188,13 @@ const CashFlowTab = () => {
         </span>
       )
     },
-    { key: 'newStoreInvestment', title: '今年新店投资', dataIndex: 'newStoreInvestment' },
-    { key: 'operatingCashFlow', title: '今年经营现金流', dataIndex: 'operatingCashFlow' },
-    { key: 'annualSurplus', title: '今年年度结余', dataIndex: 'annualSurplus' },
-    { key: 'safetyLine', title: '资金安全线', dataIndex: 'safetyLine', render: (val) => val?.toLocaleString() }
+    { key: 'totalDepreciation', title: '总折旧', dataIndex: 'totalDepreciation', align: 'right', render: (val) => <div className="tabular-nums">{formatNumber(val)}</div> },
+    { key: 'cumulativeCashFlow', title: '累计现金流', dataIndex: 'cumulativeCashFlow', align: 'right', render: (val) => <div className="tabular-nums">{formatNumber(val)}</div> },
+    { key: 'cumulativePaybackPeriod', title: '累计投资回收期', dataIndex: 'cumulativePaybackPeriod', align: 'right', render: (val) => <div className="tabular-nums">{formatNumber(val)}</div> },
+    { key: 'safetyLine', title: '资金安全线', dataIndex: 'safetyLine', align: 'right', render: (val) => <div className="tabular-nums">{formatNumber(val)}</div> }
   ];
+
+  const { sortedData: sortedCityStats, sortConfig: citySortConfig, handleSort: handleCitySort } = useTableSorting(cityColumns, cityStats);
 
   const storeColumns = [
     { key: 'store', title: '门店名称', dataIndex: 'store' },
@@ -301,82 +291,23 @@ const CashFlowTab = () => {
           总部现金流概览
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
           {metrics.map((metric) => (
             <div key={metric.key} className={`p-6 flex flex-col items-center justify-center text-center ${metric.highlight ? 'bg-red-50/30' : ''}`}>
-              <h3 className="text-gray-500 text-sm font-medium mb-2">{metric.label} {metric.unit || '(万元)'}</h3>
-              <div className={`text-3xl font-bold mb-2 ${metric.highlight ? 'text-[#a40035]' : 'text-gray-900'}`}>
-                {metric.value.toLocaleString()}
-              </div>
-              
-              <div className="flex flex-col items-center space-y-1">
-                {!metric.isStatic ? (
-                  <>
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-400 mr-2">去年同期: {metric.lastValue.toLocaleString()}</span>
-                    </div>
-                    
-                    <div className={`flex items-center text-sm px-2 py-0.5 rounded-full ${metric.yoY.direction === 'up' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                      <span className="font-medium mr-1">同比</span>
-                      <span className="font-bold flex items-center">
-                        {metric.yoY.sign}{metric.yoY.value}%
-                        {metric.yoY.direction === 'up' ? (
-                          <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                          </svg>
-                        ) : (
-                          <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                          </svg>
-                        )}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-center text-sm text-gray-400 mt-2 min-h-[48px]">
-                     固定指标
-                  </div>
-                )}
+              <h3 className="text-gray-500 text-sm font-medium mb-2">{metric.label}</h3>
+              <div className={`text-3xl font-bold mb-2 tabular-nums ${metric.highlight ? 'text-[#a40035]' : 'text-gray-900'}`}>
+                {formatWan(metric.value)}
+                <span className="ml-1 align-top text-sm text-gray-500">万元</span>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Funds Trend Container (between overview and city table) */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">资金结余趋势分析</h3>
-        <div className="space-y-4">
-          {LineTrendStyle.renderHeader(fundsTrendConfig.title, fundsTrendConfig.unit)}
-          {LineTrendStyle.renderAuxControls({
-            showYoY: fundsShowYoY,
-            setShowYoY: () => setFundsShowYoY(!fundsShowYoY),
-            showTrend: fundsShowAvg,
-            setShowTrend: () => setFundsShowAvg(!fundsShowAvg),
-            showExtremes: fundsShowExtremes,
-            setShowExtremes: () => setFundsShowExtremes(!fundsShowExtremes)
-          })}
-          <LineTrendChart
-            values={fundsTrendConfig.values}
-            valuesYoY={fundsTrendConfig.valuesYoY}
-            xLabels={months}
-            showYoY={fundsShowYoY}
-            showTrend={fundsShowAvg}
-            showExtremes={fundsShowExtremes}
-            valueFormatter={fundsTrendConfig.formatter}
-            yAxisFormatter={fundsTrendConfig.formatter}
-            height={LineTrendStyle.DIMENSIONS.height}
-            width={LineTrendStyle.DIMENSIONS.width}
-            colorPrimary={LineTrendStyle.COLORS.primary}
-            colorYoY={LineTrendStyle.COLORS.yoy}
-          />
-        </div>
-      </div>
-      
       {/* City Cash Flow Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">城市资金结余一览</h3>
-        <DataTable data={cityCashFlowData} columns={cityColumns} />
+        <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">城市经营现金流统计</h3>
+        <DataTable data={sortedCityStats} columns={cityColumns} onSort={handleCitySort} sortConfig={citySortConfig} />
       </div>
 
       {renderCityModal()}
