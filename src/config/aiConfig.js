@@ -15,7 +15,7 @@ export const AI_CONFIG = {
   // Cache Configuration
   CACHE: {
     ENABLED: false, // Enable caching to prevent repetitive API calls
-    DURATION: 10 * MINUTE, // Adjust here: e.g., 1 * HOUR, 30 * MINUTE, 1 * DAY
+    DURATION: 1 * HOUR, // Adjust here: e.g., 1 * HOUR, 30 * MINUTE, 1 * DAY
     STORAGE_KEY_PREFIX: 'dify_cache_', // Prefix for localStorage keys
   }
 };
