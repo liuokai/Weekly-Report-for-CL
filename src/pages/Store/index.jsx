@@ -4,6 +4,7 @@ import LineTrendChart from '../../components/Common/LineTrendChart';
 import UnifiedProgressBar from '../../components/Common/UnifiedProgressBar';
 import BusinessTargets from '../../config/businessTargets';
 import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
+import useFetchData from '../../hooks/useFetchData';
 
 const StoreTab = () => {
   // 模拟数据 - 门店指标
@@ -159,7 +160,7 @@ const StoreTab = () => {
        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
          <h2 className="text-lg font-bold text-gray-800 mb-2 flex items-center">
            <span className="w-1 h-5 bg-[#a40035] rounded-full mr-3"></span>
-           城市维度门店数量与预算执行情况
+           城市维度门店情况统计
          </h2>
          <CityStoresSection />
        </div>
@@ -171,62 +172,101 @@ export default StoreTab;
 
 const CityStoresSection = () => {
   const [selectedCity, setSelectedCity] = useState(null);
-  const [activeMetric, setActiveMetric] = useState('门店数量');
-  const [showYoY, setShowYoY] = useState(false);
-  const [showAverage, setShowAverage] = useState(false);
-  const [showExtremes, setShowExtremes] = useState(true);
+  const { data: storeData } = useFetchData('getStoreCalCity');
+  const { data: paybackData } = useFetchData('getCashFlowAndPaybackPeriod');
+  const { data: storeDetailDataRaw } = useFetchData('getCashFlowAndPaybackPeriodStore');
 
-  const baseRows = useMemo(() => ([
-    { 城市: '成都市', 门店数量: 91, 新开门店数量: 10, 闭店门店数量: 9, 净增门店数量: 1, 新开门店目标: 6, 目标对照: -5 },
-    { 城市: '重庆市', 门店数量: 30, 新开门店数量: 2, 闭店门店数量: 2, 净增门店数量: 0, 新开门店目标: 2, 目标对照: -2 },
-    { 城市: '深圳市', 门店数量: 27, 新开门店数量: 7, 闭店门店数量: 2, 净增门店数量: 5, 新开门店目标: 6, 目标对照: -1 },
-    { 城市: '杭州市', 门店数量: 11, 新开门店数量: 3, 闭店门店数量: 1, 净增门店数量: 2, 新开门店目标: 0, 目标对照: 2 },
-    { 城市: '南京市', 门店数量: 5, 新开门店数量: 1, 闭店门店数量: 0, 净增门店数量: 1, 新开门店目标: 0, 目标对照: 1 },
-    { 城市: '宁波市', 门店数量: 3, 新开门店数量: 0, 闭店门店数量: 0, 净增门店数量: 0, 新开门店目标: 0, 目标对照: 0 },
-    { 城市: '广州市', 门店数量: 9, 新开门店数量: 2, 闭店门店数量: 0, 净增门店数量: 2, 新开门店目标: 0, 目标对照: 2 },
-    { 城市: '上海市', 门店数量: 9, 新开门店数量: 2, 闭店门店数量: 0, 净增门店数量: 2, 新开门店目标: 0, 目标对照: 2 },
-    { 城市: '北京市', 门店数量: 13, 新开门店数量: 9, 闭店门店数量: 0, 净增门店数量: 9, 新开门店目标: 6, 目标对照: 3 },
-  ]), []);
+  const tableData = useMemo(() => {
+    if (!storeData) return [];
 
-  const rowsWithBudget = useMemo(() => {
-    return baseRows.map(r => {
-      // 预算逻辑调整：
-      // 1. 仅当新开门店目标 > 0 时才有预算
-      // 2. 预算 = 新开门店目标 * 70 (万)
-      // 3. 模拟新店投资金额与使用率
-      let budget = 0;
-      let used = 0;
+    // 目标配置 (从配置文件读取)
+    const targetsMap = BusinessTargets.store.newStore.cityTargets || {};
+    const budgetsMap = BusinessTargets.store.newStore.cityBudgets || {};
+
+    // 投资回收期数据映射 (取每个城市最新的一个月数据)
+    const paybackMap = {};
+    if (paybackData) {
+      // 假设 paybackData 按月份降序排列，只需遍历找到每个城市的第一条记录
+      paybackData.forEach(p => {
+        const city = p['statistics_city_name'] || p['统计城市']; // 兼容可能的字段名
+        if (city && !paybackMap[city]) {
+          paybackMap[city] = p['累计投资回收期'];
+        }
+      });
+    }
+
+    return storeData.map(item => {
+      const city = item['统计城市'];
+      const storeCount = item['门店数量'];
+      const newOpened = item['今年新开门店数量'];
+      const closed = item['今年闭店门店数量'];
+      const netIncrease = item['今年净增门店数量'];
+      // 投资金额 (SQL返回单位预计为元，需转换为万元)
+      const newInvest = item['新开门店总投资金额'] || 0;
+      const newInvestWan = Math.round(newInvest / 10000);
+
+      const targetNew = targetsMap[city] || 0;
+      const targetCompare = netIncrease - targetNew;
+      
+      // 预算逻辑：直接从配置读取，单位转换为万元（保留1位小数）
+      const budgetRaw = budgetsMap[city] || 0;
+      const budgetWan = budgetRaw > 0 ? Number((budgetRaw / 10000).toFixed(2)) : 0;
+      
       let usage = 0;
-
-      if (r.新开门店目标 > 0) {
-        budget = r.新开门店目标 * 70;
-        // 模拟已用金额：预算的 40% ~ 110% 之间波动，体现真实执行情况
-        used = Math.round(budget * (0.4 + Math.random() * 0.7));
-        usage = Math.round((used / budget) * 100);
+      if (budgetWan > 0 && newInvestWan > 0) {
+         usage = Math.round((newInvestWan / budgetWan) * 100);
       }
 
+      const paybackPeriod = paybackMap[city] || '-';
+
       return {
-        ...r,
-        新店投资预算金额: budget > 0 ? budget : '-',
-        新店投资金额: budget > 0 ? used : '-',
-        预算使用率: budget > 0 ? `${usage}%` : '-',
-        投资回收期: 36
+        城市: city,
+        门店数量: storeCount,
+        新开门店数量: newOpened,
+        闭店门店数量: closed,
+        净增门店数量: netIncrease,
+        新开门店目标: targetNew,
+        目标对照: targetCompare,
+        新店预算费用: budgetWan > 0 ? budgetWan : '-',
+        新店投资金额: newInvestWan > 0 ? newInvestWan : '-',
+        预算使用率: (budgetWan > 0 && newInvestWan > 0) ? `${usage}%` : '-',
+        投资回收期: paybackPeriod
       };
     });
-  }, [baseRows]);
+  }, [storeData, paybackData]);
+
+  const storeDetails = useMemo(() => {
+    if (!storeDetailDataRaw || !selectedCity) return [];
+    
+    // 1. 找到最大月份
+    let maxMonth = '';
+    storeDetailDataRaw.forEach(item => {
+      if (!maxMonth || item.month > maxMonth) {
+        maxMonth = item.month;
+      }
+    });
+
+    if (!maxMonth) return [];
+
+    // 2. 筛选数据
+    return storeDetailDataRaw.filter(item => 
+      item.month === maxMonth && 
+      (item.statistics_city_name === selectedCity || item['统计城市'] === selectedCity)
+    );
+  }, [storeDetailDataRaw, selectedCity]);
 
   const columns = useMemo(() => ([
     { 
       key: 'city', 
       title: '城市', 
       dataIndex: '城市',
-      render: (value, row) => (
-        <button 
-          className="text-[#a40035] hover:underline font-medium"
-          onClick={() => setSelectedCity(row.城市)}
+      render: (value) => (
+        <span 
+          className="font-medium text-[#a40035] cursor-pointer hover:underline"
+          onClick={() => setSelectedCity(value)}
         >
           {value}
-        </button>
+        </span>
       )
     },
     { key: 'storeCount', title: '门店数量', dataIndex: '门店数量' },
@@ -244,8 +284,8 @@ const CityStoresSection = () => {
         </span>
       )
     },
-    { key: 'budgetPlan', title: '新店投资预算金额', dataIndex: '新店投资预算金额' },
-    { key: 'budgetUsed', title: '新店投资金额', dataIndex: '新店投资金额' },
+    { key: 'budgetPlan', title: '新店预算费用（万元）', dataIndex: '新店预算费用' },
+    { key: 'budgetUsed', title: '新店投资金额（万元）', dataIndex: '新店投资金额' },
     { key: 'budgetUsage', title: '预算使用率', dataIndex: '预算使用率' },
     { key: 'paybackPeriod', title: '投资回收期 (月)', dataIndex: '投资回收期' },
   ]), []);
@@ -261,102 +301,10 @@ const CityStoresSection = () => {
     };
   }, [selectedCity]);
 
-  const monthLabels = useMemo(() => Array.from({ length: 12 }, (_, i) => `${i + 1}月`), []);
-  const metricSeries = useMemo(() => {
-    const makeSeries = (base) => monthLabels.map((_, i) => Math.max(0, Math.round(base + (Math.sin(i / 1.8) * base * 0.15) + (Math.random() * base * 0.12))));
-    return {
-      门店数量: makeSeries(50),
-      新开门店数量: makeSeries(4),
-      闭店门店数量: makeSeries(2),
-      净增门店数量: makeSeries(2)
-    };
-  }, [monthLabels]);
-  const seriesYoy = useMemo(() => {
-    const curr = metricSeries[activeMetric] || [];
-    return curr.map(v => Math.round(v * (0.9 + Math.random() * 0.1)));
-  }, [metricSeries, activeMetric]);
-
-  const cityStoreMap = useMemo(() => ({
-    成都市: [
-      { 门店名称: '财富又一城', 开业时间: '4月25日' },
-      { 门店名称: '中粮香颂丽都悦街店', 开业时间: '4月29日' },
-      { 门店名称: 'in99', 开业时间: '5月7日' },
-      { 门店名称: '金楠天街', 开业时间: '6月17日' },
-      { 门店名称: '双流万达', 开业时间: '7月31日' },
-      { 门店名称: '蔚蓝卡地亚', 开业时间: '9月9日' },
-      { 门店名称: '城南优品道', 开业时间: '9月18日' },
-      { 门店名称: '悠方', 开业时间: '11月26日' },
-      { 门店名称: 'IFS', 开业时间: '12月10日' },
-      { 门店名称: '美学中心', 开业时间: '12月25日' },
-      { 门店名称: '光环', 开业时间: '12月29日' },
-    ],
-    深圳市: [
-      { 门店名称: 'K11', 开业时间: '4月28日' },
-      { 门店名称: '深业上城', 开业时间: '5月1日' },
-      { 门店名称: '平安金融中心', 开业时间: '6月26日' },
-      { 门店名称: '京基百纳', 开业时间: '8月3日' },
-      { 门店名称: '金地威', 开业时间: '8月23日' },
-      { 门店名称: '大悦城', 开业时间: '9月6日' },
-      { 门店名称: '来福士', 开业时间: '12月20日' },
-    ],
-    重庆市: [
-      { 门店名称: '高新天街', 开业时间: '4月30日' },
-      { 门店名称: '光环花园城', 开业时间: '9月26日' },
-      { 门店名称: '长嘉汇购物公园', 开业时间: '10月25日' },
-    ],
-    北京市: [
-      { 门店名称: '通州万象汇', 开业时间: '6月17日' },
-      { 门店名称: '悠唐', 开业时间: '6月24日' },
-      { 门店名称: '西铁营万达', 开业时间: '7月8日' },
-      { 门店名称: '中关村领展', 开业时间: '8月3日' },
-      { 门店名称: '五棵松万达', 开业时间: '8月12日' },
-      { 门店名称: '银座和谐广场', 开业时间: '11月12日' },
-      { 门店名称: '枫蓝国际', 开业时间: '11月16日' },
-      { 门店名称: '清河万象汇', 开业时间: '11月17日' },
-      { 门店名称: '东方新天地', 开业时间: '12月9日' },
-      { 门店名称: '华联万柳购物中心', 开业时间: '12月19日' },
-    ],
-    广州市: [
-      { 门店名称: 'IFC国金中心', 开业时间: '6月15日' },
-      { 门店名称: '琶洲天地', 开业时间: '11月29日' },
-    ],
-    上海市: [
-      { 门店名称: '静安CP', 开业时间: '8月17日' },
-      { 门店名称: '荟聚', 开业时间: '10月18日' },
-    ],
-    杭州市: [
-      { 门店名称: '亚奥万象天地', 开业时间: '9月22日' },
-      { 门店名称: '龙湖滨江天街', 开业时间: '9月30日' },
-      { 门店名称: '大悦城', 开业时间: '10月25日' },
-    ],
-    南京市: [
-      { 门店名称: '华采天地', 开业时间: '9月30日' },
-    ],
-  }), []);
-
-  const storeTableData = useMemo(() => {
-    const list = cityStoreMap[selectedCity] || [];
-    return list.map(s => {
-      const invest = Math.round(80 + Math.random() * 120);
-      const revenue = Math.round(150 + Math.random() * 300);
-      const target = Math.round(revenue * (0.9 + Math.random() * 0.3));
-      const rate = target > 0 ? Math.round((revenue / target) * 100) : 0;
-      return {
-        门店名称: s.门店名称,
-        开业时间: s.开业时间,
-        投资金额: invest,
-        累计营业额: revenue,
-        营业额目标: target,
-        营业额达标率: `${rate}%`,
-        投资回收期: 36,
-      };
-    });
-  }, [selectedCity, cityStoreMap]);
-
   return (
     <>
       <DataTable
-        data={rowsWithBudget}
+        data={tableData}
         columns={columns}
         getKey={(item) => item.城市}
         hideNoDataMessage={true}
@@ -367,77 +315,21 @@ const CityStoresSection = () => {
           <div className="absolute inset-0 bg-black/40" onClick={() => setSelectedCity(null)} />
           <div className="relative bg-white w-full max-w-5xl mx-4 rounded-xl shadow-lg flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
-              <h3 className="text-lg font-bold text-gray-800">{selectedCity} · 城市洞察</h3>
+              <h3 className="text-lg font-bold text-gray-800">{selectedCity} · 门店详情</h3>
               <button className="text-gray-500 hover:text-gray-700" onClick={() => setSelectedCity(null)}>关闭</button>
             </div>
-            <div className="p-6 space-y-6 overflow-y-auto">
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  {['门店数量', '新开门店数量', '闭店门店数量', '净增门店数量'].map(metric => (
-                    <button
-                      key={metric}
-                      onClick={() => setActiveMetric(metric)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${activeMetric === metric ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                    >
-                      {metric}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <button 
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showYoY ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                    onClick={() => setShowYoY(!showYoY)}
-                  >
-                    显示同比
-                  </button>
-                  <button 
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showAverage ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                    onClick={() => setShowAverage(!showAverage)}
-                  >
-                    显示均值
-                  </button>
-                  <button 
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${showExtremes ? 'bg-[#a40035] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                    onClick={() => setShowExtremes(!showExtremes)}
-                  >
-                    显示极值
-                  </button>
-                </div>
-              </div>
-
-              <LineTrendChart
-                headerTitle="2025 月度趋势"
-                headerUnit="家"
-                values={metricSeries[activeMetric] || []}
-                valuesYoY={seriesYoy}
-                xLabels={monthLabels}
-                showYoY={showYoY}
-                showAverage={showAverage}
-                showExtremes={showExtremes}
-                width={900}
-                height={340}
-                colorPrimary="#a40035"
-                colorYoY="#2563eb"
-                valueFormatter={(v) => v}
-                getHoverTitle={(idx) => `${monthLabels[idx]}`}
-              />
-
-              <div>
-                <h4 className="text-base font-semibold text-gray-800 mb-3">今年新营建门店统计表</h4>
-                <DataTable
-                  data={storeTableData}
+            <div className="p-6 overflow-y-auto">
+               <DataTable
+                  data={storeDetails}
                   columns={[
-                    { key: 'store', title: '门店名称', dataIndex: '门店名称' },
-                    { key: 'openDate', title: '开业时间', dataIndex: '开业时间' },
-                    { key: 'invest', title: '投资金额', dataIndex: '投资金额' },
-                    { key: 'revenue', title: '累计营业额', dataIndex: '累计营业额' },
-                    { key: 'target', title: '营业额目标', dataIndex: '营业额目标' },
-                    { key: 'rate', title: '营业额达标率', dataIndex: '营业额达标率' },
-                    { key: 'paybackPeriod', title: '投资回收期 (月)', dataIndex: '投资回收期' },
+                    { key: 'storeName', title: '门店名称', dataIndex: 'store_name' },
+                    { key: 'storeCode', title: '门店编码', dataIndex: 'store_code' },
+                    { key: 'depreciation', title: '总折旧', dataIndex: '总折旧' },
+                    { key: 'cashFlow', title: '累计现金流', dataIndex: '累计现金流' },
+                    { key: 'payback', title: '累计投资回收期', dataIndex: '累计投资回收期' },
                   ]}
-                  getKey={(item, idx) => `${item.门店名称}-${idx}`}
-                />
-              </div>
+                  getKey={(item) => item.store_code}
+               />
             </div>
           </div>
         </div>

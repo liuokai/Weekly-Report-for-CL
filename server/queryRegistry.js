@@ -91,6 +91,10 @@ const queryRegistry = {
     sql: loadSql('cash_flow_and_payback_period.sql'),
     description: '现金流与投资回收期（城市维度）'
   },
+  getCashFlowAndPaybackPeriodStore: {
+    sql: loadSql('cash_flow_and_payback_period_store.sql'),
+    description: '现金流与投资回收期（门店维度）'
+  },
   getCapitalSafetyLine: {
     sql: loadSql('capital_safety_line.sql'),
     description: '资金安全线（一个月房租+半个月工资）'
@@ -245,6 +249,10 @@ const queryRegistry = {
   getStaffServiceDurationBelowStandardCityMonthly: {
     sql: loadSql('staff_service_duration_below_standard_city_monthly.sql'),
     description: '按月、城市维度统计推拿师天均服务时长不达标占比（含去年同期与同比），近12个月'
+  },
+  getStoreCalCity: {
+    sql: loadSql('store_cal_city.sql'),
+    description: '城市维度门店数量与预算执行情况'
   },
 };
 
