@@ -3,56 +3,25 @@ import cacheManager from './cacheManager';
 // List of all query keys used in the application
 // This should ideally be synced with server/queryRegistry.js
 export const PRELOAD_QUERIES = [
+  // 核心指标
   'getTurnoverOverview',
+  // 营业额图表
   'getWeeklyTurnover',
-  'getWeeklyTurnoverCum',
-  'getWeeklyTurnoverAvgDay',
+  // 营收拆解
   'getCityTurnover',
-  'getWeeklyAvgPriceYTD',
-  'getWeeklyAvgPrice',
-  'getCityAnnualAvgPrice',
+  // 客单价拆解 (默认视图)
   'getAnnualAvgPrice',
-  'getCityWeeklyAvgPriceYTD',
-  'getStoreWeeklyAvgPriceYTD',
+  'getCityAnnualAvgPrice',
+  'getWeeklyAvgPriceYTD',
+  // 回头率 (默认 Process Metric)
   'getRepurchaseRateAnnual',
   'getRepurchaseRateWeekly',
   'getRepurchaseRateCityWeekly',
-  'getRepurchaseRateStoreWeekly',
-  'getCityStoreWeeklyTurnover',
-  'getProfitYearly',
-  'getProfitTrend',
-  'getCashFlowAndPaybackPeriod',
-  'getCapitalSafetyLine',
-  'getCapitalSafetyLineCity',
-  'getNewEmpReturnComplianceAnnual',
-  'getNewEmpReturnComplianceMonthly',
-  'getNewEmpReturnComplianceCityAnnual',
-  'getNewEmpReturnComplianceCityMonthly',
-  'getNewEmpReturnComplianceStoreAnnual',
-  'getEmployeeOutputStandardRateMonthly',
-  'getEmployeeOutputStandardRateCityMonthly',
-  'getEmployeeOutputStandardRateStoreMonthly',
-  'getBedStaffRatioAnnual',
-  'getBedStaffRatioWeekly',
-  'getBedStaffRatioCityAnnual',
-  'getBedStaffRatioCityWeekly',
-  'getBedStaffRatioStoreAnnual',
+  // 客次量拆解 (默认视图)
   'getUserVisitCountAnnual',
   'getUserVisitCountDailyAvgMonthly',
-  'getUserVisitCountCumMonthly',
   'getStaffServiceDurationMonthly',
-  'getStaffServiceDurationCityMonthly',
-  'getStaffServiceDurationBelowStandardMonthly',
-  'getStaffServiceDurationBelowStandardCityMonthly',
-  'getActiveUserMonthlyYoy',
-  'getActiveUserCityMonthlyYoy',
-  'getMemberChurnRateMonthlyYoy',
-  'getMemberChurnRateCityMonthlyYoy',
-  'getActiveReviewRateMonthlyYoy',
-  'getActiveReviewRateCityMonthlyYoy',
-  'getActiveReviewRateStoreMonthlyYoy',
-  'getActiveUserStoreMonthlyYoy',
-  'getMemberChurnRateStoreMonthlyYoy'
+  'getStaffServiceDurationCityMonthly'
 ];
 
 class DataLoader {

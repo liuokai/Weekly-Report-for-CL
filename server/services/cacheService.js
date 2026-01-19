@@ -1,7 +1,7 @@
 const NodeCache = require('node-cache');
 
 // Initialize cache with standard TTL of 1 hour (3600 seconds)
-const cache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
+const cache = new NodeCache({ stdTTL: 7200, checkperiod: 600 });
 
 /**
  * Generate a unique cache key based on query key and params

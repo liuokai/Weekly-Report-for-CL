@@ -26,28 +26,28 @@ const VolumeDecompositionContainer = () => {
 
   // Fetch Data
   const { data: annualVisitData } = useFetchData('getUserVisitCountAnnual', []);
-  const { data: dailyAvgVisitMonthlyData } = useFetchData('getUserVisitCountDailyAvgMonthly', []);
-  const { data: cumVisitMonthlyData } = useFetchData('getUserVisitCountCumMonthly', []);
+  const { data: dailyAvgVisitMonthlyData } = useFetchData('getUserVisitCountDailyAvgMonthly', [], null, { manual: trendMetric !== 'daily' });
+  const { data: cumVisitMonthlyData } = useFetchData('getUserVisitCountCumMonthly', [], null, { manual: trendMetric !== 'cumulative' });
   // 旧的城市下钻数据源移除，统一使用新的真实数据源（各指标按月/城市/门店）
   // 推拿师天均服务时长（新的真实数据源）
-  const { data: staffDurationMonthly } = useFetchData('getStaffServiceDurationMonthly', []);
-  const { data: staffDurationCityMonthly } = useFetchData('getStaffServiceDurationCityMonthly', []);
-  const { data: staffDurationStoreMonthly } = useFetchData('getStaffServiceDurationStoreMonthly', { city: selectedCity });
+  const { data: staffDurationMonthly } = useFetchData('getStaffServiceDurationMonthly', [], null, { manual: influenceMetric !== 'duration' });
+  const { data: staffDurationCityMonthly } = useFetchData('getStaffServiceDurationCityMonthly', [], null, { manual: influenceMetric !== 'duration' });
+  const { data: staffDurationStoreMonthly } = useFetchData('getStaffServiceDurationStoreMonthly', { city: selectedCity }, null, { manual: !(selectedCity && influenceMetric === 'duration') });
   // 推拿师天均服务时长不达标占比（真实数据源）
-  const { data: staffDurationBelowStandardMonthly } = useFetchData('getStaffServiceDurationBelowStandardMonthly', []);
-  const { data: staffDurationBelowStandardCityMonthly } = useFetchData('getStaffServiceDurationBelowStandardCityMonthly', []);
+  const { data: staffDurationBelowStandardMonthly } = useFetchData('getStaffServiceDurationBelowStandardMonthly', [], null, { manual: influenceMetric !== 'compliance' });
+  const { data: staffDurationBelowStandardCityMonthly } = useFetchData('getStaffServiceDurationBelowStandardCityMonthly', [], null, { manual: influenceMetric !== 'compliance' });
   // 活跃会员数（真实数据源）
-  const { data: activeUserMonthlyYoy } = useFetchData('getActiveUserMonthlyYoy', []);
-  const { data: activeUserCityMonthlyYoy } = useFetchData('getActiveUserCityMonthlyYoy', []);
-  const { data: activeUserStoreMonthlyYoy } = useFetchData('getActiveUserStoreMonthlyYoy', { city: selectedCity });
+  const { data: activeUserMonthlyYoy } = useFetchData('getActiveUserMonthlyYoy', [], null, { manual: influenceMetric !== 'active_members' });
+  const { data: activeUserCityMonthlyYoy } = useFetchData('getActiveUserCityMonthlyYoy', [], null, { manual: influenceMetric !== 'active_members' });
+  const { data: activeUserStoreMonthlyYoy } = useFetchData('getActiveUserStoreMonthlyYoy', { city: selectedCity }, null, { manual: !(selectedCity && influenceMetric === 'active_members') });
   // 会员流失率（真实数据源）
-  const { data: memberChurnMonthlyYoy } = useFetchData('getMemberChurnRateMonthlyYoy', []);
-  const { data: memberChurnCityMonthlyYoy } = useFetchData('getMemberChurnRateCityMonthlyYoy', []);
-  const { data: memberChurnStoreMonthlyYoy } = useFetchData('getMemberChurnRateStoreMonthlyYoy', { city: selectedCity });
+  const { data: memberChurnMonthlyYoy } = useFetchData('getMemberChurnRateMonthlyYoy', [], null, { manual: influenceMetric !== 'churn_rate' });
+  const { data: memberChurnCityMonthlyYoy } = useFetchData('getMemberChurnRateCityMonthlyYoy', [], null, { manual: influenceMetric !== 'churn_rate' });
+  const { data: memberChurnStoreMonthlyYoy } = useFetchData('getMemberChurnRateStoreMonthlyYoy', { city: selectedCity }, null, { manual: !(selectedCity && influenceMetric === 'churn_rate') });
   // 主动评价率（真实数据源）
-  const { data: activeReviewRateMonthlyYoy } = useFetchData('getActiveReviewRateMonthlyYoy', []);
-  const { data: activeReviewRateCityMonthlyYoy } = useFetchData('getActiveReviewRateCityMonthlyYoy', []);
-  const { data: activeReviewRateStoreMonthlyYoy } = useFetchData('getActiveReviewRateStoreMonthlyYoy', { city: selectedCity });
+  const { data: activeReviewRateMonthlyYoy } = useFetchData('getActiveReviewRateMonthlyYoy', [], null, { manual: influenceMetric !== 'review_rate' });
+  const { data: activeReviewRateCityMonthlyYoy } = useFetchData('getActiveReviewRateCityMonthlyYoy', [], null, { manual: influenceMetric !== 'review_rate' });
+  const { data: activeReviewRateStoreMonthlyYoy } = useFetchData('getActiveReviewRateStoreMonthlyYoy', { city: selectedCity }, null, { manual: !(selectedCity && influenceMetric === 'review_rate') });
 
   const { data: cityBreakdownData } = useFetchData('getVolumeCityBreakdown');
 

@@ -86,17 +86,11 @@ const WeeklyReport = () => {
 
         {/* 内容区域 */}
         <div className="bg-white rounded-lg shadow p-4 md:p-6 min-h-[400px]">
-          {isPrefetching ? (
-            <div className="flex justify-center items-center h-[320px] text-gray-400">数据加载中...</div>
-          ) : (
-            <>
-              {activeTab === 0 && <TurnoverReport />}
-              
-              {activeTab === 1 && <CostAndProfitTab />}
+          {activeTab === 0 && <TurnoverReport />}
+          
+          {activeTab === 1 && <CostAndProfitTab />}
 
-              {activeTab === 2 && <CashFlowTab />}
-            </>
-          )}
+          {activeTab === 2 && <CashFlowTab />}
         </div>
       </main>
     </div>

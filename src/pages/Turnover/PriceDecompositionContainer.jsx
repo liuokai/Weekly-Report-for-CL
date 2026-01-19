@@ -45,33 +45,33 @@ const PriceDecompositionContainer = () => {
   // Fetch annual average price data
   const { data: annualPriceData } = useFetchData('getAnnualAvgPrice');
   // Fetch city weekly average price data
-  const { data: cityWeeklyData } = useFetchData('getCityWeeklyAvgPriceYTD');
+  const { data: cityWeeklyData } = useFetchData('getCityWeeklyAvgPriceYTD', [], null, { manual: true });
   // Fetch store weekly average price data
-  const { data: storeWeeklyData } = useFetchData('getStoreWeeklyAvgPriceYTD');
+  const { data: storeWeeklyData } = useFetchData('getStoreWeeklyAvgPriceYTD', [], null, { manual: true });
 
   // New hooks for Repurchase Rate
-  const { data: repurchaseAnnual } = useFetchData('getRepurchaseRateAnnual');
-  const { data: repurchaseWeekly } = useFetchData('getRepurchaseRateWeekly');
-  const { data: repurchaseCityWeekly } = useFetchData('getRepurchaseRateCityWeekly');
-  const { data: repurchaseStoreWeekly } = useFetchData('getRepurchaseRateStoreWeekly');
+  const { data: repurchaseAnnual } = useFetchData('getRepurchaseRateAnnual', [], null, { manual: procMetric !== 'returnRate' });
+  const { data: repurchaseWeekly } = useFetchData('getRepurchaseRateWeekly', [], null, { manual: procMetric !== 'returnRate' });
+  const { data: repurchaseCityWeekly } = useFetchData('getRepurchaseRateCityWeekly', [], null, { manual: procMetric !== 'returnRate' });
+  const { data: repurchaseStoreWeekly } = useFetchData('getRepurchaseRateStoreWeekly', [], null, { manual: !(isModalOpen && procMetric === 'returnRate') });
   // 新增：新员工回头率达标率数据源
-  const { data: newEmpAnnual } = useFetchData('getNewEmpReturnComplianceAnnual');
-  const { data: newEmpMonthly } = useFetchData('getNewEmpReturnComplianceMonthly');
-  const { data: newEmpCityAnnual } = useFetchData('getNewEmpReturnComplianceCityAnnual');
-  const { data: newEmpCityMonthly } = useFetchData('getNewEmpReturnComplianceCityMonthly');
-  const { data: newEmpStoreAnnual } = useFetchData('getNewEmpReturnComplianceStoreAnnual');
+  const { data: newEmpAnnual } = useFetchData('getNewEmpReturnComplianceAnnual', [], null, { manual: procMetric !== 'newEmpReturn' });
+  const { data: newEmpMonthly } = useFetchData('getNewEmpReturnComplianceMonthly', [], null, { manual: procMetric !== 'newEmpReturn' });
+  const { data: newEmpCityAnnual } = useFetchData('getNewEmpReturnComplianceCityAnnual', [], null, { manual: procMetric !== 'newEmpReturn' });
+  const { data: newEmpCityMonthly } = useFetchData('getNewEmpReturnComplianceCityMonthly', [], null, { manual: procMetric !== 'newEmpReturn' });
+  const { data: newEmpStoreAnnual } = useFetchData('getNewEmpReturnComplianceStoreAnnual', [], null, { manual: !(isModalOpen && procMetric === 'newEmpReturn') });
 
   
   // Bed Staff Ratio Data (Added for configRatio metric)
-  const { data: bedStaffRatioAnnual } = useFetchData('getBedStaffRatioAnnual');
-  const { data: bedStaffRatioWeekly } = useFetchData('getBedStaffRatioWeekly');
-  const { data: bedStaffRatioCityAnnual } = useFetchData('getBedStaffRatioCityAnnual');
-  const { data: bedStaffRatioCityWeekly } = useFetchData('getBedStaffRatioCityWeekly');
-  const { data: bedStaffRatioStoreAnnual } = useFetchData('getBedStaffRatioStoreAnnual');
+  const { data: bedStaffRatioAnnual } = useFetchData('getBedStaffRatioAnnual', [], null, { manual: procMetric !== 'configRatio' });
+  const { data: bedStaffRatioWeekly } = useFetchData('getBedStaffRatioWeekly', [], null, { manual: procMetric !== 'configRatio' });
+  const { data: bedStaffRatioCityAnnual } = useFetchData('getBedStaffRatioCityAnnual', [], null, { manual: procMetric !== 'configRatio' });
+  const { data: bedStaffRatioCityWeekly } = useFetchData('getBedStaffRatioCityWeekly', [], null, { manual: procMetric !== 'configRatio' });
+  const { data: bedStaffRatioStoreAnnual } = useFetchData('getBedStaffRatioStoreAnnual', [], null, { manual: !(isModalOpen && procMetric === 'configRatio') });
   // 推拿师产值达标率（月度/城市月度/门店月度）
-  const { data: empOutputMonthly } = useFetchData('getEmployeeOutputStandardRateMonthly');
-  const { data: empOutputCityMonthly } = useFetchData('getEmployeeOutputStandardRateCityMonthly');
-  const { data: empOutputStoreMonthly } = useFetchData('getEmployeeOutputStandardRateStoreMonthly');
+  const { data: empOutputMonthly } = useFetchData('getEmployeeOutputStandardRateMonthly', [], null, { manual: procMetric !== 'therapistYield' });
+  const { data: empOutputCityMonthly } = useFetchData('getEmployeeOutputStandardRateCityMonthly', [], null, { manual: procMetric !== 'therapistYield' });
+  const { data: empOutputStoreMonthly } = useFetchData('getEmployeeOutputStandardRateStoreMonthly', [], null, { manual: !(isModalOpen && procMetric === 'therapistYield') });
 
   const [modalContextCity, setModalContextCity] = useState(null);
   

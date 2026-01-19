@@ -146,39 +146,31 @@ const TurnoverReport = () => {
         }
       }
 
-        // 2. Prefetch other chart data (Optional but good for "Sequential" loading)
-        // These are normally fetched by sub-components (WeeklyTurnoverChart, etc.)
-        // But if we want to ensure they are done BEFORE AI starts, we should wait for the queue to drain.
-        // Since we can't easily know when sub-components finish, we can just trigger AI now,
-        // but since dataLoader has a queue, AI request will naturally be queued behind pending requests
-        // IF sub-components fire them immediately.
-        
-        // However, user specifically asked to wait until all data queries are done.
-        // A simple heuristic: Wait a short moment for sub-components to mount and push their requests,
-        // then check dataLoader status or just push AI request to end of queue.
-        
+        // 2. Wait for other critical queries that are visible on first screen
+        // This ensures data loading has priority over AI (User Requirement 3)
+        if (isMounted) {
+          try {
+            await Promise.all([
+               // Weekly Turnover Chart (Default)
+               dataLoader.fetchData('getWeeklyTurnover', []),
+               // Revenue Decomposition (City List)
+               dataLoader.fetchData('getCityTurnover', []),
+               // Price Overview
+               dataLoader.fetchData('getAnnualAvgPrice', []),
+               // Price Table (Default)
+               dataLoader.fetchData('getCityAnnualAvgPrice', []),
+               // Volume Overview
+               dataLoader.fetchData('getUserVisitCountAnnual', [])
+            ]);
+          } catch (e) {
+            console.warn('Prefetch secondary critical data failed', e);
+            // We continue to trigger AI even if some data failed, 
+            // as we don't want to block AI forever.
+          }
+        }
+
         if (isMounted && difyService.isEnabled) {
            // Signal AI to start. 
-           // Because AI request goes through axios directly (in AiAnalysisBox), not dataLoader,
-           // we should ideally wait. 
-           // But AiAnalysisBox now respects 'shouldAnalyze' prop.
-           
-           // We'll use a small timeout to allow sub-components to mount and initiate their fetches.
-           // Since dataLoader limits concurrency, those fetches will occupy the slots.
-           // But AiAnalysisBox uses its own axios call, so it might compete if we don't be careful.
-           // Ideally AiAnalysisBox should ALSO use dataLoader or we rely on the browser/server to handle it.
-           // Given the user's specific request "perform queries sequentially", 
-           // and "start AI after all data done".
-           
-           // Let's rely on the fact that we just finished the main critical query.
-           // Sub-components (WeeklyTurnoverChart etc) will use useFetchData -> dataLoader.
-           // We can't easily wait for *them* here without lifting state.
-           // BUT, we can set shouldTriggerAi to true, and in AiAnalysisBox we can add a small delay
-           // or we can trust that since the critical data is loaded, the page is usable.
-           
-           // To strictly follow "after all data", we would need a global "loading" state for the page.
-           // For now, let's trigger it here, which is "after *this* component's data is done".
-           // This is a significant improvement over "on mount".
            setShouldTriggerAi(true);
         }
 
