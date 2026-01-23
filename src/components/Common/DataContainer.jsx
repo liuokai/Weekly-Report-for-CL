@@ -8,6 +8,7 @@ const DataContainer = ({
   enableAiAnalysis = false, // 是否启用AI分析组件，默认为false
   renderFilters, 
   renderContent,
+  children,
   className = "",
   maxHeight = "500px"  // 默认最大高度为500px
 }) => {
@@ -26,7 +27,7 @@ const DataContainer = ({
     }, 0);
     
     return () => clearTimeout(timer);
-  }, [data, maxHeight, renderContent]);
+  }, [data, maxHeight, renderContent, children]);
 
   // 点击外部关闭下拉框的逻辑
   useEffect(() => {
@@ -58,7 +59,7 @@ const DataContainer = ({
           overflowY: isScrollable ? 'auto' : 'visible'
         }}
       >
-        {renderContent ? renderContent() : <div>暂无内容</div>}
+        {children ? children : (renderContent ? renderContent() : <div>暂无内容</div>)}
       </div>
     </div>
   );
