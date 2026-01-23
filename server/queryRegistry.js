@@ -248,6 +248,10 @@ const queryRegistry = {
     sql: loadSql('closing_store_list.sql'),
     description: '闭店预警门店列表'
   },
+  getCashFlowNewStoreProcess: {
+    sql: loadSql('cash_flow_new_store_process.sql'),
+    description: '新店目标完成情况'
+  },
 };
 
 module.exports = queryRegistry;
