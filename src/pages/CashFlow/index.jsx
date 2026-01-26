@@ -1,27 +1,145 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import useFetchData from '../../hooks/useFetchData';
 import DataTable from '../../components/Common/DataTable';
 import DataContainer from '../../components/Common/DataContainer';
+import useTableSorting from '../../components/Common/useTableSorting';
+
+const FilterDropdown = ({ label, value, options, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // 检查当前筛选项是否有选中值，用于高亮触发按钮
+  const isSelected = value !== null && value !== undefined;
+
+          return (
+            <div className={`relative inline-block text-left mr-4 ${isOpen ? 'z-50' : 'z-10'}`} ref={dropdownRef}>
+              <button
+                type="button"
+                className={`inline-flex justify-between w-40 rounded-md border shadow-sm px-4 py-2 bg-white text-sm font-medium focus:outline-none ${
+                  isSelected 
+            ? 'border-[#a40035] text-[#a40035]' 
+            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+        }`}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {value || `全部${label}`}
+        <svg 
+          className={`-mr-1 ml-2 h-5 w-5 ${isSelected ? 'text-[#a40035]' : 'text-gray-500'}`} 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 20 20" 
+          fill="currentColor"
+        >
+          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="origin-top-left absolute left-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 max-h-60 overflow-y-auto z-50">
+          <div className="py-1">
+            <button
+                className={`block w-full text-left px-4 py-2 text-sm ${
+                    !value 
+                        ? 'bg-[#a40035] text-white' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                onClick={() => { onChange(null); setIsOpen(false); }}
+            >
+                全部{label}
+            </button>
+            {options.map((opt) => (
+              <button
+                key={opt}
+                className={`block w-full text-left px-4 py-2 text-sm ${
+                    value === opt 
+                        ? 'bg-[#a40035] text-white' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                onClick={() => { onChange(opt); setIsOpen(false); }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CashFlowTab = () => {
   const { data: newStoreProcessData } = useFetchData('getCashFlowNewStoreProcess');
+  
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [selectedCity, setSelectedCity] = useState(null);
 
-  const processedData = useMemo(() => {
-    if (!Array.isArray(newStoreProcessData)) return [];
+  // 提取筛选选项
+  const { uniqueMonths, uniqueCities } = useMemo(() => {
+    if (!Array.isArray(newStoreProcessData)) return { uniqueMonths: [], uniqueCities: [] };
     
-    // 获取最新月份
-    const months = Array.from(new Set(newStoreProcessData.map(r => r.month))).sort();
-    const latestMonth = months[months.length - 1];
+    const months = new Set();
+    const cities = new Set();
     
-    // 过滤最新月份数据
-    const currentMonthData = newStoreProcessData.filter(r => r.month === latestMonth);
+    newStoreProcessData.forEach(item => {
+      if (item.month) months.add(item.month);
+      if (item.city_name) cities.add(item.city_name);
+    });
+    
+    return {
+      uniqueMonths: Array.from(months).sort(),
+      uniqueCities: Array.from(cities).sort()
+    };
+  }, [newStoreProcessData]);
 
-    // 计算合计行
-    const totalNewTarget = currentMonthData.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
-    const totalNewActual = currentMonthData.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
-    const totalReinstallTarget = currentMonthData.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
-    const totalReinstallActual = currentMonthData.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
-    const totalStores = currentMonthData.reduce((sum, r) => sum + (Number(r['门店数量']) || 0), 0);
+  const { rows, summaryRow } = useMemo(() => {
+    if (!Array.isArray(newStoreProcessData)) return { rows: [], summaryRow: null };
+    
+    // 1. 过滤数据
+    const filteredData = newStoreProcessData.filter(item => {
+      const matchMonth = selectedMonth ? item.month === selectedMonth : true;
+      const matchCity = selectedCity ? item.city_name === selectedCity : true;
+      return matchMonth && matchCity;
+    });
+
+    if (filteredData.length === 0) return { rows: [], summaryRow: null };
+
+    // 2. 排序 (默认按月份排序)
+    const sortedFilteredData = [...filteredData].sort((a, b) => {
+      const monthA = a.month || '';
+      const monthB = b.month || '';
+      return monthA.localeCompare(monthB);
+    });
+
+    // 3. 计算合计行 (基于筛选后的数据)
+    const totalNewTarget = sortedFilteredData.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
+    const totalNewActual = sortedFilteredData.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
+    const totalReinstallTarget = sortedFilteredData.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
+    const totalReinstallActual = sortedFilteredData.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
+    
+    // 计算门店总数：
+    // 如果筛选了特定月份，则取该月份的总和（因为不同城市在同一月份的数据相加是有意义的）
+    // 如果没有筛选月份（即跨月数据），通常取最新月份的数据比较合理（因为门店数是存量概念，不是流量概念）
+    // 但是这里如果用户选择了“北京”，展示了1-12月的数据，底部的“门店数量”合计如果只显示12月的，可能会让用户疑惑（虽然是正确的）
+    // 这里我们采取的策略是：找出筛选结果中出现的所有月份，取最后一个月份（最新月份）的数据进行求和。
+    // 这意味着如果用户选了“全部月份”，显示的是最新月份的门店总数。
+    // 如果用户选了“1月”，显示的是1月的门店总数。
+    
+    const monthsInFilter = Array.from(new Set(sortedFilteredData.map(r => r.month))).sort();
+    const latestMonthInFilter = monthsInFilter[monthsInFilter.length - 1];
+    const latestMonthData = sortedFilteredData.filter(r => r.month === latestMonthInFilter);
+    const currentTotalStores = latestMonthData.reduce((sum, r) => sum + (Number(r['门店数量']) || 0), 0);
 
     // 计算合计行状态逻辑 (参考 SQL 逻辑)
     const getSummaryStatus = (target, actual) => {
@@ -33,21 +151,21 @@ const CashFlowTab = () => {
       return null;
     };
 
-    const summaryRow = {
-      month: latestMonth,
-      city_name: '合计',
+    const summary = {
+      month: '合计', 
+      city_name: '-',
       '新店目标': totalNewTarget,
       '新店数量': totalNewActual,
       '新店目标完成情况': getSummaryStatus(totalNewTarget, totalNewActual),
       '重装目标': totalReinstallTarget,
       '重装数量': totalReinstallActual,
       '重装目标完成情况': getSummaryStatus(totalReinstallTarget, totalReinstallActual),
-      '门店数量': totalStores,
-      isSummary: true // 标记为合计行，用于样式处理
+      '门店数量': currentTotalStores, 
+      isSummary: true
     };
 
-    return [...currentMonthData, summaryRow];
-  }, [newStoreProcessData]);
+    return { rows: sortedFilteredData, summaryRow: summary };
+  }, [newStoreProcessData, selectedMonth, selectedCity]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -89,35 +207,115 @@ const CashFlowTab = () => {
     { key: 'total_store_num', title: '门店数量', dataIndex: '门店数量', align: 'right' },
   ];
 
-  // 汇总统计逻辑（按月份聚合最新数据）
+  // 使用 useTableSorting 钩子实现排序
+  // 注意：只对数据行进行排序，不包含合计行
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, rows);
+
+  // 汇总统计逻辑（始终基于最新月份数据展示卡片，不随表格排序或过滤变化，除非需要联动）
   const summaryMetrics = useMemo(() => {
-    if (!processedData.length) return null;
+    if (!newStoreProcessData || !newStoreProcessData.length) return null;
     
-    // 找到合计行
-    const summaryRow = processedData.find(r => r.isSummary);
-    if (!summaryRow) return null;
+    // 获取最新月份
+    const months = Array.from(new Set(newStoreProcessData.map(r => r.month))).sort();
+    const latestMonth = months[months.length - 1];
+    
+    // 1. 计算门店总数：逻辑为按月份分组，取最后一个有数据的月份的合计值
+          // 由于数据可能是分城市的，需要先把所有数据按月份聚合
+          const monthlyStores = {};
+          newStoreProcessData.forEach(item => {
+            const m = item.month;
+            const num = Number(item['门店数量']) || 0;
+            if (!monthlyStores[m]) monthlyStores[m] = 0;
+            monthlyStores[m] += num;
+          });
 
-    const totalNewTarget = summaryRow['新店目标'];
-    const totalNewActual = summaryRow['新店数量'];
-    const totalReinstallTarget = summaryRow['重装目标'];
-    const totalReinstallActual = summaryRow['重装数量'];
-    const totalStores = summaryRow['门店数量'];
+          // 找到最后一个门店数量合计 > 0 的月份
+          const sortedMonths = Object.keys(monthlyStores).sort();
+          let validStoreMonth = null;
+          let totalStores = 0;
+          
+          for (let i = sortedMonths.length - 1; i >= 0; i--) {
+            const m = sortedMonths[i];
+            if (monthlyStores[m] > 0) {
+              validStoreMonth = m;
+              totalStores = monthlyStores[m];
+              break;
+            }
+          }
 
-    return {
-      month: summaryRow.month,
-      totalStores,
-      newStore: {
-        target: totalNewTarget,
-        actual: totalNewActual,
-        rate: totalNewTarget > 0 ? Math.round((totalNewActual / totalNewTarget) * 100) : 0
-      },
-      reinstall: {
-        target: totalReinstallTarget,
-        actual: totalReinstallActual,
-        rate: totalReinstallTarget > 0 ? Math.round((totalReinstallActual / totalReinstallTarget) * 100) : 0
-      }
-    };
-  }, [processedData]);
+          // 获取当前系统时间，用于计算截止当前月的进度
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth() + 1;
+          const currentSysMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+          const currentSysMonthDisplay = `${currentYear} 年 ${currentMonth} 月`;
+
+          // 2. 计算新店和重装的全年目标与实际
+          // 过滤当年数据（假设数据中的年份与系统年份一致，或者直接取数据中的年份）
+          // 这里使用系统年份作为基准
+          const currentYearData = newStoreProcessData.filter(r => r.month.startsWith(String(currentYear)));
+          
+          const totalNewTarget = currentYearData.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
+          const totalNewActual = currentYearData.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
+          const totalReinstallTarget = currentYearData.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
+          const totalReinstallActual = currentYearData.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
+
+          // 3. 计算截止当前月份（currentSysMonthStr）的目标与实际
+          // 取从当年 1 月至当前月份这段时间的数据
+          const dataUpToNow = currentYearData.filter(r => r.month <= currentSysMonthStr);
+          
+          const currentNewTarget = dataUpToNow.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
+          const currentNewActual = dataUpToNow.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
+          const currentReinstallTarget = dataUpToNow.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
+          const currentReinstallActual = dataUpToNow.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
+
+          // 计算完成率的辅助函数
+          const calculateRate = (actual, target) => {
+            if (target > 0) return Math.round((actual / target) * 100);
+            if (target === 0 && actual > 0) return 100;
+            return 0;
+          };
+
+          return {
+            month: latestMonth,
+            currentSysMonthDisplay,
+            totalStores,
+            validStoreMonth,
+            newStore: {
+              totalTarget: totalNewTarget,
+              totalActual: totalNewActual,
+              totalRate: calculateRate(totalNewActual, totalNewTarget),
+              currentTarget: currentNewTarget,
+              currentActual: currentNewActual,
+              currentRate: calculateRate(currentNewActual, currentNewTarget)
+            },
+            reinstall: {
+              totalTarget: totalReinstallTarget,
+              totalActual: totalReinstallActual,
+              totalRate: calculateRate(totalReinstallActual, totalReinstallTarget),
+              currentTarget: currentReinstallTarget,
+              currentActual: currentReinstallActual,
+              currentRate: calculateRate(currentReinstallActual, currentReinstallTarget)
+            }
+          };
+        }, [newStoreProcessData]);
+
+  const renderFilters = () => (
+    <div className="flex flex-row relative z-40">
+        <FilterDropdown 
+            label="月份" 
+            value={selectedMonth} 
+            options={uniqueMonths} 
+            onChange={setSelectedMonth} 
+        />
+        <FilterDropdown 
+            label="城市" 
+            value={selectedCity} 
+            options={uniqueCities} 
+            onChange={setSelectedCity} 
+        />
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -125,93 +323,127 @@ const CashFlowTab = () => {
       {summaryMetrics && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* 门店总数卡片 */}
-          <div className="bg-gradient-to-br from-[#a40035] to-[#c81f52] rounded-xl shadow-md p-6 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2V9h-2V7h8v12zm-2-8h-2v2h2V9zm0 4h-2v2h2v-2z"/></svg>
+          <div className="bg-gradient-to-br from-[#a40035] to-[#c81f52] rounded-xl shadow-md p-6 text-white relative overflow-hidden h-40">
+            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+              <svg className="w-32 h-32 transform translate-x-4 -translate-y-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2V9h-2V7h8v12zm-2-8h-2v2h2V9zm0 4h-2v2h2v-2z"/></svg>
             </div>
-            <div className="relative z-10">
-              <p className="text-white/80 text-sm font-medium mb-1">当前门店总数</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold">{summaryMetrics.totalStores}</span>
-                <span className="text-sm">家</span>
+            {/* 左上角标题 */}
+            <div className="absolute top-6 left-6 z-10">
+              <p className="text-white/80 text-lg font-medium">当前门店总数</p>
+            </div>
+            {/* 右下角数值 - 稍微向左上移动 */}
+            <div className="absolute bottom-10 right-16 z-10">
+              <div className="flex items-baseline justify-end gap-2">
+                <span className="text-6xl font-bold">{summaryMetrics.totalStores}</span>
+                <span className="text-2xl font-medium text-white/90">家</span>
               </div>
-              <p className="mt-4 text-xs bg-white/20 inline-block px-2 py-1 rounded">
-                统计截止：{summaryMetrics.month}
-              </p>
             </div>
           </div>
 
-          {/* 新店指标卡片 */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-gray-600 font-medium">新店开发进度</h4>
-                <span className={`px-2 py-1 rounded text-xs font-bold ${
-                  summaryMetrics.newStore.actual >= summaryMetrics.newStore.target 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-red-50 text-[#a40035]'
-                }`}>
-                  {summaryMetrics.newStore.actual >= summaryMetrics.newStore.target ? '达成目标' : '需努力'}
-                </span>
-              </div>
-              <div className="flex items-end justify-between mb-2">
-                <div>
-                  <span className="text-3xl font-bold text-gray-800">{summaryMetrics.newStore.actual}</span>
-                  <span className="text-gray-500 text-sm ml-1">/ {summaryMetrics.newStore.target} 家</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm text-gray-500 block">完成率</span>
-                  <span className="text-xl font-bold text-[#a40035]">{summaryMetrics.newStore.rate}%</span>
-                </div>
-              </div>
+          {/* 新店开发进度卡片 */}
+          <div className="bg-white rounded-xl shadow-md p-6 flex flex-col justify-between h-40 relative overflow-hidden">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-gray-800 font-bold text-lg">新店开发进度</h3>
+              <div className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">实际值 / 目标值</div>
             </div>
-            {/* 进度条 */}
-            <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-              <div 
-                className="bg-[#a40035] h-2 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(summaryMetrics.newStore.rate, 100)}%` }}
-              ></div>
+            
+            <div className="flex-1 flex flex-col justify-center space-y-1">
+              {/* 全年进度 */}
+              <div>
+                <div className="flex justify-between text-sm mb-1.5">
+                  <span className="text-gray-600">全年新店目标进度</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-[#a40035]">{summaryMetrics.newStore.totalRate}%</span>
+                    <span className="font-bold text-[#a40035] text-xs">{summaryMetrics.newStore.totalActual} / {summaryMetrics.newStore.totalTarget}</span>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2.5">
+                  <div 
+                    className="bg-[#a40035] h-2.5 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(summaryMetrics.newStore.totalRate, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* 截止当前月进度 */}
+              <div>
+                <div className="flex justify-between text-sm mb-1.5">
+                  <span className="text-gray-600">截至 {summaryMetrics.currentSysMonthDisplay} 新店目标进度</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-[#a40035]">{summaryMetrics.newStore.currentRate}%</span>
+                    <span className="font-bold text-[#a40035] text-xs">{summaryMetrics.newStore.currentActual} / {summaryMetrics.newStore.currentTarget}</span>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2.5">
+                  <div 
+                    className="bg-[#a40035] h-2.5 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(summaryMetrics.newStore.currentRate, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* 重装指标卡片 */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-gray-600 font-medium">老店重装进度</h4>
-                <span className={`px-2 py-1 rounded text-xs font-bold ${
-                  summaryMetrics.reinstall.actual >= summaryMetrics.reinstall.target 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-blue-50 text-blue-600'
-                }`}>
-                  {summaryMetrics.reinstall.actual >= summaryMetrics.reinstall.target ? '达成目标' : '进行中'}
-                </span>
-              </div>
-              <div className="flex items-end justify-between mb-2">
-                <div>
-                  <span className="text-3xl font-bold text-gray-800">{summaryMetrics.reinstall.actual}</span>
-                  <span className="text-gray-500 text-sm ml-1">/ {summaryMetrics.reinstall.target} 家</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm text-gray-500 block">完成率</span>
-                  <span className="text-xl font-bold text-blue-600">{summaryMetrics.reinstall.rate}%</span>
-                </div>
-              </div>
+          {/* 老店重装进度卡片 */}
+          <div className="bg-white rounded-xl shadow-md p-6 flex flex-col justify-between h-40 relative overflow-hidden">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-gray-800 font-bold text-lg">老店重装进度</h3>
+              <div className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">实际值 / 目标值</div>
             </div>
-            {/* 进度条 */}
-            <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-              <div 
-                className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(summaryMetrics.reinstall.rate, 100)}%` }}
-              ></div>
+            
+            <div className="flex-1 flex flex-col justify-center space-y-1">
+              {/* 全年进度 */}
+              <div>
+                <div className="flex justify-between text-sm mb-1.5">
+                  <span className="text-gray-600">全年重装目标进度</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-800">{summaryMetrics.reinstall.totalRate}%</span>
+                    <span className="font-bold text-gray-800 text-xs">{summaryMetrics.reinstall.totalActual} / {summaryMetrics.reinstall.totalTarget}</span>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2.5">
+                  <div 
+                    className="bg-gray-800 h-2.5 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(summaryMetrics.reinstall.totalRate, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* 截止当前月进度 */}
+              <div>
+                <div className="flex justify-between text-sm mb-1.5">
+                  <span className="text-gray-600">截至 {summaryMetrics.currentSysMonthDisplay} 重装目标进度</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-800">{summaryMetrics.reinstall.currentRate}%</span>
+                    <span className="font-bold text-gray-800 text-xs">{summaryMetrics.reinstall.currentActual} / {summaryMetrics.reinstall.currentTarget}</span>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2.5">
+                  <div 
+                    className="bg-gray-800 h-2.5 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(summaryMetrics.reinstall.currentRate, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* 详细数据表格 - 使用 DataContainer 保持统一风格 */}
-      <DataContainer title="新店与重装目标完成情况详情">
-        <DataTable data={processedData} columns={columns} />
+      <DataContainer 
+        title="新店与重装目标完成情况详情"
+        renderFilters={renderFilters}
+        maxHeight="none" // 禁用 DataContainer 的内部滚动，移交给 DataTable
+      >
+        <DataTable 
+          data={sortedData} 
+          columns={columns} 
+          onSort={handleSort}
+          sortConfig={sortConfig}
+          summaryRow={summaryRow}
+          maxHeight={selectedMonth || selectedCity ? undefined : "500px"} // 当未筛选时，限制表格高度并启用内部滚动
+        />
       </DataContainer>
     </div>
   );

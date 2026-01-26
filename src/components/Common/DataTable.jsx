@@ -7,17 +7,22 @@ const DataTable = ({
   stickyHeader = true, 
   hideNoDataMessage = false,
   onSort,
-  sortConfig
+  sortConfig,
+  summaryRow,
+  maxHeight // 新增：支持自定义最大高度，启用内部滚动
 }) => {
   if (!data || data.length === 0) {
     if (hideNoDataMessage) return null;
     return <div className="text-center py-4 text-gray-500">暂无数据</div>;
   }
 
-  const theadClass = `bg-gray-50 ${stickyHeader ? 'sticky top-0' : ''}`;
+  const theadClass = `bg-gray-50 ${stickyHeader ? 'sticky top-0 z-10' : ''}`;
+  
+  // 容器样式：如果提供了 maxHeight，则启用纵向滚动
+  const containerStyle = maxHeight ? { maxHeight, overflowY: 'auto' } : {};
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" style={containerStyle}>
       <table className="min-w-full divide-y divide-gray-200">
         <thead className={theadClass}>
           <tr>
@@ -52,6 +57,18 @@ const DataTable = ({
               })()
             ))}
           </tr>
+          {summaryRow && (
+            <tr className="bg-white border-b border-gray-200 font-bold shadow-sm">
+              {columns.map(column => (
+                <td
+                  key={column.key}
+                  className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${column.align === 'right' ? 'text-right' : 'text-left'}`}
+                >
+                  {column.render ? column.render(summaryRow[column.dataIndex], summaryRow, -1) : (summaryRow[column.dataIndex] || '-')}
+                </td>
+              ))}
+            </tr>
+          )}
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {data.map((row, index) => (
