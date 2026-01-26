@@ -128,18 +128,37 @@ const CashFlowTab = () => {
     const totalReinstallTarget = sortedFilteredData.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
     const totalReinstallActual = sortedFilteredData.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
     
-    // 计算门店总数：
-    // 如果筛选了特定月份，则取该月份的总和（因为不同城市在同一月份的数据相加是有意义的）
-    // 如果没有筛选月份（即跨月数据），通常取最新月份的数据比较合理（因为门店数是存量概念，不是流量概念）
-    // 但是这里如果用户选择了“北京”，展示了1-12月的数据，底部的“门店数量”合计如果只显示12月的，可能会让用户疑惑（虽然是正确的）
-    // 这里我们采取的策略是：找出筛选结果中出现的所有月份，取最后一个月份（最新月份）的数据进行求和。
-    // 这意味着如果用户选了“全部月份”，显示的是最新月份的门店总数。
-    // 如果用户选了“1月”，显示的是1月的门店总数。
-    
-    const monthsInFilter = Array.from(new Set(sortedFilteredData.map(r => r.month))).sort();
-    const latestMonthInFilter = monthsInFilter[monthsInFilter.length - 1];
-    const latestMonthData = sortedFilteredData.filter(r => r.month === latestMonthInFilter);
-    const currentTotalStores = latestMonthData.reduce((sum, r) => sum + (Number(r['门店数量']) || 0), 0);
+    // 计算合计行中的“门店数量”
+    // - 当存在筛选条件时（按月份或城市筛选），基于筛选结果：
+    //   取筛选结果中最新月份的数据汇总门店数量
+    // - 当不存在筛选条件时，基于全量数据：
+    //   先按月汇总各城市的门店数量，再按月份排序，从后往前找到最后一个门店数量合计 > 0 的月份，
+    //   取该月份的门店数量合计值
+    let currentTotalStores = 0;
+
+    if (selectedMonth || selectedCity) {
+      const monthsInFilter = Array.from(new Set(sortedFilteredData.map(r => r.month))).sort();
+      const latestMonthInFilter = monthsInFilter[monthsInFilter.length - 1];
+      const latestMonthData = sortedFilteredData.filter(r => r.month === latestMonthInFilter);
+      currentTotalStores = latestMonthData.reduce((sum, r) => sum + (Number(r['门店数量']) || 0), 0);
+    } else {
+      const monthlyStores = {};
+      newStoreProcessData.forEach(item => {
+        const m = item.month;
+        const num = Number(item['门店数量']) || 0;
+        if (!monthlyStores[m]) monthlyStores[m] = 0;
+        monthlyStores[m] += num;
+      });
+
+      const sortedMonths = Object.keys(monthlyStores).sort();
+      for (let i = sortedMonths.length - 1; i >= 0; i--) {
+        const m = sortedMonths[i];
+        if (monthlyStores[m] > 0) {
+          currentTotalStores = monthlyStores[m];
+          break;
+        }
+      }
+    }
 
     // 计算合计行状态逻辑 (参考 SQL 逻辑)
     const getSummaryStatus = (target, actual) => {
