@@ -338,113 +338,155 @@ const CashFlowTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* 核心指标卡片 */}
+      {/* 核心指标整体容器 */}
       {summaryMetrics && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* 门店总数卡片 */}
-          <div className="bg-gradient-to-br from-[#a40035] to-[#c81f52] rounded-xl shadow-md p-6 text-white relative overflow-hidden h-40">
-            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-              <svg className="w-32 h-32 transform translate-x-4 -translate-y-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2V9h-2V7h8v12zm-2-8h-2v2h2V9zm0 4h-2v2h2v-2z"/></svg>
-            </div>
-            {/* 左上角标题 */}
-            <div className="absolute top-6 left-6 z-10">
-              <p className="text-white/80 text-lg font-medium">当前门店总数</p>
-            </div>
-            {/* 右下角数值 - 稍微向左上移动 */}
-            <div className="absolute bottom-10 right-16 z-10">
-              <div className="flex items-baseline justify-end gap-2">
-                <span className="text-6xl font-bold">{summaryMetrics.totalStores}</span>
-                <span className="text-2xl font-medium text-white/90">家</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 新店开发进度卡片 */}
-          <div className="bg-white rounded-xl shadow-md p-6 flex flex-col justify-between h-40 relative overflow-hidden">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-gray-800 font-bold text-lg">新店开发进度</h3>
-              <div className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">实际值 / 目标值</div>
-            </div>
+        <div className="bg-white rounded-2xl shadow-lg mb-8 overflow-hidden border border-gray-100">
+          <div className="flex flex-col md:flex-row">
             
-            <div className="flex-1 flex flex-col justify-center space-y-1">
-              {/* 全年进度 */}
-              <div>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="text-gray-600">全年新店目标进度</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-[#a40035]">{summaryMetrics.newStore.totalRate}%</span>
-                    <span className="font-bold text-[#a40035] text-xs">{summaryMetrics.newStore.totalActual} / {summaryMetrics.newStore.totalTarget}</span>
-                  </div>
+            {/* 左侧：新店开发进度 */}
+            <div className="flex-1 p-8 relative">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-[#a40035] rounded-full"></div>
+                  <h3 className="text-gray-900 font-bold text-xl tracking-tight">新店拓店</h3>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5">
-                  <div 
-                    className="bg-[#a40035] h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(summaryMetrics.newStore.totalRate, 100)}%` }}
-                  ></div>
-                </div>
+                <div className="text-[11px] text-[#a40035] font-semibold bg-[#a40035]/5 px-2.5 py-1 rounded-full border border-[#a40035]/10">实际值 / 目标值</div>
               </div>
-
-              {/* 截止当前月进度 */}
-              <div>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="text-gray-600">截至 {summaryMetrics.currentSysMonthDisplay} 新店目标进度</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-[#a40035]">{summaryMetrics.newStore.currentRate}%</span>
-                    <span className="font-bold text-[#a40035] text-xs">{summaryMetrics.newStore.currentActual} / {summaryMetrics.newStore.currentTarget}</span>
+              
+              <div className="space-y-6">
+                {/* 全年进度 */}
+                <div>
+                  <div className="flex justify-between text-sm mb-2.5 items-end">
+                    <span className="text-gray-500 font-medium">全年目标进度</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-[#a40035] text-lg leading-none">{summaryMetrics.newStore.totalRate}<span className="text-sm ml-0.5">%</span></span>
+                      <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-md">
+                        <span className="text-gray-700">{summaryMetrics.newStore.totalActual}</span>
+                        <span className="mx-1 text-gray-300">/</span>
+                        <span>{summaryMetrics.newStore.totalTarget}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3.5 overflow-hidden p-0.5">
+                    <div 
+                      className="bg-gradient-to-r from-[#a40035] to-[#d62055] h-full rounded-full transition-all duration-700 relative shadow-sm"
+                      style={{ width: `${Math.min(summaryMetrics.newStore.totalRate, 100)}%` }}
+                    >
+                      <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                    </div>
                   </div>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5">
-                  <div 
-                    className="bg-[#a40035] h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(summaryMetrics.newStore.currentRate, 100)}%` }}
-                  ></div>
+
+                {/* 截止当前月进度 */}
+                <div>
+                  <div className="flex justify-between text-sm mb-2.5 items-end">
+                    <span className="text-gray-500 font-medium">截至 {summaryMetrics.currentSysMonthDisplay} 进度</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-[#a40035] text-lg leading-none">{summaryMetrics.newStore.currentRate}<span className="text-sm ml-0.5">%</span></span>
+                      <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-md">
+                        <span className="text-gray-700">{summaryMetrics.newStore.currentActual}</span>
+                        <span className="mx-1 text-gray-300">/</span>
+                        <span>{summaryMetrics.newStore.currentTarget}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3.5 overflow-hidden p-0.5">
+                    <div 
+                      className="bg-gradient-to-r from-[#a40035] to-[#d62055] h-full rounded-full transition-all duration-700 relative shadow-sm"
+                      style={{ width: `${Math.min(summaryMetrics.newStore.currentRate, 100)}%` }}
+                    >
+                       <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* 老店重装进度卡片 */}
-          <div className="bg-white rounded-xl shadow-md p-6 flex flex-col justify-between h-40 relative overflow-hidden">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-gray-800 font-bold text-lg">老店重装进度</h3>
-              <div className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">实际值 / 目标值</div>
-            </div>
-            
-            <div className="flex-1 flex flex-col justify-center space-y-1">
-              {/* 全年进度 */}
-              <div>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="text-gray-600">全年重装目标进度</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800">{summaryMetrics.reinstall.totalRate}%</span>
-                    <span className="font-bold text-gray-800 text-xs">{summaryMetrics.reinstall.totalActual} / {summaryMetrics.reinstall.totalTarget}</span>
+            {/* 中间：老店重装进度 */}
+            <div className="flex-1 p-8 relative">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                   <div className="w-1.5 h-6 bg-[#a40035] rounded-full"></div>
+                   <h3 className="text-gray-900 font-bold text-xl tracking-tight">老店重装</h3>
+                </div>
+                <div className="text-[11px] text-[#a40035] font-semibold bg-[#a40035]/5 px-2.5 py-1 rounded-full border border-[#a40035]/10">实际值 / 目标值</div>
+              </div>
+              
+              <div className="space-y-6">
+                {/* 全年进度 */}
+                <div>
+                  <div className="flex justify-between text-sm mb-2.5 items-end">
+                    <span className="text-gray-500 font-medium">全年目标进度</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-[#a40035] text-lg leading-none">{summaryMetrics.reinstall.totalRate}<span className="text-sm ml-0.5">%</span></span>
+                      <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-md">
+                        <span className="text-gray-700">{summaryMetrics.reinstall.totalActual}</span>
+                        <span className="mx-1 text-gray-300">/</span>
+                        <span>{summaryMetrics.reinstall.totalTarget}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3.5 overflow-hidden p-0.5">
+                    <div 
+                      className="bg-gradient-to-r from-[#a40035] to-[#d62055] h-full rounded-full transition-all duration-700 relative shadow-sm"
+                      style={{ width: `${Math.min(summaryMetrics.reinstall.totalRate, 100)}%` }}
+                    >
+                      <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                    </div>
                   </div>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5">
-                  <div 
-                    className="bg-gray-800 h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(summaryMetrics.reinstall.totalRate, 100)}%` }}
-                  ></div>
+
+                {/* 截止当前月进度 */}
+                <div>
+                  <div className="flex justify-between text-sm mb-2.5 items-end">
+                    <span className="text-gray-500 font-medium">截至 {summaryMetrics.currentSysMonthDisplay} 进度</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-[#a40035] text-lg leading-none">{summaryMetrics.reinstall.currentRate}<span className="text-sm ml-0.5">%</span></span>
+                      <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-md">
+                        <span className="text-gray-700">{summaryMetrics.reinstall.currentActual}</span>
+                        <span className="mx-1 text-gray-300">/</span>
+                        <span>{summaryMetrics.reinstall.currentTarget}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3.5 overflow-hidden p-0.5">
+                    <div 
+                      className="bg-gradient-to-r from-[#a40035] to-[#d62055] h-full rounded-full transition-all duration-700 relative shadow-sm"
+                      style={{ width: `${Math.min(summaryMetrics.reinstall.currentRate, 100)}%` }}
+                    >
+                      <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 右侧：当前门店数量 - 浅色背景 */}
+            <div className="flex-1 p-8 relative flex flex-col justify-between overflow-hidden bg-red-50/50">
+              {/* 背景装饰 */}
+              <div className="absolute top-0 right-0 p-0 opacity-[0.03] pointer-events-none text-[#a40035]">
+                <svg className="w-48 h-48 transform translate-x-12 -translate-y-12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2V9h-2V7h8v12zm-2-8h-2v2h2V9zm0 4h-2v2h2v-2z"/></svg>
+              </div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 bg-[#a40035]/10 rounded-lg">
+                        <svg className="w-5 h-5 text-[#a40035]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    </div>
+                    <h3 className="text-gray-900 font-bold text-lg tracking-wide">当前门店总数</h3>
                 </div>
               </div>
 
-              {/* 截止当前月进度 */}
-              <div>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="text-gray-600">截至 {summaryMetrics.currentSysMonthDisplay} 重装目标进度</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800">{summaryMetrics.reinstall.currentRate}%</span>
-                    <span className="font-bold text-gray-800 text-xs">{summaryMetrics.reinstall.currentActual} / {summaryMetrics.reinstall.currentTarget}</span>
-                  </div>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5">
-                  <div 
-                    className="bg-gray-800 h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(summaryMetrics.reinstall.currentRate, 100)}%` }}
-                  ></div>
-                </div>
+              <div className="flex items-end justify-end mt-4 relative z-10">
+                 <div className="text-right">
+                    <div className="flex items-baseline gap-2 justify-end">
+                      <span className="text-7xl font-black text-[#a40035] tracking-tighter drop-shadow-sm">{summaryMetrics.totalStores}</span>
+                      <span className="text-xl font-medium text-gray-500 mb-3">家</span>
+                    </div>
+                 </div>
               </div>
             </div>
+
           </div>
         </div>
       )}
