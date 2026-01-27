@@ -3,6 +3,8 @@ import useFetchData from '../../hooks/useFetchData';
 import DataTable from '../../components/Common/DataTable';
 import DataContainer from '../../components/Common/DataContainer';
 import useTableSorting from '../../components/Common/useTableSorting';
+import CapitalForecastContainer from './CapitalForecastContainer';
+import CapitalBalanceContainer from './CapitalBalanceContainer';
 
 const FilterDropdown = ({ label, value, options, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -506,6 +508,9 @@ const CashFlowTab = () => {
           maxHeight={selectedMonth || selectedCity ? undefined : "500px"} // 当未筛选时，限制表格高度并启用内部滚动
         />
       </DataContainer>
+
+      {/* 2026年公司总部及城市维度资金测算周报 (NEW) */}
+      <CapitalForecastContainer />
     </div>
   );
 };
