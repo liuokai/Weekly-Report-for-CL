@@ -184,6 +184,66 @@ export const BusinessTargets = {
         '宁波市': 0
       }
     }
+  },
+
+  // =================================================================
+  // 总部成本核算 (Headquarters Cost Accounting)
+  // =================================================================
+  headquartersCostAccounting: {
+    // 收入
+    revenue: [
+      { name: "服务费收入", value: 12142741.76 },
+      { name: "租金收入", value: 776400.00 },
+      { name: "商品销售收入", value: 138000.00 },
+      { name: "小计", value: 13057141.76 }
+    ],
+    // 人工成本
+    laborCosts: [
+      { name: "人工成本-投融资管理", value: 5236511.74 },
+      { name: "人工成本-推拿之家", value: 5431538.46 },
+      { name: "人工成本-用户中心", value: 6768164.21 },
+      { name: "人工成本-IT中心", value: 7142000.00 },
+      { name: "小计", value: 24578214.40 }
+    ],
+    // 固定成本
+    fixedCosts: [
+      { name: "房租费", value: 210252.93 },
+      { name: "折旧费", value: 47884.62 },
+      { name: "研发培训费", value: 2504709.71 },
+      { name: "招聘渠道费", value: 1029371.05 },
+      { name: "办公费", value: 909462.33 },
+      { name: "水电费", value: 48000.00 },
+      { name: "服务器租赁", value: 1207900.00 },
+      { name: "手续费", value: 5000.00 },
+      { name: "税金", value: 891603.20 },
+      { name: "小计", value: 6854183.84 }
+    ],
+    // 合计与利润
+    summary: {
+      totalExpenditure: 31432398.25, // 支出合计
+      headquartersProfit: -18375256.49 // 总部利润
+    }
+  },
+
+  // =================================================================
+  // 资金结余 (Capital Balance)
+  // =================================================================
+  capitalBalance: {
+    // 2025 年末资金结余目标
+    target2025: {
+      // 各城市资金结余目标 (单位：元)
+      cityTargets: {
+        '北京市': 6500000.00,
+        '上海市': 6200000.00,
+        '广州市': 3800000.00,
+        '深圳市': 4200000.00,
+        '成都市': 2500000.00,
+        '重庆市': 2200000.00,
+        '杭州市': 2100000.00,
+        '南京市': 1600000.00,
+        '宁波市': 1381638.21
+      }
+    }
   }
 };
 
@@ -239,6 +299,18 @@ export const AnalysisModules = [
     name: '门店拓展目标',
     description: '包含年度新店目标及预算',
     value: BusinessTargets.store
+  },
+  {
+    key: 'static_headquarters_cost',
+    name: '总部成本核算',
+    description: '包含总部收入、人工成本、固定成本及利润分析',
+    value: BusinessTargets.headquartersCostAccounting
+  },
+  {
+    key: 'static_capital_balance',
+    name: '资金结余配置',
+    description: '包含2025年末各城市资金结余目标',
+    value: BusinessTargets.capitalBalance
   }
 ];
 
