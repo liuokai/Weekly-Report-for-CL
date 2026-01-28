@@ -1,72 +1,8 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import BusinessTargets from '../../config/businessTargets';
 import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
-
-// FilterDropdown 组件（样式与新店进度保持一致）
-const FilterDropdown = ({ label, value, options, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const isSelected = value !== null && value !== undefined && value !== '全部';
-
-  return (
-    <div className={`relative inline-block text-left mr-4 ${isOpen ? 'z-50' : 'z-10'}`} ref={dropdownRef}>
-      <button
-        type="button"
-        className={`inline-flex justify-between w-40 rounded-md border shadow-sm px-4 py-2 bg-white text-sm font-medium focus:outline-none ${
-          isSelected 
-            ? 'border-[#a40035] text-[#a40035]' 
-            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-        }`}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {value || `全部${label}`}
-        <svg 
-          className={`-mr-1 ml-2 h-5 w-5 ${isSelected ? 'text-[#a40035]' : 'text-gray-500'}`} 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 20 20" 
-          fill="currentColor"
-        >
-          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="origin-top-left absolute left-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 max-h-60 overflow-y-auto z-50">
-          <div className="py-1">
-            {options.map((opt) => (
-              <button
-                key={opt}
-                className={`block w-full text-left px-4 py-2 text-sm ${
-                  value === opt 
-                    ? 'bg-[#a40035] text-white' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-                onClick={() => { onChange(opt); setIsOpen(false); }}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+import FilterDropdown from '../../components/Common/FilterDropdown';
 
 /**
  * 2026年公司总部及城市维度资金测算周报容器
@@ -245,7 +181,14 @@ const CapitalForecastContainer = () => {
       isHighlight: true 
     };
 
-    return [row1, row2, row3, row4, row5, row6, row7];
+    const rows = [row1, row2];
+    // 只有在总部视角下才展示“预计2026年经营资金结余【总部】”
+    if (selectedCity === '总部') {
+      rows.push(row3);
+    }
+    rows.push(row4, row5, row6, row7);
+
+    return rows;
   }, [selectedCity]);
 
   // 格式化金额
@@ -360,7 +303,8 @@ const CapitalForecastContainer = () => {
             label="城市" 
             value={selectedCity} 
             options={cityList} 
-            onChange={setSelectedCity} 
+            onChange={setSelectedCity}
+            showAllOption={false}
         />
     </div>
   );
