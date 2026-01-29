@@ -252,6 +252,10 @@ const queryRegistry = {
     sql: loadSql('cash_flow_new_store_process.sql'),
     description: '新店目标完成情况'
   },
+  getCashFlowBudgetMonthly: {
+    sql: loadSql('cash_flow_budget.sql'),
+    description: '按月输出预算、实际、剩余与滚动的现金流等汇总'
+  },
 };
 
 module.exports = queryRegistry;

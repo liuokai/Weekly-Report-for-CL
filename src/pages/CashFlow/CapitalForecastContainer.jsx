@@ -3,6 +3,7 @@ import BusinessTargets from '../../config/businessTargets';
 import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
 import FilterDropdown from '../../components/Common/FilterDropdown';
+import useFetchData from '../../hooks/useFetchData';
 
 /**
  * 2026年公司总部及城市维度资金测算周报容器
@@ -22,6 +23,35 @@ const CapitalForecastContainer = () => {
   
   const [selectedCity, setSelectedCity] = useState('总部');
 
+  const { data: cashFlowMonthlyData, fetchData } = useFetchData('getCashFlowBudgetMonthly', [], [], { manual: false });
+
+  // 调试日志：观察实际获取到的数据
+  useEffect(() => {
+    console.log('[CapitalForecastContainer] cashFlowMonthlyData:', cashFlowMonthlyData);
+  }, [cashFlowMonthlyData]);
+
+  const storeCashFlowAnnual = useMemo(() => {
+    if (!Array.isArray(cashFlowMonthlyData) || cashFlowMonthlyData.length === 0) {
+      return {
+        occurred: null,
+        pending: null,
+        rolling: null,
+        budget: null
+      };
+    }
+    let occurred = 0;
+    let pending = 0;
+    let rolling = 0;
+    let budget = 0;
+    for (const row of cashFlowMonthlyData) {
+      occurred += Number(row.total_cash_flow_actual || 0);
+      pending += Number(row.remaining_cash_flow_budget || 0);
+      rolling += Number(row.total_cash_flow_rolling || 0);
+      budget += Number(row.total_cash_flow_budget || 0);
+    }
+    return { occurred, pending, rolling, budget };
+  }, [cashFlowMonthlyData]);
+
   // 模拟数据生成器 (后续替换为 SQL 聚合数据)
   const getMockData = (city) => {
     // 基础数值 (根据城市名哈希生成一些差异化数据，仅用于演示)
@@ -29,9 +59,9 @@ const CapitalForecastContainer = () => {
     const isHQ = city === '总部';
 
     // 2025 年末资金结余
-    // 总部取所有城市之和 (模拟), 城市取配置值
-    const balance2025 = isHQ 
-      ? Object.values(cityTargets2025).reduce((acc, val) => acc + Number(val), 0)
+    const configuredTotal = BusinessTargets.capitalBalance?.target2025?.totalBalance;
+    const balance2025 = isHQ
+      ? Number(configuredTotal || 0)
       : Number(cityTargets2025[city] || 0);
 
     // 辅助函数：生成某行的完整数据
@@ -102,10 +132,10 @@ const CapitalForecastContainer = () => {
       id: '2',
       subject: '预计2026年经营资金结余【门店】',
       col_2025_end: null,
-      col_2026_occurred: mock.storeOp.occurred,
-      col_2026_pending: mock.storeOp.pending,
-      col_2026_rolling: mock.storeOp.occurred + mock.storeOp.pending,
-      col_2026_budget: mock.storeOp.budget,
+      col_2026_occurred: storeCashFlowAnnual.occurred,
+      col_2026_pending: storeCashFlowAnnual.pending,
+      col_2026_rolling: storeCashFlowAnnual.rolling,
+      col_2026_budget: storeCashFlowAnnual.budget,
       isBold: false
     };
 

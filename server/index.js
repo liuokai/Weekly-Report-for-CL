@@ -81,7 +81,7 @@ app.post('/api/fetch-data', async (req, res) => {
     const [rows] = await connection.query(queryConfig.sql, params);
     connection.release();
     const duration = Date.now() - startTime;
-    console.log(`[Query End] ${queryKey} - ${duration}ms`);
+    console.log(`[Query End] ${queryKey} - ${duration}ms - Rows: ${rows ? rows.length : 0}`);
 
     // Post-processing filters for specific queries
     try {

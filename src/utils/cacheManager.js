@@ -4,7 +4,7 @@
  */
 class CacheManager {
   constructor() {
-    this.storageKeyPrefix = 'cl_weekly_cache_v2_'; // Updated prefix to invalidate old cache
+    this.storageKeyPrefix = 'cl_weekly_cache_v3_'; // Updated prefix to invalidate old cache
     this.configKey = 'cl_weekly_cache_config';
     this.defaultUpdateHour = 7; // 7:00 AM
     this.enableCache = false; // Switch to control cache mechanism. Set to false to disable cache.

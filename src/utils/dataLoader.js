@@ -21,7 +21,9 @@ export const PRELOAD_QUERIES = [
   'getUserVisitCountAnnual',
   'getUserVisitCountDailyAvgMonthly',
   'getStaffServiceDurationMonthly',
-  'getStaffServiceDurationCityMonthly'
+  'getStaffServiceDurationCityMonthly',
+  // 资金测算所需的现金流预算月度数据
+  'getCashFlowBudgetMonthly'
 ];
 
 class DataLoader {

@@ -231,6 +231,7 @@ export const BusinessTargets = {
   capitalBalance: {
     // 2025 年末资金结余目标
     target2025: {
+      totalBalance: 46565517.46,
       // 各城市资金结余目标 (单位：元)
       cityTargets: {
         '北京市': 6500000.00,
