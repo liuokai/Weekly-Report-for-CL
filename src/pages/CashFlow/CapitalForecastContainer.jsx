@@ -24,11 +24,15 @@ const CapitalForecastContainer = () => {
   const [selectedCity, setSelectedCity] = useState('总部');
 
   const { data: cashFlowMonthlyData, fetchData } = useFetchData('getCashFlowBudgetMonthly', [], [], { manual: false });
+  const { data: safetyLineData } = useFetchData('getCashFlowCapitalSafetyLine', [], [], { manual: false });
+  const { data: newStoreProcessData } = useFetchData('getCashFlowNewStoreProcess', [], [], { manual: false });
 
   // 调试日志：观察实际获取到的数据
   useEffect(() => {
     console.log('[CapitalForecastContainer] cashFlowMonthlyData:', cashFlowMonthlyData);
-  }, [cashFlowMonthlyData]);
+    console.log('[CapitalForecastContainer] safetyLineData:', safetyLineData);
+    console.log('[CapitalForecastContainer] newStoreProcessData:', newStoreProcessData);
+  }, [cashFlowMonthlyData, safetyLineData, newStoreProcessData]);
 
   const storeCashFlowAnnual = useMemo(() => {
     if (!Array.isArray(cashFlowMonthlyData) || cashFlowMonthlyData.length === 0) {
@@ -44,86 +48,75 @@ const CapitalForecastContainer = () => {
     let rolling = 0;
     let budget = 0;
     for (const row of cashFlowMonthlyData) {
-      occurred += Number(row.total_cash_flow_actual || 0);
-      pending += Number(row.remaining_cash_flow_budget || 0);
-      rolling += Number(row.total_cash_flow_rolling || 0);
-      budget += Number(row.total_cash_flow_budget || 0);
+      occurred += Number(row.total_revenue_actual || 0);
+      pending += Number(row.remaining_revenue_budget || 0);
+      rolling += Number(row.total_revenue_rolling || 0);
+      budget += Number(row.total_revenue_budget || 0);
     }
     return { occurred, pending, rolling, budget };
   }, [cashFlowMonthlyData]);
 
-  // 模拟数据生成器 (后续替换为 SQL 聚合数据)
-  const getMockData = (city) => {
-    // 基础数值 (根据城市名哈希生成一些差异化数据，仅用于演示)
-    const baseFactor = city === '总部' ? 10 : (city.length + 1); 
-    const isHQ = city === '总部';
+  const safetyLineTotal = useMemo(() => {
+    if (!Array.isArray(safetyLineData) || safetyLineData.length === 0) return null;
+    let total = 0;
+    for (const row of safetyLineData) {
+      total += Number(row.total_funds || 0);
+    }
+    return total;
+  }, [safetyLineData]);
 
-    // 2025 年末资金结余
+  // 计算预计2026年开店支出预算
+  const openingExpenditureBudget = useMemo(() => {
+    if (!Array.isArray(newStoreProcessData) || newStoreProcessData.length === 0) return null;
+
+    let totalNewStores = 0;
+    let totalReinstalls = 0;
+
+    for (const row of newStoreProcessData) {
+      // 过滤城市：如果是总部则统计所有，否则只统计选中城市
+      // 注意：SQL返回的字段名为中文别名
+      if (selectedCity !== '总部' && row.city_name !== selectedCity) {
+        continue;
+      }
+      totalNewStores += Number(row['新店目标'] || 0);
+      totalReinstalls += Number(row['重装目标'] || 0);
+    }
+
+    const newStoreBudgetUnit = Number(BusinessTargets.capitalBalance?.newStoreInvestmentBudget || 0);
+    const oldStoreBudgetUnit = Number(BusinessTargets.capitalBalance?.oldStoreRenovationBudget || 0);
+
+    return (totalNewStores * newStoreBudgetUnit) + (totalReinstalls * oldStoreBudgetUnit);
+  }, [newStoreProcessData, selectedCity]);
+
+  // 获取配置数据 (2025 年末资金结余)
+  const getConfigurationData = (city) => {
+    const isHQ = city === '总部';
     const configuredTotal = BusinessTargets.capitalBalance?.target2025?.totalBalance;
     const balance2025 = isHQ
       ? Number(configuredTotal || 0)
       : Number(cityTargets2025[city] || 0);
-
-    // 辅助函数：生成某行的完整数据
-    const createRowData = (yearBudget) => {
-      const occurred = yearBudget * 0.35; // 假设已发生 35%
-      const pending = yearBudget * 0.65;  // 假设待发生 65%
-      const rolling = occurred + pending; // 滚动全年值
-      return { occurred, pending, rolling, budget: yearBudget };
-    };
-
-    // 各项指标预算基数 (模拟)
-    const storeOperatingBudget = balance2025 * 0.8;
-    const hqOperatingBudget = isHQ ? balance2025 * 0.2 : 0; // 城市没有总部经营结余
-    // 资金安全线逻辑调整：全部门店的一个月工资 + 全部员工的半个月工资
-    // 这是一个相对固定的存量概念，不适用“已发生+待发生”
-    // 模拟值：假设为 balance2025 的 40%
-    const safetyLineValue = balance2025 * 0.4;
     
-    const openStoreBudget = isHQ ? 30000000 : 3000000; // 总部3000万，城市300万
+    // 总部经营结余预算值
+    const hqProfitBudget = isHQ 
+      ? Number(BusinessTargets.headquartersCostAccounting?.summary?.headquartersProfit || 0)
+      : 0;
 
-    // 生成各行数据
-    const storeOp = createRowData(storeOperatingBudget);
-    const hqOp = createRowData(hqOperatingBudget);
-    const openStore = createRowData(openStoreBudget);
-
-    // 计算核心汇总行逻辑
-    // 自有资金可用金额 = 2025年末资金结余 + 门店经营 + 总部经营 - 安全线
-    const ownFunds = {
-      occurred: 0, // 2025年末值不参与已发生/待发生计算，只在滚动值体现? 
-                   // 需求定义：2026年滚动全年值 = [已发生值] + [待发生值]
-                   // 但公式包含 2025年末余额（这是存量）。
-                   // 这里假设：自有资金可用金额的“滚动全年值” = 2025存量 + 2026滚动增量
-                   // 为了表格展示一致性，我们把 2025年末值单独列展示，
-                   // 这里的 occurred/pending/rolling 指的是 2026 年度的变动部分 + 2025 基数?
-                   // 根据需求表格结构：
-                   // "2025年末值" 仅第一行有值。
-                   // "2026年滚动全年值" = 已发生 + 待发生 (对于流量科目)
-                   // 对于存量科目(自有资金、实际结余)，滚动值应包含 2025 年末值。
-    };
-
-    return {
-      balance2025,
-      storeOp,
-      hqOp,
-      safetyLineValue,
-      openStore
-    };
+    return { balance2025, hqProfitBudget };
   };
 
   const data = useMemo(() => {
-    const mock = getMockData(selectedCity);
+    const configData = getConfigurationData(selectedCity);
     
     // 构建 7 行数据
     // 1. 2025年末资金结余
     const row1 = {
       id: '1',
       subject: '2025年末资金结余',
-      col_2025_end: mock.balance2025,
+      col_2025_end: configData.balance2025,
       col_2026_occurred: null,
       col_2026_pending: null,
-      col_2026_rolling: mock.balance2025, 
-      col_2026_budget: mock.balance2025,  
+      col_2026_rolling: configData.balance2025, 
+      col_2026_budget: configData.balance2025,  
       isBold: false
     };
 
@@ -144,39 +137,47 @@ const CapitalForecastContainer = () => {
       id: '3',
       subject: '预计2026年经营资金结余【总部】',
       col_2025_end: null,
-      col_2026_occurred: mock.hqOp.occurred,
-      col_2026_pending: mock.hqOp.pending,
-      col_2026_rolling: mock.hqOp.occurred + mock.hqOp.pending,
-      col_2026_budget: mock.hqOp.budget,
+      col_2026_occurred: null,
+      col_2026_pending: null,
+      col_2026_rolling: configData.hqProfitBudget,
+      col_2026_budget: configData.hqProfitBudget,
       isBold: false
     };
 
     // 4. 预计2026年资金安全线
-    // 特殊逻辑：待发生值为空，滚动值 = 固定计算逻辑（模拟值）
     const row4 = {
       id: '4',
       subject: '预计2026年资金安全线',
       col_2025_end: null,
       col_2026_occurred: null, 
       col_2026_pending: null,
-      col_2026_rolling: mock.safetyLineValue,
-      col_2026_budget: mock.safetyLineValue, // 预算通常等于这个固定计算值
+      col_2026_rolling: safetyLineTotal,
+      col_2026_budget: safetyLineTotal,
       isBold: false
     };
 
-    // 5. 预计2026年自有资金可用金额 (计算行)
-    // 公式: 2025年末资金结余 + 门店经营 + 总部经营 - 安全线
-    // 滚动全年值 = Row1(滚动) + Row2(滚动) + Row3(滚动) - Row4(滚动)
-    // 已发生值 = Row2(已发生) + Row3(已发生) (注意：安全线和期初不参与流转)
-    // 待发生值 = Row2(待发生) + Row3(待发生)
+    // 5. 预计2026年自有资金可用金额
+    // 逻辑：2025年末资金结余 + 预计2026年经营资金结余【门店】+ 预计2026年经营资金结余【总部】 - 预计2026年资金安全线
+    // 注意：如果不在总部视角，row3 (总部经营结余) 应该视为 0
+    const availableFundsRolling = (row1.col_2026_rolling || 0) + 
+                                  (row2.col_2026_rolling || 0) + 
+                                  (selectedCity === '总部' ? (row3.col_2026_rolling || 0) : 0) - 
+                                  (row4.col_2026_rolling || 0);
+
+    // 预算值计算逻辑同上，使用 col_2026_budget 列
+    const availableFundsBudget = (row1.col_2026_budget || 0) +
+                                 (row2.col_2026_budget || 0) +
+                                 (selectedCity === '总部' ? (row3.col_2026_budget || 0) : 0) -
+                                 (row4.col_2026_budget || 0);
+
     const row5 = {
       id: '5',
       subject: '预计2026年自有资金可用金额',
       col_2025_end: null,
-      col_2026_occurred: row2.col_2026_occurred + row3.col_2026_occurred, 
-      col_2026_pending: row2.col_2026_pending + row3.col_2026_pending,
-      col_2026_rolling: row1.col_2026_rolling + row2.col_2026_rolling + row3.col_2026_rolling - row4.col_2026_rolling,
-      col_2026_budget: row1.col_2026_budget + row2.col_2026_budget + row3.col_2026_budget - row4.col_2026_budget,
+      col_2026_occurred: null, 
+      col_2026_pending: null,
+      col_2026_rolling: availableFundsRolling,
+      col_2026_budget: availableFundsBudget,
       isHighlight: true 
     };
 
@@ -185,29 +186,25 @@ const CapitalForecastContainer = () => {
       id: '6',
       subject: '预计2026年开店支出',
       col_2025_end: null,
-      col_2026_occurred: mock.openStore.occurred,
-      col_2026_pending: mock.openStore.pending,
-      col_2026_rolling: mock.openStore.occurred + mock.openStore.pending,
-      col_2026_budget: mock.openStore.budget,
+      col_2026_occurred: null,
+      col_2026_pending: null,
+      col_2026_rolling: null,
+      col_2026_budget: openingExpenditureBudget,
       isBold: false
     };
 
-    // 7. 预计2026年实际结余资金 (计算行)
-    // 公式: Row5 - Row6
-    // 滚动值 = Row5(滚动) - Row6(滚动)
-    // 已发生 = Row5(已发生) - Row6(已发生)
-    // 待发生 = Row5(待发生) - Row6(待发生)
-    // 确保数值为正值（模拟逻辑：如果是负数，可能是预算超支，这里暂不强制转正，仅做绝对值或保持原值，通常是正值）
-    const row7Rolling = row5.col_2026_rolling - row6.col_2026_rolling;
-    
+    // 7. 预计2026年实际结余资金
+    // 逻辑：预计2026年自有资金可用金额 - 预计2026年开店支出
+    const actualBalanceBudget = availableFundsBudget - (openingExpenditureBudget || 0);
+
     const row7 = {
       id: '7',
       subject: '预计2026年实际结余资金',
       col_2025_end: null,
-      col_2026_occurred: row5.col_2026_occurred - row6.col_2026_occurred,
-      col_2026_pending: row5.col_2026_pending - row6.col_2026_pending,
-      col_2026_rolling: row7Rolling,
-      col_2026_budget: row5.col_2026_budget - row6.col_2026_budget,
+      col_2026_occurred: null,
+      col_2026_pending: null,
+      col_2026_rolling: null,
+      col_2026_budget: actualBalanceBudget,
       isHighlight: true 
     };
 
@@ -219,7 +216,7 @@ const CapitalForecastContainer = () => {
     rows.push(row4, row5, row6, row7);
 
     return rows;
-  }, [selectedCity]);
+  }, [selectedCity, storeCashFlowAnnual, safetyLineTotal, openingExpenditureBudget]);
 
   // 格式化金额
   const formatMoney = (val) => {

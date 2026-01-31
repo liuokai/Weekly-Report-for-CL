@@ -244,7 +244,11 @@ export const BusinessTargets = {
         '南京市': 1600000.00,
         '宁波市': 1381638.21
       }
-    }
+    },
+    // 新店投资预算值
+    newStoreInvestmentBudget: 710000,
+    // 老店重装预算值
+    oldStoreRenovationBudget: 650000
   }
 };
 
