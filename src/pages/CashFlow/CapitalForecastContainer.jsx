@@ -69,12 +69,16 @@ const CapitalForecastContainer = () => {
 
   const safetyLineTotal = useMemo(() => {
     if (!Array.isArray(safetyLineData) || safetyLineData.length === 0) return null;
-    let total = 0;
-    for (const row of safetyLineData) {
-      total += Number(row.total_funds || 0);
+    
+    if (selectedCity === '总部') {
+      // 当用户查看“总部”维度时，展示的资金安全线为该 SQL 执行后所有城市+总部的条数的和
+      return safetyLineData.reduce((total, row) => total + Number(row.total_funds || 0), 0);
+    } else {
+      // 当用户查看各个城市维度时，展示的资金安全线数值为对应城市的数值
+      const cityData = safetyLineData.find(row => row.city_name === selectedCity);
+      return cityData ? Number(cityData.total_funds || 0) : 0;
     }
-    return total;
-  }, [safetyLineData]);
+  }, [safetyLineData, selectedCity]);
 
   // 计算预计2026年开店支出
   // 包含：预算值（全年目标）、已发生值（至今实际）、滚动值（暂定=预算）、待发生值（滚动-已发生）
