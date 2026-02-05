@@ -87,15 +87,11 @@ const queryRegistry = {
     sql: loadSql('turnover_weekly_store_yoy.sql'),
     description: '获取某城市门店周度营业额数据'
   },
+  getCashFlowClosingWarning: {
+    sql: loadSql('cash_flow_closing_warning.sql'),
+    description: '获取触发闭店预警的门店列表及详情'
+  },
 
-  getCapitalSafetyLine: {
-    sql: loadSql('capital_safety_line.sql'),
-    description: '资金安全线（一个月房租+半个月工资）'
-  },
-  getCapitalSafetyLineCity: {
-    sql: loadSql('capital_safe_line_city.sql'),
-    description: '城市维度资金安全线'
-  },
   // 客次量：年度累计（取最新年份）
   getUserVisitCountAnnual: {
     sql: loadSql('user_visit_count_annual.sql'),
