@@ -29,6 +29,14 @@ const IconCalendar = () => (
   </svg>
 );
 
+const IconEmpty = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+
 const ClosingWarningContainer = () => {
   const { data: warningList, loading, error, fetchData } = useFetchData('getCashFlowClosingWarning', [], [], { manual: false });
 
@@ -98,15 +106,10 @@ const ClosingWarningContainer = () => {
             </button>
           </div>
         ) : isEmpty ? (
-          <div className="text-center text-gray-500 py-8 bg-gray-50 rounded border border-dashed border-gray-200">
-            <div className="flex justify-center mb-2 text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                <path d="m9 12 2 2 4-4"/>
-              </svg>
-            </div>
-            <p>当前没有触发闭店预警的门店</p>
-            <p className="text-xs text-gray-400 mt-1">（后端服务需重启以加载最新配置）</p>
+          <div className="flex flex-col items-center justify-center py-12">
+            <IconEmpty />
+            <p className="mt-3 text-sm text-gray-400">当前没有触发闭店预警的门店</p>
+            <p className="text-xs text-gray-300 mt-1">（后端服务需重启以加载最新配置）</p>
           </div>
         ) : (
           <div className="space-y-8">

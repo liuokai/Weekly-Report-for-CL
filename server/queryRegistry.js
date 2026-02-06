@@ -252,6 +252,10 @@ const queryRegistry = {
     sql: loadSql('cash_flow_budget.sql'),
     description: '按月输出预算、实际、剩余与滚动的现金流等汇总'
   },
+  getCashFlowContinuousLoss: {
+    sql: loadSql('cash_flow_continuous_loss.sql'),
+    description: '获取现金流持续亏损门店列表'
+  },
   getCashFlowCapitalSafetyLine: {
     sql: loadSql('cash_flow_capital_safety_line.sql'),
     description: '资金安全线汇总查询'

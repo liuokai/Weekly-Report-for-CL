@@ -28,7 +28,6 @@ WHERE
     AND is_cashflow_assessed_this_quarter = '是'
     AND quarterly_cashflow_assessment = 1 -- 季度现金流亏损超过 3 万元
     AND (CAST(`year` AS SIGNED) * 4 + `quarter_number`) >= (
-        YEAR(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) * 4 +
-        QUARTER(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) - 2
-    ) -- 最近 3 个季度内的数据
+    YEAR(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) * 4 +
+    QUARTER(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) - 2  ) -- 最近 3 个季度内的数据
 order by concat(year,'-Q',quarter_number);

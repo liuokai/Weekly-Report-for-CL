@@ -5,6 +5,7 @@ import DataContainer from '../../components/Common/DataContainer';
 import useTableSorting from '../../components/Common/useTableSorting';
 import CapitalForecastContainer from './CapitalForecastContainer';
 import CityBudgetExecutionContainer from './CityBudgetExecutionContainer';
+import CashFlowContinuousLossContainer from './CashFlowContinuousLossContainer';
 import ClosingWarningContainer from './ClosingWarningContainer';
 import FilterDropdown from '../../components/Common/FilterDropdown';
 
@@ -441,6 +442,9 @@ const CashFlowTab = () => {
 
       {/* 2026年城市新店投资与现金流预算执行情况 (NEW) */}
       <CityBudgetExecutionContainer />
+
+      {/* 现金流持续亏损门店 */}
+      <CashFlowContinuousLossContainer />
 
       {/* 触发闭店预警门店 (NEW) */}
       <ClosingWarningContainer />
