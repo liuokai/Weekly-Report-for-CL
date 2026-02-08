@@ -169,7 +169,7 @@ const WarningCard = ({ store }) => {
   const currentQuarter = store['季度'];
 
   // 辅助组件：财务指标详情块
-  const FinanceDetailBlock = ({ label, quarterLabel, ratio, revenue, labor, fixed, dataCutoffDate, isLast = false }) => (
+  const FinanceDetailBlock = ({ label, quarterLabel, ratio, revenue, labor, rent, dataCutoffDate, isLast = false }) => (
     <div className={`py-2 ${!isLast ? 'border-b border-dashed border-gray-200' : ''}`}>
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-end gap-1">
@@ -193,8 +193,8 @@ const WarningCard = ({ store }) => {
             <span className="text-gray-700">{fmtMoney(labor)}</span>
          </div>
          <div className="flex justify-between items-center">
-            <span className="text-gray-500">固定成本</span>
-            <span className="text-gray-700">{fmtMoney(fixed)}</span>
+            <span className="text-gray-500">租金成本</span>
+            <span className="text-gray-700">{fmtMoney(rent)}</span>
          </div>
       </div>
       {dataCutoffDate && (
@@ -256,7 +256,7 @@ const WarningCard = ({ store }) => {
              ratio={store['上上季度成本占比']}
              revenue={store['上上季度主营业务收入']}
              labor={store['上上季度人工成本']}
-             fixed={store['上上季度固定成本']}
+             rent={store['上上季度租金成本']}
              dataCutoffDate={store['上上季度季度末月份']}
            />
 
@@ -266,7 +266,7 @@ const WarningCard = ({ store }) => {
              ratio={store['上季度成本占比']}
              revenue={store['上季度主营业务收入']}
              labor={store['上季度人工成本']}
-             fixed={store['上季度固定成本']}
+             rent={store['上季度租金成本']}
              dataCutoffDate={store['上季度季度末月份']}
            />
            
@@ -276,7 +276,7 @@ const WarningCard = ({ store }) => {
              ratio={store['当期成本占比（本季度完整月份）']}
              revenue={store['主营业务收入（本季度完整月份）']}
              labor={store['人工成本（本季度完整月份）']}
-             fixed={store['固定成本（本季度完整月份）']}
+             rent={store['租金成本（本季度完整月份）']}
              dataCutoffDate={store['季度末月份']}
              isLast={true}
            />

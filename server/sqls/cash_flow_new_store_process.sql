@@ -19,7 +19,7 @@ select
         -- 正常对比目标
         when new_store_opening_num = new_store_opening_target then '如期完成'
         when new_store_opening_num > new_store_opening_target then '高于目标'
-        when new_store_opening_num < new_store_opening_target then '未完成'
+        when new_store_opening_num < new_store_opening_target then '尚未完成'
     end as `新店目标完成情况`,
 
     reinstall_store_target        as `重装目标`,
@@ -34,7 +34,7 @@ select
 
         when reinstall_store_num = reinstall_store_target then '如期完成'
         when reinstall_store_num > reinstall_store_target then '高于目标'
-        when reinstall_store_num < reinstall_store_target then '未完成'
+        when reinstall_store_num < reinstall_store_target then '尚未完成'
     end as `重装目标完成情况`,
 
     total_store_num               as `门店数量`

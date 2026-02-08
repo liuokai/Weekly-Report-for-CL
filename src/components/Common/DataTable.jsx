@@ -9,6 +9,8 @@ const DataTable = ({
   onSort,
   sortConfig,
   summaryRow,
+  summaryPosition = 'top', // 'top' | 'bottom'
+  summaryClassName = 'bg-white font-bold shadow-sm',
   maxHeight // 新增：支持自定义最大高度，启用内部滚动
 }) => {
   if (!data || data.length === 0) {
@@ -57,8 +59,8 @@ const DataTable = ({
               })()
             ))}
           </tr>
-          {summaryRow && (
-            <tr className="bg-white border-b border-gray-200 font-bold shadow-sm">
+          {summaryRow && summaryPosition === 'top' && (
+            <tr className={`border-b border-gray-200 ${summaryClassName}`}>
               {columns.map(column => (
                 <td
                   key={column.key}
@@ -84,6 +86,20 @@ const DataTable = ({
             </tr>
           ))}
         </tbody>
+        {summaryRow && summaryPosition === 'bottom' && (
+          <tfoot className="sticky bottom-0 z-10">
+            <tr className={`border-t border-gray-200 ${summaryClassName}`}>
+              {columns.map(column => (
+                <td
+                  key={column.key}
+                  className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${column.align === 'right' ? 'text-right' : 'text-left'}`}
+                >
+                  {column.render ? column.render(summaryRow[column.dataIndex], summaryRow, -1) : (summaryRow[column.dataIndex] || '-')}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   );

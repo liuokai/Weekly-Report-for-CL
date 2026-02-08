@@ -1,4 +1,4 @@
--- 闭店预警门店列表
+-- 闭店预警门店列表 
 
 WITH
 quarterly_store_metrics AS (
@@ -13,11 +13,24 @@ quarterly_store_metrics AS (
         a.opening_date,
         sum(nvl(a.main_business_income, 0)) AS 主营业务收入,
         sum(nvl(a.labor_cost, 0)) AS 人工成本,
-        sum(nvl(a.fixed_cost, 0)) AS 固定成本,
+        sum(
+            nvl(a.fixed_rent, 0) +
+            nvl(a.percentage_rent, 0) +
+            nvl(a.promotion_fee, 0) +
+            nvl(a.property_fee, 0)
+        ) AS 租金成本,
         sum(nvl(a.net_cash_flow, 0)) AS 现金流,
         CASE
             WHEN sum(nvl(a.main_business_income, 0)) = 0 THEN NULL
-            ELSE (sum(nvl(a.fixed_cost, 0) + nvl(a.labor_cost, 0))) / sum(nvl(a.main_business_income, 0))
+            ELSE (
+                sum(
+                    nvl(a.fixed_rent, 0) +
+                    nvl(a.percentage_rent, 0) +
+                    nvl(a.promotion_fee, 0) +
+                    nvl(a.property_fee, 0) +
+                    nvl(a.labor_cost, 0)
+                )
+            ) / sum(nvl(a.main_business_income, 0))
         END AS 当期成本占比,
         row_number() over (
             partition by a.store_code
@@ -60,18 +73,18 @@ calculated_results AS (
         q.opening_date,
         q.主营业务收入,
         q.人工成本,
-        q.固定成本,
+        q.租金成本,
         q.现金流,
         q.当期成本占比,
-        -- 上季度原始财务指标与占比
+        -- 上季度财务指标与占比（更新为租金成本）
         LAG(q.主营业务收入, 1) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上季度主营业务收入,
         LAG(q.人工成本, 1) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上季度人工成本,
-        LAG(q.固定成本, 1) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上季度固定成本,
+        LAG(q.租金成本, 1) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上季度租金成本,
         LAG(q.当期成本占比, 1) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上季度成本占比,
-        -- 上上季度原始财务指标与占比
+        -- 上上季度财务指标与占比（更新为租金成本）
         LAG(q.主营业务收入, 2) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上上季度主营业务收入,
         LAG(q.人工成本, 2) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上上季度人工成本,
-        LAG(q.固定成本, 2) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上上季度固定成本,
+        LAG(q.租金成本, 2) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上上季度租金成本,
         LAG(q.当期成本占比, 2) OVER ( PARTITION BY q.store_code ORDER BY q.rn ) AS 上上季度成本占比,
         qm.总折旧,
         qm.累计经营现金流,
@@ -84,27 +97,27 @@ calculated_results AS (
 SELECT
     res.quarter as 季度,
     res.last_month_of_quarter as 季度末月份,
-    dc.statistics_city_name as 城市名称, -- 诉求：通过 dm_city 关联取值并取代原字段
+    dc.statistics_city_name as 城市名称,
     res.store_name as 门店名称,
     res.store_code as 门店编码,
-    res.opening_date as 开业日期, 
+    res.opening_date as 开业日期,
     m.city_manager_name as 城市总姓名,
     m.technology_vice_name as 技术副总姓名,
     -- 本季度指标
     res.主营业务收入 as `主营业务收入（本季度完整月份）`,
     res.人工成本 as `人工成本（本季度完整月份）`,
-    res.固定成本 as `固定成本（本季度完整月份）`,
+    res.租金成本 as `租金成本（本季度完整月份）`,
     res.现金流 as `现金流（本季度完整月份）`,
     CONCAT(ROUND(nvl(res.当期成本占比, 0) * 100, 1), '%') as `当期成本占比（本季度完整月份）`,
     -- 上季度指标展示
     res.上季度主营业务收入,
     res.上季度人工成本,
-    res.上季度固定成本,
+    res.上季度租金成本,
     CONCAT(ROUND(nvl(res.上季度成本占比, 0) * 100, 1), '%') as 上季度成本占比,
     -- 上上季度指标展示
     res.上上季度主营业务收入,
     res.上上季度人工成本,
-    res.上上季度固定成本,
+    res.上上季度租金成本,
     CONCAT(ROUND(nvl(res.上上季度成本占比, 0) * 100, 1), '%') as 上上季度成本占比,
     -- 资产与现金流指标
     res.总折旧,
@@ -113,9 +126,9 @@ SELECT
     CASE
         WHEN (res.当期成本占比 > 1 AND res.上季度成本占比 > 1 AND res.上上季度成本占比 > 1)
              AND (res.累计经营现金流 < 0 AND -res.累计经营现金流 > res.总折旧 * 0.5)
-             THEN '连续三个季度人工+房租成本占比超过 100% 且 累计现金流亏损超过折旧的 50%'
+             THEN '连续三个季度人工+租金成本占比超过 100% 且 累计现金流亏损超过折旧的 50%'
         WHEN (res.当期成本占比 > 1 AND res.上季度成本占比 > 1 AND res.上上季度成本占比 > 1)
-             THEN '连续三个季度人工+房租成本占比超过 100%'
+             THEN '连续三个季度人工+租金成本占比超过 100%'
         WHEN (res.累计经营现金流 < 0 AND -res.累计经营现金流 > res.总折旧 * 0.5)
              THEN '累计现金流亏损超过折旧的 50%'
         ELSE ''

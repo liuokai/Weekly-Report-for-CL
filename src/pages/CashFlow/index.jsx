@@ -5,6 +5,7 @@ import DataContainer from '../../components/Common/DataContainer';
 import useTableSorting from '../../components/Common/useTableSorting';
 import CapitalForecastContainer from './CapitalForecastContainer';
 import CityBudgetExecutionContainer from './CityBudgetExecutionContainer';
+import NewStoreSupplyContainer from './NewStoreSupplyContainer';
 import CashFlowContinuousLossContainer from './CashFlowContinuousLossContainer';
 import ClosingWarningContainer from './ClosingWarningContainer';
 import FilterDropdown from '../../components/Common/FilterDropdown';
@@ -12,7 +13,13 @@ import FilterDropdown from '../../components/Common/FilterDropdown';
 const CashFlowTab = () => {
   const { data: newStoreProcessData } = useFetchData('getCashFlowNewStoreProcess');
   
-  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    now.setDate(now.getDate() - 1);
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  });
   const [selectedCity, setSelectedCity] = useState(null);
 
   // 提取筛选选项
@@ -96,7 +103,7 @@ const CashFlowTab = () => {
       if ((target === null || target === 0) && (actual === null || actual === 0)) return null;
       if (actual === target) return '如期完成';
       if (actual > target) return '高于目标';
-      if (actual < target) return '未完成';
+      if (actual < target) return '尚未完成';
       return null;
     };
 
@@ -122,7 +129,7 @@ const CashFlowTab = () => {
         return 'text-green-600 font-bold';
       case '如期完成':
         return 'text-blue-600 font-bold';
-      case '未完成':
+      case '尚未完成':
         return 'text-[#a40035] font-bold';
       default:
         return 'text-gray-600';
@@ -442,6 +449,9 @@ const CashFlowTab = () => {
 
       {/* 2026年城市新店投资与现金流预算执行情况 (NEW) */}
       <CityBudgetExecutionContainer />
+
+      {/* 新店供应总结 */}
+      <NewStoreSupplyContainer />
 
       {/* 现金流持续亏损门店 */}
       <CashFlowContinuousLossContainer />

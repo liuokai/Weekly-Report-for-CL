@@ -260,6 +260,10 @@ const queryRegistry = {
     sql: loadSql('cash_flow_capital_safety_line.sql'),
     description: '资金安全线汇总查询'
   },
+  getNewStoreSupplySummary: {
+    sql: loadSql('cash_flow_new_store_supply.sql'),
+    description: '新店供应总结'
+  },
 };
 
 module.exports = queryRegistry;
