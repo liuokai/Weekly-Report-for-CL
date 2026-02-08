@@ -1,4 +1,4 @@
--- 新店爬坡期供应情况
+-- 新店经营情况总结：爬坡期现金流预算与实际对比
 
 WITH ramp_config AS (
     -- 1. 锁定 2026 年新开门店爬坡期的起点、长度、开业日期及基础信息
@@ -7,7 +7,7 @@ WITH ramp_config AS (
         store_name,
         city_code,
         city_name,
-        opening_date,         -- 新增：开业日期
+        opening_date,    
         month AS start_month,
         ramp_up_period
     FROM dws_new_store_commission_monthly

@@ -57,6 +57,12 @@ const CapitalForecastContainer = () => {
       if (!row.month || !row.month.startsWith(currentYear)) {
         continue;
       }
+
+      // 过滤城市：如果是总部则统计所有，否则只统计选中城市
+      // 注意：后端 SQL 现已按城市分组返回，字段中包含 city_name
+      if (selectedCity !== '总部' && row.city_name !== selectedCity) {
+        continue;
+      }
       
       // 使用 cash_flow 相关字段 (经营资金结余)
       occurred += Number(row.total_cash_flow_actual || 0);
@@ -65,7 +71,7 @@ const CapitalForecastContainer = () => {
       budget += Number(row.total_cash_flow_budget || 0);
     }
     return { occurred, pending, rolling, budget };
-  }, [cashFlowMonthlyData]);
+  }, [cashFlowMonthlyData, selectedCity]);
 
   const safetyLineTotal = useMemo(() => {
     if (!Array.isArray(safetyLineData) || safetyLineData.length === 0) return null;

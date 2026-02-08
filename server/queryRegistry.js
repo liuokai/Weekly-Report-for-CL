@@ -264,6 +264,10 @@ const queryRegistry = {
     sql: loadSql('cash_flow_new_store_supply.sql'),
     description: '新店供应总结'
   },
+  getNewStoreOperationStatus: {
+    sql: loadSql('cash_flow_new_store_operation_status.sql'),
+    description: '新店经营情况总结'
+  },
 };
 
 module.exports = queryRegistry;

@@ -14,18 +14,24 @@ SELECT
 FROM (
     -- 基础数据层：保留去重和过滤逻辑
     SELECT
-        hidden_city_name,
-        store_code,
-        suite_area,
-        bed_count,
-        ROW_NUMBER() OVER (PARTITION BY store_code ORDER BY store_info_record_time DESC) AS rn
-    FROM data_warehouse.dwd_store_info
-    WHERE date(store_info_record_time) = date_sub(curdate(), interval 0 day)
-      AND (is_invalid_store = '否' OR (opening_time >= '2026-01-01 00:00:00' AND opening_time <= NOW()))
-      AND closing_date IS NULL
-      AND store_name NOT LIKE '%能量%'
-      AND store_operation_status IN ('正常', '营业')
-      AND opening_time >= '2026-01-01 00:00:00'
+        a.hidden_city_name,
+        a.store_code,
+        a.store_name,
+        a.suite_area,
+        a.bed_count,
+        ROW_NUMBER() OVER (PARTITION BY a.store_code ORDER BY a.store_info_record_time DESC) AS rn
+    FROM data_warehouse.dwd_store_info a
+    inner join (
+                SELECT store_code,store_name,city_code,city_name,opening_date,month AS start_month,ramp_up_period
+                FROM dws_new_store_commission_monthly
+                WHERE opening_date > '2026-01-01' AND LEFT(month, 4) = '2026' AND ramp_up_month_count = 1
+                    ) b on a.store_code = b.store_code
+    WHERE date(a.store_info_record_time) = date_sub(curdate(), interval 0 day)
+      AND (a.is_invalid_store = '否' OR (a.opening_time >= '2026-01-01 00:00:00' AND a.opening_time <= NOW()))
+      AND a.closing_date IS NULL
+      AND a.store_name NOT LIKE '%能量%'
+      AND a.store_operation_status IN ('正常', '营业')
+      AND a.opening_time >= '2026-01-01 00:00:00'
 ) t
 WHERE rn = 1
 GROUP BY hidden_city_name WITH ROLLUP;
