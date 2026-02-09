@@ -169,7 +169,20 @@ const CapitalForecastContainer = () => {
       isBold: false
     };
 
-    // 2. 预计2026年经营资金结余【门店】
+    // 2. 预计2026年经营资金结余（父科目）
+    // 汇总：门店 + 总部
+    const row2_parent = {
+      id: '2_parent',
+      subject: '预计2026年经营资金结余',
+      col_2025_end: null,
+      col_2026_occurred: (storeCashFlowAnnual.occurred || 0),
+      col_2026_pending: (storeCashFlowAnnual.pending || 0),
+      col_2026_rolling: (storeCashFlowAnnual.rolling || 0) + (selectedCity === '总部' ? (configData.hqProfitBudget || 0) : 0),
+      col_2026_budget: (storeCashFlowAnnual.budget || 0) + (selectedCity === '总部' ? (configData.hqProfitBudget || 0) : 0),
+      isBold: true
+    };
+
+    // 2.1 预计2026年经营资金结余【门店】
     const row2 = {
       id: '2',
       subject: '预计2026年经营资金结余【门店】',
@@ -178,10 +191,12 @@ const CapitalForecastContainer = () => {
       col_2026_pending: storeCashFlowAnnual.pending,
       col_2026_rolling: storeCashFlowAnnual.rolling,
       col_2026_budget: storeCashFlowAnnual.budget,
-      isBold: false
+      isBold: false,
+      isIndent: true,
+      isGray: true
     };
 
-    // 3. 预计2026年经营资金结余【总部】
+    // 2.2 预计2026年经营资金结余【总部】
     const row3 = {
       id: '3',
       subject: '预计2026年经营资金结余【总部】',
@@ -190,7 +205,9 @@ const CapitalForecastContainer = () => {
       col_2026_pending: null,
       col_2026_rolling: configData.hqProfitBudget,
       col_2026_budget: configData.hqProfitBudget,
-      isBold: false
+      isBold: false,
+      isIndent: true,
+      isGray: true
     };
 
     // 4. 预计2026年资金安全线
@@ -206,17 +223,15 @@ const CapitalForecastContainer = () => {
     };
 
     // 5. 预计2026年自有资金可用金额
-    // 逻辑：2025年末资金结余 + 预计2026年经营资金结余【门店】+ 预计2026年经营资金结余【总部】 - 预计2026年资金安全线
-    // 注意：如果不在总部视角，row3 (总部经营结余) 应该视为 0
+    // 逻辑：2025年末资金结余 + (预计2026年经营资金结余【门店】+ 预计2026年经营资金结余【总部】) - 预计2026年资金安全线
+    // 即：2025年末资金结余 + 预计2026年经营资金结余(父) - 预计2026年资金安全线
     const availableFundsRolling = (row1.col_2026_rolling || 0) + 
-                                  (row2.col_2026_rolling || 0) + 
-                                  (selectedCity === '总部' ? (row3.col_2026_rolling || 0) : 0) - 
+                                  (row2_parent.col_2026_rolling || 0) - 
                                   (row4.col_2026_rolling || 0);
 
     // 预算值计算逻辑同上，使用 col_2026_budget 列
     const availableFundsBudget = (row1.col_2026_budget || 0) +
-                                 (row2.col_2026_budget || 0) +
-                                 (selectedCity === '总部' ? (row3.col_2026_budget || 0) : 0) -
+                                 (row2_parent.col_2026_budget || 0) -
                                  (row4.col_2026_budget || 0);
 
     const row5 = {
@@ -259,11 +274,16 @@ const CapitalForecastContainer = () => {
       isHighlight: true 
     };
 
-    const rows = [row1, row2];
-    // 只有在总部视角下才展示“预计2026年经营资金结余【总部】”
+    // 构建行顺序：2025年末 -> 经营结余(父) -> 经营结余(门店) -> 经营结余(总部) -> 资金安全线 -> ...
+    const rows = [row1, row2_parent];
+    
+    // 只有在总部视角下才展示拆分明细（门店、总部）
+    // 当选择特定城市时，父科目数据等于门店数据，无需展示子科目
     if (selectedCity === '总部') {
+      rows.push(row2);
       rows.push(row3);
     }
+    
     rows.push(row4, row5, row6, row7);
 
     return rows;
@@ -288,7 +308,13 @@ const CapitalForecastContainer = () => {
     // 但需求只说“差异值为滚动-预算”，未指定颜色方向，这里沿用通用的红绿逻辑：
     // 大于等于0为绿（或默认黑），小于0为红？
     // 用户之前的逻辑是：滚动<预算为红，滚动>预算为绿。
-    const colorClass = diff >= 0 ? 'text-green-600' : 'text-red-600';
+    let colorClass = diff >= 0 ? 'text-green-600' : 'text-red-600';
+    
+    // 如果该行被标记为灰色，则覆盖差异颜色
+    if (row.isGray) {
+      colorClass = 'text-gray-400';
+    }
+
     const sign = diff > 0 ? '+' : '';
     
     return (
@@ -306,11 +332,26 @@ const CapitalForecastContainer = () => {
       dataIndex: 'subject',
       width: '240px',
       fixed: 'left',
-      render: (text, row) => (
-        <span className={`${row.isHighlight ? 'font-bold text-gray-900' : 'text-gray-700'}`}>
-          {text}
-        </span>
-      )
+      render: (text, row) => {
+        let className = 'block ';
+        if (row.isHighlight) {
+          className += 'font-bold text-gray-900';
+        } else if (row.isGray) {
+          className += 'text-gray-400';
+        } else {
+          className += 'text-gray-700';
+        }
+        
+        if (row.isIndent) {
+          className += ' pl-8';
+        }
+        
+        return (
+          <span className={className}>
+            {text}
+          </span>
+        );
+      }
     },
     {
       key: 'col_2025_end',
@@ -318,7 +359,7 @@ const CapitalForecastContainer = () => {
       dataIndex: 'col_2025_end',
       align: 'right',
       width: '150px',
-      render: (val) => <span className="text-gray-600">{formatMoney(val)}</span>
+      render: (val, row) => <span className={row.isGray ? "text-gray-400" : "text-gray-600"}>{formatMoney(val)}</span>
     },
     {
       key: 'col_2026_occurred',
@@ -328,7 +369,7 @@ const CapitalForecastContainer = () => {
       width: '150px',
       className: 'bg-blue-50/30', // 微弱淡蓝底色
       render: (val, row) => (
-        <span className={`${row.isHighlight ? 'font-semibold' : ''} text-gray-700`}>
+        <span className={`${row.isHighlight ? 'font-semibold' : ''} ${row.isGray ? 'text-gray-400' : 'text-gray-700'}`}>
           {formatMoney(val)}
         </span>
       )
@@ -341,7 +382,7 @@ const CapitalForecastContainer = () => {
       width: '150px',
       className: 'bg-gray-50/50', // 微弱淡灰底色
       render: (val, row) => (
-        <span className={`${row.isHighlight ? 'font-semibold' : ''} text-gray-700`}>
+        <span className={`${row.isHighlight ? 'font-semibold' : ''} ${row.isGray ? 'text-gray-400' : 'text-gray-700'}`}>
           {formatMoney(val)}
         </span>
       )
@@ -353,7 +394,7 @@ const CapitalForecastContainer = () => {
       align: 'right',
       width: '160px',
       render: (val, row) => (
-        <span className="font-bold text-gray-900">
+        <span className={`font-bold ${row.isGray ? 'text-gray-400' : 'text-gray-900'}`}>
           {formatMoney(val)}
         </span>
       )
@@ -364,7 +405,7 @@ const CapitalForecastContainer = () => {
       dataIndex: 'col_2026_budget',
       align: 'right',
       width: '150px',
-      render: (val) => <span className="text-gray-600">{formatMoney(val)}</span>
+      render: (val, row) => <span className={row.isGray ? "text-gray-400" : "text-gray-600"}>{formatMoney(val)}</span>
     },
     {
       key: 'diff',

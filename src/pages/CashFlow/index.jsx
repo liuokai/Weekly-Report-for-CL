@@ -32,7 +32,7 @@ const CashFlowTab = () => {
     
     newStoreProcessData.forEach(item => {
       if (item.month) months.add(item.month);
-      if (item.city_name) cities.add(item.city_name);
+      if (item.city_name && item.city_name !== '月度合计') cities.add(item.city_name);
     });
     
     return {
@@ -44,61 +44,28 @@ const CashFlowTab = () => {
   const { rows, summaryRow } = useMemo(() => {
     if (!Array.isArray(newStoreProcessData)) return { rows: [], summaryRow: null };
     
-    // 1. 过滤数据
-    const filteredData = newStoreProcessData.filter(item => {
+    // 1. 识别并分离合计行与数据行
+    // SQL 中合计行的 city_name 为 '月度合计'
+    const allDataRows = newStoreProcessData.filter(item => item.city_name !== '月度合计');
+    
+    // 2. 过滤数据行
+    const filteredRows = allDataRows.filter(item => {
       const matchMonth = selectedMonth ? item.month === selectedMonth : true;
       const matchCity = selectedCity ? item.city_name === selectedCity : true;
       return matchMonth && matchCity;
     });
 
-    if (filteredData.length === 0) return { rows: [], summaryRow: null };
-
-    // 2. 排序 (默认按月份排序)
-    const sortedFilteredData = [...filteredData].sort((a, b) => {
+    // 3. 排序 (默认按月份排序)
+    const sortedFilteredRows = [...filteredRows].sort((a, b) => {
       const monthA = a.month || '';
       const monthB = b.month || '';
       return monthA.localeCompare(monthB);
     });
 
-    // 3. 计算合计行 (基于筛选后的数据)
-    const totalNewTarget = sortedFilteredData.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
-    const totalNewActual = sortedFilteredData.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
-    const totalReinstallTarget = sortedFilteredData.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
-    const totalReinstallActual = sortedFilteredData.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
-    
-    // 计算合计行中的“门店数量”
-    // - 当存在筛选条件时（按月份或城市筛选），基于筛选结果：
-    //   取筛选结果中最新月份的数据汇总门店数量
-    // - 当不存在筛选条件时，基于全量数据：
-    //   先按月汇总各城市的门店数量，再按月份排序，从后往前找到最后一个门店数量合计 > 0 的月份，
-    //   取该月份的门店数量合计值
-    let currentTotalStores = 0;
+    // 4. 获取合计行
+    let summary = null;
 
-    if (selectedMonth || selectedCity) {
-      const monthsInFilter = Array.from(new Set(sortedFilteredData.map(r => r.month))).sort();
-      const latestMonthInFilter = monthsInFilter[monthsInFilter.length - 1];
-      const latestMonthData = sortedFilteredData.filter(r => r.month === latestMonthInFilter);
-      currentTotalStores = latestMonthData.reduce((sum, r) => sum + (Number(r['门店数量']) || 0), 0);
-    } else {
-      const monthlyStores = {};
-      newStoreProcessData.forEach(item => {
-        const m = item.month;
-        const num = Number(item['门店数量']) || 0;
-        if (!monthlyStores[m]) monthlyStores[m] = 0;
-        monthlyStores[m] += num;
-      });
-
-      const sortedMonths = Object.keys(monthlyStores).sort();
-      for (let i = sortedMonths.length - 1; i >= 0; i--) {
-        const m = sortedMonths[i];
-        if (monthlyStores[m] > 0) {
-          currentTotalStores = monthlyStores[m];
-          break;
-        }
-      }
-    }
-
-    // 计算合计行状态逻辑 (参考 SQL 逻辑)
+    // 辅助函数：计算合计行状态逻辑 (参考 SQL 逻辑)
     const getSummaryStatus = (target, actual) => {
       if ((target === null || target === 0) && actual > 0) return '高于目标';
       if ((target === null || target === 0) && (actual === null || actual === 0)) return null;
@@ -108,20 +75,68 @@ const CashFlowTab = () => {
       return null;
     };
 
-    const summary = {
-      month: '合计', 
-      city_name: '-',
-      '新店目标': totalNewTarget,
-      '新店数量': totalNewActual,
-      '新店目标完成情况': getSummaryStatus(totalNewTarget, totalNewActual),
-      '重装目标': totalReinstallTarget,
-      '重装数量': totalReinstallActual,
-      '重装目标完成情况': getSummaryStatus(totalReinstallTarget, totalReinstallActual),
-      '门店数量': currentTotalStores, 
-      isSummary: true
-    };
+    if (selectedMonth) {
+      // 场景 A：选择了特定月份
+      // 直接使用 SQL 返回的 '月度合计' 行
+      const sqlSummaryRow = newStoreProcessData.find(
+        item => item.month === selectedMonth && item.city_name === '月度合计'
+      );
+      
+      if (sqlSummaryRow) {
+        summary = {
+          ...sqlSummaryRow,
+          isSummary: true
+        };
+      }
+    } else {
+      // 场景 B：全部月份 (或未选择月份)
+      // 需要前端计算整体合计
+      // 基于 filteredRows (已应用城市筛选，且已排除 '月度合计' 行)
+      
+      if (sortedFilteredRows.length > 0) {
+        // 1. 累加各项指标 (新店、重装)
+        const totalNewTarget = sortedFilteredRows.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
+        const totalNewActual = sortedFilteredRows.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
+        const totalReinstallTarget = sortedFilteredRows.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
+        const totalReinstallActual = sortedFilteredRows.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
 
-    return { rows: sortedFilteredData, summaryRow: summary };
+        // 2. 计算门店数量
+        // 逻辑：各个城市的门店数量不为空(>0)时的月份最大的那个月中，各个城市门店数量的和
+        
+        // 第一步：找到所有“门店数量 > 0”的记录
+        const validStoreRows = sortedFilteredRows.filter(r => (Number(r['门店数量']) || 0) > 0);
+        
+        let currentTotalStores = 0;
+        
+        if (validStoreRows.length > 0) {
+          // 第二步：找到这些记录中的最大月份
+          const allValidMonths = validStoreRows.map(r => r.month).sort();
+          const latestValidMonth = allValidMonths[allValidMonths.length - 1];
+          
+          // 第三步：统计该最大月份下所有记录的门店数量之和
+          // 注意：这里是统计 sortedFilteredRows 中在该月份下的所有记录，不仅仅是 validStoreRows
+          // 不过既然是按月份统计，通常我们只关心该月份的数据
+          currentTotalStores = sortedFilteredRows
+            .filter(r => r.month === latestValidMonth)
+            .reduce((sum, r) => sum + (Number(r['门店数量']) || 0), 0);
+        }
+
+        summary = {
+          month: '整体合计', 
+          city_name: '-',
+          '新店目标': totalNewTarget,
+          '新店数量': totalNewActual,
+          '新店目标完成情况': getSummaryStatus(totalNewTarget, totalNewActual),
+          '重装目标': totalReinstallTarget,
+          '重装数量': totalReinstallActual,
+          '重装目标完成情况': getSummaryStatus(totalReinstallTarget, totalReinstallActual),
+          '门店数量': currentTotalStores, 
+          isSummary: true
+        };
+      }
+    }
+
+    return { rows: sortedFilteredRows, summaryRow: summary };
   }, [newStoreProcessData, selectedMonth, selectedCity]);
 
   const getStatusColor = (status) => {
@@ -191,13 +206,22 @@ const CashFlowTab = () => {
           let validStoreMonth = null;
           let totalStores = 0;
           
-          for (let i = sortedMonths.length - 1; i >= 0; i--) {
-            const m = sortedMonths[i];
-            if (monthlyStores[m] > 0) {
-              validStoreMonth = m;
-              totalStores = monthlyStores[m];
-              break;
-            }
+          // 逻辑：各个城市的门店数量不为空时的月份最大的那个月中，各个城市门店数量的和
+          // 1. 找到所有记录中“门店数量 > 0”的记录，取最大月份
+          const validRecords = newStoreProcessData.filter(r => (Number(r['门店数量']) || 0) > 0);
+          if (validRecords.length > 0) {
+             const validMonths = validRecords.map(r => r.month).sort();
+             validStoreMonth = validMonths[validMonths.length - 1];
+             
+             // 2. 统计该月份下所有记录的门店数量之和
+             totalStores = newStoreProcessData
+               .filter(r => r.month === validStoreMonth && r.city_name !== '月度合计') // 排除月度合计行以免重复计算
+               .reduce((sum, r) => sum + (Number(r['门店数量']) || 0), 0);
+          } else {
+             // 兜底逻辑：如果所有记录都为0，取原本的逻辑（最后一个有数据的月份）
+             // 或者直接设为0
+             validStoreMonth = sortedMonths[sortedMonths.length - 1];
+             totalStores = 0;
           }
 
           // 获取当前系统时间，用于计算截止当前月的进度
@@ -208,23 +232,25 @@ const CashFlowTab = () => {
           const currentSysMonthDisplay = `${currentYear} 年 ${currentMonth} 月`;
 
           // 2. 计算新店和重装的全年目标与实际
-          // 过滤当年数据（假设数据中的年份与系统年份一致，或者直接取数据中的年份）
-          // 这里使用系统年份作为基准
-          const currentYearData = newStoreProcessData.filter(r => r.month.startsWith(String(currentYear)));
-          
-          const totalNewTarget = currentYearData.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
-          const totalNewActual = currentYearData.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
-          const totalReinstallTarget = currentYearData.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
-          const totalReinstallActual = currentYearData.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
+          // 逻辑：基于 '月度合计' 行进行统计，确保数据准确性
+          const totalRows = newStoreProcessData.filter(
+            r => r.city_name === '月度合计' && r.month.startsWith(String(currentYear))
+          );
+
+          // 全年目标与实际：累加所有月份的合计行
+          const totalNewTarget = totalRows.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
+          const totalNewActual = totalRows.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
+          const totalReinstallTarget = totalRows.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
+          const totalReinstallActual = totalRows.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
 
           // 3. 计算截止当前月份（currentSysMonthStr）的目标与实际
-          // 取从当年 1 月至当前月份这段时间的数据
-          const dataUpToNow = currentYearData.filter(r => r.month <= currentSysMonthStr);
+          // 逻辑：累加 1月 至 当前月份 的 '月度合计' 行
+          const rowsUpToNow = totalRows.filter(r => r.month <= currentSysMonthStr);
           
-          const currentNewTarget = dataUpToNow.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
-          const currentNewActual = dataUpToNow.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
-          const currentReinstallTarget = dataUpToNow.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
-          const currentReinstallActual = dataUpToNow.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
+          const currentNewTarget = rowsUpToNow.reduce((sum, r) => sum + (Number(r['新店目标']) || 0), 0);
+          const currentNewActual = rowsUpToNow.reduce((sum, r) => sum + (Number(r['新店数量']) || 0), 0);
+          const currentReinstallTarget = rowsUpToNow.reduce((sum, r) => sum + (Number(r['重装目标']) || 0), 0);
+          const currentReinstallActual = rowsUpToNow.reduce((sum, r) => sum + (Number(r['重装数量']) || 0), 0);
 
           // 计算完成率的辅助函数
           const calculateRate = (actual, target) => {
