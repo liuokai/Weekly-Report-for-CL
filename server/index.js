@@ -9,6 +9,7 @@ const fs = require('fs');
 const OpenAI = require('openai');
 const { generateReminder } = require('./services/reminderGenerator');
 const { generateNewStoreAnalysis } = require('./services/newStoreAnalysisGenerator');
+const { generateCityBudgetSummary } = require('./services/cityBudgetSummaryGenerator');
 const variableService = require('./services/variableService');
 const difyWorkflows = require('./config/difyWorkflows');
 const cacheService = require('./services/cacheService');
@@ -184,6 +185,117 @@ app.post('/api/generate-new-store-analysis', async (req, res) => {
     res.json({ status: 'success', data: analysis });
   } catch (error) {
     console.error('Generate Analysis API Error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// API Route: Generate City Budget Summary
+app.post('/api/generate-city-budget-summary', async (req, res) => {
+  try {
+    // 1. Execute SQL Queries concurrently
+    // Note: executeVariableQuery uses file names as keys (without .sql)
+    const [
+      newStoreAndOperationResults,
+      budgetResults,
+      newStoreProcessResults
+    ] = await Promise.all([
+      variableService.executeVariableQuery('cash_flow_new_store_and_cashflow_operation', pool),
+      variableService.executeVariableQuery('cash_flow_budget', pool),
+      variableService.executeVariableQuery('cash_flow_new_store_process', pool)
+    ]);
+
+    // 2. Process Data
+    
+    // a) Process newStoreAndOperationResults (a, c, completedCities)
+    // Find the latest month (last row usually has the latest month, but safer to sort or parse)
+    // The query returns cumulative data month by month.
+    // The format of '月份' is YYYY-MM.
+    
+    if (!newStoreAndOperationResults || newStoreAndOperationResults.length === 0) {
+        throw new Error("No data returned from cash_flow_new_store_and_cashflow_operation");
+    }
+    
+    // Filter for '合计' rows to get the aggregate numbers
+    // In SQL: case when city_name = '合计' then 1 else 0 end -> sorted last
+    // Column name for city is '城市'
+    const totalRows = newStoreAndOperationResults.filter(r => r['城市'] === '合计');
+    
+    // Sort by month just in case
+    totalRows.sort((a, b) => (a['月份'] > b['月份'] ? 1 : -1));
+    const latestTotalRow = totalRows[totalRows.length - 1];
+    
+    if (!latestTotalRow) {
+         throw new Error("No total row found in cash_flow_new_store_and_cashflow_operation");
+    }
+    
+    const currentMonth = latestTotalRow['月份'];
+    const a = parseFloat(latestTotalRow['截止当月累计经营现金流'] || 0);
+    const c = parseFloat(latestTotalRow['截止当月累计新店投资'] || 0);
+    
+    // Find completed cities in the current month
+    // Filter rows for current month and non-total cities
+    const achievedCities = newStoreAndOperationResults
+        .filter(r => r['月份'] === currentMonth && r['城市'] !== '合计')
+        .filter(r => {
+            const rateStr = r['现金流达成率']; // e.g. "105.00%"
+            if (!rateStr) return false;
+            // Remove % and convert to float
+            const rate = parseFloat(rateStr.toString().replace('%', ''));
+            return rate >= 100;
+        })
+        .map(r => r['城市']);
+        
+    // b) Process budgetResults (b)
+    // Sum of 'total_cash_flow_budget' for all records (assuming the query returns all months for the year)
+    // cash_flow_budget.sql returns month/city_name breakdown.
+    // We just sum everything up to get the annual budget (if the query covers the whole year).
+    // The query uses `current_info` but selects from `dws_store_revenue_estimate` which contains full year budget usually?
+    // Wait, the SQL `cash_flow_budget.sql` joins with `current_info` but the budgets are selected from `combined_base`.
+    // The `combined_base` is `existing_store_base` UNION `new_store_base`.
+    // `existing_store_base` selects from `dws_store_revenue_estimate`.
+    // We need to confirm if it returns all months.
+    // The query does NOT have a WHERE clause restricting months for the budget part (only for progress ratio calculation).
+    // So summing all `total_cash_flow_budget` should give the annual budget.
+    
+    const b = budgetResults.reduce((sum, r) => sum + parseFloat(r.total_cash_flow_budget || 0), 0);
+
+    // c) Process newStoreProcessResults (d)
+    // "从当年年初至当前月份对应的合计行的‘新店数量’字段加总"
+    // cash_flow_new_store_process.sql returns monthly data.
+    // Filter rows where month <= currentMonth and city_name (aliased) is '月度合计'
+    
+    // Column names: 'month', 'city_name' (aliased from city_name_display), '新店数量'
+    // In mysql2 driver, alias is used as key.
+    
+    const validMonthsProcessRows = newStoreProcessResults.filter(r => r['month'] <= currentMonth);
+    const monthlyTotalRows = validMonthsProcessRows.filter(r => r['city_name'] === '月度合计'); 
+    
+    const d = monthlyTotalRows.reduce((sum, r) => sum + parseFloat(r['新店数量'] || 0), 0);
+    
+    // Calculate e
+    const e = d > 0 ? (c / d).toFixed(1) : "0.0";
+
+    // 3. Generate Analysis
+    const analysisData = {
+        currentMonth,
+        cumulativeCashFlowActual: a.toFixed(2),
+        annualCashFlowBudget: b.toFixed(2),
+        achievedCities,
+        cumulativeInvestment: c.toFixed(2),
+        investmentStoreCount: d,
+        avgInvestmentPerStore: e
+    };
+
+    const analysis = await generateCityBudgetSummary(deepseek, analysisData);
+    
+    res.json({
+        status: 'success',
+        data: analysisData,
+        analysis: analysis
+    });
+
+  } catch (error) {
+    console.error('Generate City Budget Summary API Error:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 });

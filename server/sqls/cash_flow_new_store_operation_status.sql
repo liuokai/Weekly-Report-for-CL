@@ -7,11 +7,11 @@ WITH ramp_config AS (
         store_name,
         city_code,
         city_name,
-        opening_date,    
+        opening_date,
         month AS start_month,
         ramp_up_period
     FROM dws_new_store_commission_monthly
-    WHERE opening_date > '2026-01-01'
+    WHERE opening_date >= '2026-01-01'
       AND LEFT(month, 4) = '2026'
       AND ramp_up_month_count = 1
 ),
@@ -43,9 +43,35 @@ actual_agg AS (
       -- 截止到昨日所在的自然月
       AND a.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
     GROUP BY a.store_code
+),
+cost_agg AS (
+    -- 4. 汇总爬坡期内（截止昨日所在月）的各项费用预算与明细实际值
+    SELECT
+        c.store_code,
+        -- 预算项
+        SUM(c.marketing_est)      AS total_marketing_est,
+        SUM(c.incentive_est)      AS total_incentive_est,
+        -- 实际明细项
+        SUM(c.ad_fee)             AS total_ad_fee,
+        SUM(c.group_buy_discount) AS total_group_buy_discount,
+        SUM(c.offline_ad_fee)     AS total_offline_ad_fee,
+        SUM(c.new_guest_discount) AS total_new_guest_discount,
+        SUM(c.exhibition_fee)     AS total_exhibition_fee,
+        SUM(c.masseur_commission) AS total_masseur_commission,
+        SUM(c.incentive_actual)   AS total_incentive_actual
+    FROM dws_new_store_ramp_up_cost_execution_statistics c
+    INNER JOIN ramp_config r ON c.store_code = r.store_code
+    WHERE
+      -- 属于爬坡期内
+      ((CAST(LEFT(c.month, 4) AS INT) * 12 + CAST(RIGHT(c.month, 2) AS INT)) -
+       (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
+      ) BETWEEN 1 AND r.ramp_up_period
+      -- 截止到昨日所在的自然月
+      AND c.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
+    GROUP BY c.store_code
 )
 
--- 4. 最终合并结果集
+-- 5. 最终合并结果集
 SELECT
     r.city_name                             AS `城市`,
     r.store_name                            AS `门店名称`,
@@ -54,17 +80,43 @@ SELECT
     m.city_manager_name                     AS `城市经理`,
     m.technology_vice_name                  AS `技术副总`,
     r.ramp_up_period                        AS `爬坡期长度`,
-    -- 计算当前月份对应的爬坡期序号
+    -- 当前月份对应的爬坡期序号
     ( (CAST(LEFT(DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'), 4) AS INT) * 12
        + CAST(RIGHT(DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'), 2) AS INT))
       - (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
     )                                       AS `当前爬坡期`,
+
+    -- 1. 现金流数据
     ROUND(b.total_cash_flow_budget, 2)      AS `现金流目标值`,
     ROUND(COALESCE(a.actual_cash_flow_to_date, 0), 2) AS `爬坡期现金流实际值`,
-    ROUND((COALESCE(a.actual_cash_flow_to_date, 0) - b.total_cash_flow_budget), 2) AS `现金流差异`
+    ROUND((COALESCE(a.actual_cash_flow_to_date, 0) - b.total_cash_flow_budget), 2) AS `现金流差异`,
+
+    -- 2. 营销费用相关
+    ROUND(COALESCE(c.total_marketing_est, 0), 2)      AS `营销费预算`,
+    -- 营销费合计 = 广告+团购+线下+新客+布展+推拿师提成
+    ROUND(
+        COALESCE(c.total_ad_fee, 0) +
+        COALESCE(c.total_group_buy_discount, 0) +
+        COALESCE(c.total_offline_ad_fee, 0) +
+        COALESCE(c.total_new_guest_discount, 0) +
+        COALESCE(c.total_exhibition_fee, 0) +
+        COALESCE(c.total_masseur_commission, 0)
+    , 2)                                              AS `营销费合计`,
+    ROUND(COALESCE(c.total_ad_fee, 0), 2)             AS `广告费`,
+    ROUND(COALESCE(c.total_group_buy_discount, 0), 2) AS `团购优惠`,
+    ROUND(COALESCE(c.total_offline_ad_fee, 0), 2)     AS `线下广告`,
+    ROUND(COALESCE(c.total_new_guest_discount, 0), 2) AS `新客优惠`,
+    ROUND(COALESCE(c.total_exhibition_fee, 0), 2)     AS `布展`,
+    ROUND(COALESCE(c.total_masseur_commission, 0), 2) AS `推拿师提成`,
+
+    -- 3. 激励费用相关
+    ROUND(COALESCE(c.total_incentive_est, 0), 2)      AS `激励费预算`,
+    ROUND(COALESCE(c.total_incentive_actual, 0), 2)   AS `激励费实际`,
+    ROUND(COALESCE(c.total_incentive_actual, 0) - COALESCE(c.total_incentive_est, 0), 2) AS `激励费差异`
+
 FROM ramp_config r
 LEFT JOIN budget_agg b ON r.store_code = b.store_code
 LEFT JOIN actual_agg a ON r.store_code = a.store_code
--- 关联管理人员映射表
+LEFT JOIN cost_agg c ON r.store_code = c.store_code
 LEFT JOIN tmp_manager_store_mapping m ON r.store_code = m.store_code
 ORDER BY r.city_code, r.store_code;
