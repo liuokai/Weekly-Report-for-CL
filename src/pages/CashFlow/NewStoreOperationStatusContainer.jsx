@@ -16,16 +16,16 @@ const NewStoreOperationStatusContainer = () => {
   const { data, loading, error, fetchData } = useFetchData('getNewStoreOperationStatus', []);
 
   const columns = [
-    { key: '城市', label: '城市' },
-    { key: '门店名称', label: '门店名称' },
-    { key: '开业日期', label: '开业日期' },
-    { key: '城市经理', label: '城市经理' },
-    { key: '技术副总', label: '技术副总' },
-    { key: '爬坡期长度', label: '爬坡期长度' },
-    { key: '当前爬坡期', label: '当前爬坡期' },
-    { key: '现金流目标值', label: '现金流目标值' },
-    { key: '爬坡期现金流实际值', label: '爬坡期现金流实际值' },
-    { key: '现金流差异', label: '现金流差异' },
+    { key: '城市', label: '城市', dataIndex: '城市' },
+    { key: '门店名称', label: '门店名称', dataIndex: '门店名称' },
+    { key: '开业日期', label: '开业日期', dataIndex: '开业日期' },
+    { key: '城市经理', label: '城市经理', dataIndex: '城市经理' },
+    { key: '技术副总', label: '技术副总', dataIndex: '技术副总' },
+    { key: '爬坡期长度', label: '爬坡期长度', dataIndex: '爬坡期长度' },
+    { key: '当前爬坡期', label: '当前爬坡期', dataIndex: '当前爬坡期' },
+    { key: '现金流目标值', label: '现金流目标值', dataIndex: '现金流目标值' },
+    { key: '爬坡期现金流实际值', label: '爬坡期现金流实际值', dataIndex: '爬坡期现金流实际值' },
+    { key: '现金流差异', label: '现金流差异', dataIndex: '现金流差异' },
   ];
 
   const { sortedData, sortConfig, handleSort } = useTableSorting(columns, data || []);
@@ -65,13 +65,20 @@ const NewStoreOperationStatusContainer = () => {
                         <th 
                             key={col.key} 
                             scope="col" 
-                            className="px-6 py-3 cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+                            className="px-6 py-3 cursor-pointer hover:bg-gray-100 whitespace-nowrap group"
                             onClick={() => handleSort(col.key)}
                         >
                             <div className="flex items-center gap-1">
                                 {col.label}
                                 {sortConfig.key === col.key && (
-                                    <span className="text-gray-400">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                                    <span className="text-[#a40035]">
+                                        {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                    </span>
+                                )}
+                                {(!sortConfig.key || sortConfig.key !== col.key) && (
+                                    <span className="text-gray-300 opacity-0 group-hover:opacity-100">
+                                        ↕
+                                    </span>
                                 )}
                             </div>
                         </th>

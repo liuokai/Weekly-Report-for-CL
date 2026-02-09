@@ -21,6 +21,11 @@ const useTableSorting = (columns, data) => {
       if (val == null) return -Infinity;
       if (typeof val === 'number') return val;
       if (typeof val === 'string') {
+        // 如果是日期格式 (YYYY-MM-DD 或 YYYY/MM/DD)，直接作为字符串返回，不转数字
+        if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(val)) {
+          return val;
+        }
+        
         if (/^[^0-9]+$/.test(val) && val !== '-Infinity' && val !== 'Infinity') {
           return val;
         }
