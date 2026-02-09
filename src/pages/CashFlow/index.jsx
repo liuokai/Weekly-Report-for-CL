@@ -278,7 +278,12 @@ const CashFlowTab = () => {
     <div className="space-y-6">
       {/* 核心指标整体容器 */}
       {summaryMetrics && (
-        <div className="bg-white rounded-2xl shadow-lg mb-8 overflow-hidden border border-gray-100">
+        <div className="bg-white rounded-lg shadow-sm mb-8 overflow-hidden border border-gray-100">
+          <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-[#a40035] flex items-center gap-2">
+              新店总结
+            </h2>
+          </div>
           <div className="flex flex-col md:flex-row">
             
             {/* 左侧：新店开发进度 */}

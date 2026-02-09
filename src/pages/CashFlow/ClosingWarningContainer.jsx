@@ -60,7 +60,6 @@ const ClosingWarningContainer = () => {
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
       <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#a40035] flex items-center gap-2">
-          <IconAlert />
           触发闭店预警门店
           <span className="ml-2 text-sm font-normal bg-[#a40035]/10 text-[#a40035] px-2 py-0.5 rounded-full">
             {loading ? '...' : (error ? '-' : `${count} 家`)}

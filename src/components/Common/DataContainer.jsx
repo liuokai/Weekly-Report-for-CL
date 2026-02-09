@@ -43,23 +43,30 @@ const DataContainer = ({
   }, []);
 
   return (
-    <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
-      {enableAiAnalysis && <AiAnalysisBox analysisText={aiAnalysis} />}
-      {renderFilters && (
-        <div className="mb-6">
-          {renderFilters()}
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-100 mb-6 ${className}`}>
+      <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 flex items-center justify-between rounded-t-lg">
+        <h2 className="text-lg font-bold text-[#a40035] flex items-center gap-2">
+          {title}
+        </h2>
+        {renderFilters && (
+          <div className="flex items-center">
+            {renderFilters()}
+          </div>
+        )}
+      </div>
+      
+      <div className="p-6">
+        {enableAiAnalysis && <AiAnalysisBox analysisText={aiAnalysis} />}
+        <div 
+          ref={contentRef}
+          className="mt-4"
+          style={{ 
+            maxHeight: isScrollable ? maxHeight : 'none',
+            overflowY: isScrollable ? 'auto' : 'visible'
+          }}
+        >
+          {children ? children : (renderContent ? renderContent() : <div>暂无内容</div>)}
         </div>
-      )}
-      <div 
-        ref={contentRef}
-        className="mt-4"
-        style={{ 
-          maxHeight: isScrollable ? maxHeight : 'none',
-          overflowY: isScrollable ? 'auto' : 'visible'
-        }}
-      >
-        {children ? children : (renderContent ? renderContent() : <div>暂无内容</div>)}
       </div>
     </div>
   );
