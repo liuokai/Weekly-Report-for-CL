@@ -8,6 +8,7 @@ const queryRegistry = require('./queryRegistry');
 const fs = require('fs');
 const OpenAI = require('openai');
 const { generateReminder } = require('./services/reminderGenerator');
+const { generateNewStoreAnalysis } = require('./services/newStoreAnalysisGenerator');
 const variableService = require('./services/variableService');
 const difyWorkflows = require('./config/difyWorkflows');
 const cacheService = require('./services/cacheService');
@@ -168,6 +169,21 @@ app.post('/api/generate-reminder', async (req, res) => {
     res.json({ status: 'success', data: reminder });
   } catch (error) {
     console.error('Generate Reminder API Error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// API Route: Generate New Store Analysis
+app.post('/api/generate-new-store-analysis', async (req, res) => {
+  const { newStoreData, currentTotalStores } = req.body;
+  if (!newStoreData) {
+    return res.status(400).json({ status: 'error', message: 'Data is required' });
+  }
+  try {
+    const analysis = await generateNewStoreAnalysis(deepseek, newStoreData, currentTotalStores);
+    res.json({ status: 'success', data: analysis });
+  } catch (error) {
+    console.error('Generate Analysis API Error:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 });

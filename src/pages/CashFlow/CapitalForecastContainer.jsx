@@ -102,6 +102,11 @@ const CapitalForecastContainer = () => {
     const oldStoreBudgetUnit = Number(BusinessTargets.capitalBalance?.oldStoreRenovationBudget || 0);
 
     for (const row of newStoreProcessData) {
+      // 排除 SQL 返回的汇总行，防止重复计算
+      if (row.city_name === '月度合计') {
+        continue;
+      }
+
       // 过滤城市：如果是总部则统计所有，否则只统计选中城市
       // 注意：SQL返回的字段名为中文别名
       if (selectedCity !== '总部' && row.city_name !== selectedCity) {

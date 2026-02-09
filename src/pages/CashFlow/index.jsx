@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import useFetchData from '../../hooks/useFetchData';
 import DataTable from '../../components/Common/DataTable';
 import DataContainer from '../../components/Common/DataContainer';
@@ -10,9 +11,12 @@ import NewStoreSupplyContainer from './NewStoreSupplyContainer';
 import CashFlowContinuousLossContainer from './CashFlowContinuousLossContainer';
 import ClosingWarningContainer from './ClosingWarningContainer';
 import FilterDropdown from '../../components/Common/FilterDropdown';
+import { generateNewStoreAnalysis } from '../../services/analysisService';
 
 const CashFlowTab = () => {
   const { data: newStoreProcessData } = useFetchData('getCashFlowNewStoreProcess');
+  const [analysisText, setAnalysisText] = useState('');
+  const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
   
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -22,6 +26,39 @@ const CashFlowTab = () => {
     return `${year}-${month}`;
   });
   const [selectedCity, setSelectedCity] = useState(null);
+
+  useEffect(() => {
+    if (newStoreProcessData && newStoreProcessData.length > 0 && !analysisText && !isAnalysisLoading) {
+      
+      // Calculate Global Total Stores (Frontend Logic)
+      // 1. Filter out summary rows and get detail rows
+      const detailRows = newStoreProcessData.filter(r => r.city_name !== '月度合计');
+      
+      // 2. Find rows with store count > 0
+      const validStoreRows = detailRows.filter(r => (Number(r['门店数量']) || 0) > 0);
+      
+      let currentTotalStores = 0;
+      if (validStoreRows.length > 0) {
+        // 3. Find latest valid month
+        const allValidMonths = validStoreRows.map(r => r.month).sort();
+        const latestValidMonth = allValidMonths[allValidMonths.length - 1];
+        
+        // 4. Sum stores for that month
+        currentTotalStores = detailRows
+          .filter(r => r.month === latestValidMonth)
+          .reduce((sum, r) => sum + (Number(r['门店数量']) || 0), 0);
+      }
+
+      setIsAnalysisLoading(true);
+      generateNewStoreAnalysis(newStoreProcessData, currentTotalStores)
+        .then(text => {
+          setAnalysisText(text);
+        })
+        .finally(() => {
+          setIsAnalysisLoading(false);
+        });
+    }
+  }, [newStoreProcessData]);
 
   // 提取筛选选项
   const { uniqueMonths, uniqueCities } = useMemo(() => {
@@ -310,6 +347,35 @@ const CashFlowTab = () => {
               新店总结
             </h2>
           </div>
+          
+          {/* 分析总结区域 */}
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+             <div className="flex items-start gap-3">
+                <div className="p-1.5 bg-[#a40035]/10 rounded mt-0.5 shrink-0">
+                   <svg className="w-4 h-4 text-[#a40035]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                   </svg>
+                </div>
+                <div className="flex-1">
+                   <h3 className="text-sm font-bold text-gray-800 mb-1">分析总结</h3>
+                   <div className="text-sm text-gray-600 leading-relaxed">
+                      {isAnalysisLoading ? (
+                        <div className="flex items-center gap-2 py-1">
+                           <div className="animate-spin h-4 w-4 border-2 border-[#a40035] border-t-transparent rounded-full"></div>
+                           <span>正在生成智能分析...</span>
+                        </div>
+                      ) : (
+                         <div className="prose prose-sm max-w-none text-gray-700 [&>p]:mb-0">
+                            <ReactMarkdown>
+                               {analysisText || '暂无分析内容'}
+                            </ReactMarkdown>
+                         </div>
+                       )}
+                   </div>
+                </div>
+             </div>
+          </div>
+
           <div className="flex flex-col md:flex-row">
             
             {/* 左侧：新店开发进度 */}
