@@ -36,11 +36,9 @@ actual_agg AS (
     FROM dws_profit_store_detail_monthly a
     INNER JOIN ramp_config r ON a.store_code = r.store_code
     WHERE
-      -- 属于爬坡期内
       ((CAST(LEFT(a.month, 4) AS INT) * 12 + CAST(RIGHT(a.month, 2) AS INT)) -
        (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
       ) BETWEEN 1 AND r.ramp_up_period
-      -- 截止到昨日所在的自然月
       AND a.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
     GROUP BY a.store_code
 ),
@@ -48,10 +46,8 @@ cost_agg AS (
     -- 4. 汇总爬坡期内（截止昨日所在月）的各项费用预算与明细实际值
     SELECT
         c.store_code,
-        -- 预算项
         SUM(c.marketing_est)      AS total_marketing_est,
         SUM(c.incentive_est)      AS total_incentive_est,
-        -- 实际明细项
         SUM(c.ad_fee)             AS total_ad_fee,
         SUM(c.group_buy_discount) AS total_group_buy_discount,
         SUM(c.offline_ad_fee)     AS total_offline_ad_fee,
@@ -62,11 +58,9 @@ cost_agg AS (
     FROM dws_new_store_ramp_up_cost_execution_statistics c
     INNER JOIN ramp_config r ON c.store_code = r.store_code
     WHERE
-      -- 属于爬坡期内
       ((CAST(LEFT(c.month, 4) AS INT) * 12 + CAST(RIGHT(c.month, 2) AS INT)) -
        (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
       ) BETWEEN 1 AND r.ramp_up_period
-      -- 截止到昨日所在的自然月
       AND c.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
     GROUP BY c.store_code
 )
@@ -80,7 +74,6 @@ SELECT
     m.city_manager_name                     AS `城市经理`,
     m.technology_vice_name                  AS `技术副总`,
     r.ramp_up_period                        AS `爬坡期长度`,
-    -- 当前月份对应的爬坡期序号
     ( (CAST(LEFT(DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'), 4) AS INT) * 12
        + CAST(RIGHT(DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'), 2) AS INT))
       - (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
@@ -93,7 +86,6 @@ SELECT
 
     -- 2. 营销费用相关
     ROUND(COALESCE(c.total_marketing_est, 0), 2)      AS `营销费预算`,
-    -- 营销费合计 = 广告+团购+线下+新客+布展+推拿师提成
     ROUND(
         COALESCE(c.total_ad_fee, 0) +
         COALESCE(c.total_group_buy_discount, 0) +
@@ -102,6 +94,17 @@ SELECT
         COALESCE(c.total_exhibition_fee, 0) +
         COALESCE(c.total_masseur_commission, 0)
     , 2)                                              AS `营销费合计`,
+
+    -- 营销费使用率：保留1位小数的百分数格式
+    CASE
+        WHEN c.total_marketing_est IS NULL OR c.total_marketing_est = 0 THEN NULL
+        ELSE CONCAT(ROUND(
+            (COALESCE(c.total_ad_fee, 0) + COALESCE(c.total_group_buy_discount, 0) + COALESCE(c.total_offline_ad_fee, 0) +
+             COALESCE(c.total_new_guest_discount, 0) + COALESCE(c.total_exhibition_fee, 0) + COALESCE(c.total_masseur_commission, 0))
+            / c.total_marketing_est * 100
+        , 1), '%')
+    END                                               AS `营销费使用率`,
+
     ROUND(COALESCE(c.total_ad_fee, 0), 2)             AS `广告费`,
     ROUND(COALESCE(c.total_group_buy_discount, 0), 2) AS `团购优惠`,
     ROUND(COALESCE(c.total_offline_ad_fee, 0), 2)     AS `线下广告`,
@@ -112,6 +115,13 @@ SELECT
     -- 3. 激励费用相关
     ROUND(COALESCE(c.total_incentive_est, 0), 2)      AS `激励费预算`,
     ROUND(COALESCE(c.total_incentive_actual, 0), 2)   AS `激励费实际`,
+
+    -- 激励费使用率：保留1位小数的百分数格式
+    CASE
+        WHEN c.total_incentive_est IS NULL OR c.total_incentive_est = 0 THEN NULL
+        ELSE CONCAT(ROUND(COALESCE(c.total_incentive_actual, 0) / c.total_incentive_est * 100, 1), '%')
+    END                                               AS `激励费使用率`,
+
     ROUND(COALESCE(c.total_incentive_actual, 0) - COALESCE(c.total_incentive_est, 0), 2) AS `激励费差异`
 
 FROM ramp_config r
