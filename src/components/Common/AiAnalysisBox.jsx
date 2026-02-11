@@ -238,71 +238,166 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
   const displayLoading = analyzing || parentLoading;
   const displayError = localError || parentError;
 
-  // Even if no content, if we are analyzing, show the box
-  if (!displayContent && !displayLoading && !displayError && !analyzing) {
-    // But if we want to show the button to *start* analysis, we should render something.
-    // User requirement: "In the smart analysis component... provide a button". 
-    // If the box is hidden, the button is hidden. 
-    // So we should always render the header at least if we want the feature to be discoverable.
-    // However, the original code hid it. I'll respect the original behavior BUT since I added a feature,
-    // I should probably allow it to be visible if the user wants to configure it.
-    // Let's render a placeholder if nothing is there but config is possible.
-    // For now, I'll keep the hide logic but assume parent passes *some* prop or we want to allow empty state to be configured.
-    // Actually, let's always render the header so the button is available.
-  }
+  /**
+   * 将 JSON 或复杂内容转换为标准的 Markdown 格式
+   * 目标：实现清晰的一二级标题结构，彻底移除 JSON 符号，移除引用符号
+   */
+  const formatAsMarkdown = (content) => {
+    if (!content) return '';
+    
+    // 尝试解析 JSON
+    let data = null;
+    try {
+      if (typeof content === 'string' && (content.trim().startsWith('{') || content.trim().startsWith('['))) {
+        data = JSON.parse(content);
+      } else if (typeof content === 'object') {
+        data = content;
+      }
+    } catch (e) {
+      return content;
+    }
+
+    if (!data) return content;
+
+    // 递归转换函数，将值转换为不含 JSON 符号的纯文本
+    const cleanValue = (val) => {
+      if (val === null || val === undefined) return '';
+      if (Array.isArray(val)) {
+        return val.map(v => cleanValue(v)).join('；');
+      }
+      if (typeof val === 'object') {
+        return Object.entries(val)
+          .map(([k, v]) => `${k}：${cleanValue(v)}`)
+          .join('；');
+      }
+      return String(val).replace(/["'{}[\]]/g, '');
+    };
+
+    let markdown = '';
+    const keys = Object.keys(data);
+    
+    // 识别一级标题相关的 key
+    const primaryKeys = ['summary', 'conclusion', '总结', '结论', '核心结论', '概览', 'overview', '核心经营结论', '增长速率与动能研判', '成本效能与进度预警'];
+    
+    keys.forEach(key => {
+      const val = data[key];
+      if (!val) return;
+
+      // 判断是否为一级标题（在 primaryKeys 中，或者包含这些关键词）
+      const isPrimaryKey = primaryKeys.some(pk => key.includes(pk));
+      
+      if (isPrimaryKey) {
+        markdown += `### ${key}\n\n`; // 使用三级标题作为一级展示，视觉更均衡
+      } else {
+        markdown += `#### ${key}\n\n`; // 使用四级标题作为二级展示
+      }
+      
+      if (Array.isArray(val)) {
+        // 如果数组项中包含“：”，尝试拆分为二级标题
+        val.forEach(item => {
+          const itemStr = cleanValue(item);
+          if (itemStr.includes('：')) {
+            const [subTitle, ...subContent] = itemStr.split('：');
+            markdown += `**${subTitle}**：${subContent.join('：')}\n\n`;
+          } else {
+            markdown += `- ${itemStr}\n`;
+          }
+        });
+        markdown += '\n';
+      } else if (typeof val === 'object') {
+        // 处理对象结构
+        Object.entries(val).forEach(([subKey, subVal]) => {
+          markdown += `**${subKey}**：${cleanValue(subVal)}\n\n`;
+        });
+      } else {
+        const valStr = cleanValue(val);
+        if (valStr.includes('：')) {
+          const [subTitle, ...subContent] = valStr.split('：');
+          markdown += `**${subTitle}**：${subContent.join('：')}\n\n`;
+        } else {
+          markdown += `${valStr}\n\n`;
+        }
+      }
+    });
+
+    return markdown.trim();
+  };
+
+  const finalMarkdown = formatAsMarkdown(displayContent);
 
   return (
-    <div className="bg-gray-50 rounded-lg border border-gray-100 p-4 mb-6 relative">
-      <div className="flex items-center justify-between mb-2">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-purple-600">✨</span>
-          <h3 className="text-sm font-bold text-gray-700">智能分析</h3>
+          <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-800">智能经营洞察</h3>
+            <p className="text-[10px] text-gray-400">AI 深度解析数据结论</p>
+          </div>
         </div>
-        <button 
-          onClick={() => setShowConfig(true)}
-          className="text-gray-400 hover:text-purple-600 transition-colors p-1"
-          title="配置分析数据与工作流"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1">
+          {displayContent && !displayLoading && (
+            <button 
+              onClick={() => executeAnalysis(selectedVariables, selectedWorkflow)}
+              className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
+              title="重新分析"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          )}
+          <button 
+            onClick={() => setShowConfig(true)}
+            className="text-gray-400 hover:text-purple-600 transition-colors p-1.5 hover:bg-gray-50 rounded-lg"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
       </div>
       
       <div className="text-sm text-gray-600 leading-relaxed min-h-[60px]">
         {displayLoading ? (
-          <div className="flex items-center gap-2 text-gray-500 py-4">
-            <svg className="animate-spin h-4 w-4 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>{analyzing ? '正在进行自定义分析...' : '正在生成智能分析...'}</span>
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="animate-spin h-6 w-6 border-2 border-purple-100 border-t-purple-600 rounded-full mb-3"></div>
+            <span className="text-gray-400 text-xs">分析中...</span>
           </div>
         ) : displayError ? (
-          <div className="text-red-500 py-2">{displayError}</div>
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs border border-red-100">
+            {displayError}
+          </div>
         ) : !displayContent ? (
-           <div className="text-gray-400 italic py-2">点击右上角设置按钮开始自定义分析...</div>
+          <div className="flex items-center justify-center py-8 border border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setShowConfig(true)}>
+            <p className="text-gray-400 text-xs">点击配置并开始分析</p>
+          </div>
         ) : (
-          <div className="markdown-content">
+          <div className="markdown-content bg-gray-50/50 p-4 rounded-xl border border-gray-100">
             <ReactMarkdown
               components={{
-                h1: ({node, ...props}) => <h1 className="text-lg font-bold text-gray-800 my-2" {...props} />,
-                h2: ({node, ...props}) => <h2 className="text-base font-bold text-gray-800 my-2" {...props} />,
-                h3: ({node, ...props}) => <h3 className="text-sm font-bold text-gray-700 my-1" {...props} />,
-                p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                ul: ({node, ...props}) => <ul className="list-disc list-outside ml-4 mb-2 space-y-1" {...props} />,
-                ol: ({node, ...props}) => <ol className="list-decimal list-outside ml-4 mb-2 space-y-1" {...props} />,
-                li: ({node, ...props}) => <li className="" {...props} />,
-                strong: ({node, ...props}) => <strong className="font-semibold text-gray-800" {...props} />,
-                blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 pl-3 py-1 my-2 bg-gray-100 italic" {...props} />,
+                h3: ({node, children, ...props}) => <h3 className="text-base font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-100 pb-1" {...props}>{children}</h3>,
+                h4: ({node, children, ...props}) => <h4 className="text-sm font-bold text-purple-700 mb-2 mt-3" {...props}>{children}</h4>,
+                p: ({node, ...props}) => <p className="mb-2 last:mb-0 text-gray-700 text-sm leading-relaxed" {...props} />,
+                ul: ({node, ...props}) => <ul className="space-y-1 mb-3 ml-4 list-disc list-outside" {...props} />,
+                ol: ({node, ...props}) => <ol className="space-y-1 mb-3 ml-4 list-decimal list-outside" {...props} />,
+                li: ({node, ...props}) => <li className="text-gray-600 text-sm pl-1" {...props} />,
+                strong: ({node, ...props}) => <strong className="font-bold text-gray-800" {...props} />,
+                blockquote: ({node, ...props}) => (
+                  <blockquote className="border-l-4 border-purple-200 pl-3 py-1 my-2 text-gray-700 text-sm italic" {...props} />
+                ),
                 code: ({node, inline, ...props}) => 
                   inline ? 
-                    <code className="bg-gray-200 rounded px-1 py-0.5 text-xs font-mono" {...props} /> :
-                    <pre className="bg-gray-800 text-gray-100 rounded p-2 my-2 overflow-x-auto text-xs font-mono"><code {...props} /></pre>
+                    <code className="bg-gray-100 text-purple-600 rounded px-1 py-0.5 text-[11px]" {...props} /> :
+                    <pre className="bg-white rounded-lg p-3 my-2 overflow-x-auto text-[11px] border border-gray-100"><code {...props} /></pre>
               }}
             >
-              {displayContent}
+              {finalMarkdown}
             </ReactMarkdown>
           </div>
         )}
