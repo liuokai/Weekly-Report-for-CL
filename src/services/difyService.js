@@ -97,18 +97,21 @@ class DifyService {
    * @param {string} workflowId 
    * @param {Object} staticData - Optional static configuration data
    * @param {AbortSignal} signal - Optional signal to abort the request
+   * @param {boolean} forceRefresh - If true, bypass cache and fetch fresh data
    */
-  async executeSmartAnalysis(variableKeys, workflowId, staticData = {}, signal = null) {
+  async executeSmartAnalysis(variableKeys, workflowId, staticData = {}, signal = null, forceRefresh = false) {
     if (!this.isEnabled) {
       throw new Error('AI service is disabled');
     }
 
     const cacheKey = this._generateSmartAnalysisCacheKey(variableKeys, workflowId, staticData);
     
-    // 1. Check LocalStorage Cache
-    const cachedResult = this._getFromCache(cacheKey);
-    if (cachedResult) {
-      return cachedResult;
+    // 1. Check LocalStorage Cache (unless forceRefresh is true)
+    if (!forceRefresh) {
+      const cachedResult = this._getFromCache(cacheKey);
+      if (cachedResult) {
+        return cachedResult;
+      }
     }
 
     // 2. Check In-flight Requests (Deduplication)

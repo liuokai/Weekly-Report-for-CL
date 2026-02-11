@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import difyService from '../../services/difyService';
@@ -126,8 +126,8 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
   // we can't simply return a cleanup function from it.
   // Instead, we should use a ref for the component mount state.
   
-  const isComponentMounted = React.useRef(true);
-  const activeRequestRef = React.useRef(null);
+  const isComponentMounted = useRef(true);
+  const activeRequestRef = useRef(null);
   
   useEffect(() => {
     isComponentMounted.current = true;
@@ -140,7 +140,7 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
     };
   }, []);
 
-  const executeAnalysis = async (selectedKeys, workflowId) => {
+  const executeAnalysis = async (selectedKeys, workflowId, forceRefresh = false) => {
     if (!isComponentMounted.current) return;
     
     setAnalyzing(true);
@@ -187,7 +187,8 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
         variableKeys,
         workflowId,
         { ...staticData, ...fixedStaticData },
-        abortController.signal
+        abortController.signal,
+        forceRefresh
       );
       
       if (isComponentMounted.current) {
@@ -270,6 +271,7 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
           .map(([k, v]) => `${k}：${cleanValue(v)}`)
           .join('；');
       }
+      // 仅在确定是 JSON 结构时才移除引号，避免破坏正常文本中的引号
       return String(val).replace(/["'{}[\]]/g, '');
     };
 
@@ -283,37 +285,42 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
       const val = data[key];
       if (!val) return;
 
-      // 判断是否为一级标题（在 primaryKeys 中，或者包含这些关键词）
+      // 判断是否为一级标题
       const isPrimaryKey = primaryKeys.some(pk => key.includes(pk));
       
       if (isPrimaryKey) {
-        markdown += `### ${key}\n\n`; // 使用三级标题作为一级展示，视觉更均衡
+        markdown += `### ${key}\n\n`;
       } else {
-        markdown += `#### ${key}\n\n`; // 使用四级标题作为二级展示
+        markdown += `#### ${key}\n\n`;
       }
       
       if (Array.isArray(val)) {
-        // 如果数组项中包含“：”，尝试拆分为二级标题
         val.forEach(item => {
           const itemStr = cleanValue(item);
-          if (itemStr.includes('：')) {
-            const [subTitle, ...subContent] = itemStr.split('：');
-            markdown += `**${subTitle}**：${subContent.join('：')}\n\n`;
+          // 同时支持全角和半角冒号的拆分
+          const colonMatch = itemStr.match(/[：:]/);
+          if (colonMatch) {
+            const index = colonMatch.index;
+            const subTitle = itemStr.slice(0, index).trim();
+            const subContent = itemStr.slice(index + 1).trim();
+            markdown += `**${subTitle}**：${subContent}\n\n`;
           } else {
             markdown += `- ${itemStr}\n`;
           }
         });
         markdown += '\n';
       } else if (typeof val === 'object') {
-        // 处理对象结构
         Object.entries(val).forEach(([subKey, subVal]) => {
           markdown += `**${subKey}**：${cleanValue(subVal)}\n\n`;
         });
       } else {
         const valStr = cleanValue(val);
-        if (valStr.includes('：')) {
-          const [subTitle, ...subContent] = valStr.split('：');
-          markdown += `**${subTitle}**：${subContent.join('：')}\n\n`;
+        const colonMatch = valStr.match(/[：:]/);
+        if (colonMatch) {
+          const index = colonMatch.index;
+          const subTitle = valStr.slice(0, index).trim();
+          const subContent = valStr.slice(index + 1).trim();
+          markdown += `**${subTitle}**：${subContent}\n\n`;
         } else {
           markdown += `${valStr}\n\n`;
         }
@@ -323,7 +330,7 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
     return markdown.trim();
   };
 
-  const finalMarkdown = formatAsMarkdown(displayContent);
+  const finalMarkdown = useMemo(() => formatAsMarkdown(displayContent), [displayContent]);
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
@@ -340,9 +347,9 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
           </div>
         </div>
         <div className="flex items-center gap-1">
-          {displayContent && !displayLoading && (
+          {((displayContent && !displayLoading) || displayError) && (
             <button 
-              onClick={() => executeAnalysis(selectedVariables, selectedWorkflow)}
+              onClick={() => executeAnalysis(selectedVariables, selectedWorkflow, true)}
               className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
               title="重新分析"
             >
