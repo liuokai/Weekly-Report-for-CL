@@ -41,7 +41,7 @@ const CityBudgetExecutionContainer = () => {
   // 获取月份列表
   const monthList = useMemo(() => {
     if (!rawData || rawData.length === 0) return [];
-    const months = [...new Set(rawData.map(item => item['月份']))];
+    const months = [...new Set(rawData.map(item => item['month']))];
     return months.sort().reverse(); // 降序排列，最新的月份在前
   }, [rawData]);
   
@@ -65,7 +65,7 @@ const CityBudgetExecutionContainer = () => {
     if (!rawData || rawData.length === 0 || !selectedMonth) return { tableData: [], summaryRow: null };
 
     // 筛选出选中月份的数据
-    const filteredData = rawData.filter(item => item['月份'] === selectedMonth);
+    const filteredData = rawData.filter(item => item['month'] === selectedMonth);
 
     // 注入上年末资金结余数据
     // 注意：如果是“合计”行，上年末资金结余也需要累加吗？
@@ -78,21 +78,21 @@ const CityBudgetExecutionContainer = () => {
 
     const processedData = filteredData.map(item => {
       let lastYearBalance = 0;
-      if (item['城市'] === '合计') {
+      if (item['city_name'] === '合计') {
         lastYearBalance = totalLastYearBalance;
       } else {
-        lastYearBalance = cityCapitalBalanceTargets[item['城市']] || 0;
+        lastYearBalance = cityCapitalBalanceTargets[item['city_name']] || 0;
       }
       
       return {
         ...item,
-        '上年末资金结余': lastYearBalance
+        'last_year_capital_balance': lastYearBalance
       };
     });
 
     // 分离合计行和普通数据行
-    const dataRows = processedData.filter(item => item['城市'] !== '合计');
-    const summary = processedData.find(item => item['城市'] === '合计');
+    const dataRows = processedData.filter(item => item['city_name'] !== '合计');
+    const summary = processedData.find(item => item['city_name'] === '合计');
 
     return { tableData: dataRows, summaryRow: summary };
   }, [rawData, selectedMonth, cityCapitalBalanceTargets]);
@@ -107,7 +107,7 @@ const CityBudgetExecutionContainer = () => {
     {
       key: 'city',
       title: '城市',
-      dataIndex: '城市',
+      dataIndex: 'city_name',
       width: '120px',
       fixed: 'left',
       render: (text) => <span className="font-medium text-gray-900">{text}</span>
@@ -115,7 +115,7 @@ const CityBudgetExecutionContainer = () => {
     {
       key: 'lastYearBalance',
       title: '上年末资金结余',
-      dataIndex: '上年末资金结余',
+      dataIndex: 'last_year_capital_balance',
       align: 'right',
       width: '180px',
       render: (val) => (
@@ -127,7 +127,7 @@ const CityBudgetExecutionContainer = () => {
     {
       key: 'investment',
       title: '截止当月累计新店投资',
-      dataIndex: '截止当月累计新店投资',
+      dataIndex: 'cumulative_new_store_investment',
       align: 'right',
       width: '180px',
       render: (val) => <span className="text-gray-700">{formatMoney(val)}</span>
@@ -135,7 +135,7 @@ const CityBudgetExecutionContainer = () => {
     {
       key: 'cashflow_budget',
       title: '截止当月累计现金流预算值',
-      dataIndex: '截止当月累计现金流预算值',
+      dataIndex: 'cumulative_cash_flow_budget',
       align: 'right',
       width: '180px',
       render: (val) => <span className="text-gray-700">{formatMoney(val)}</span>
@@ -143,7 +143,7 @@ const CityBudgetExecutionContainer = () => {
     {
       key: 'cashflow_actual',
       title: '截止当月累计经营现金流',
-      dataIndex: '截止当月累计经营现金流',
+      dataIndex: 'cumulative_cash_flow_actual',
       align: 'right',
       width: '180px',
       render: (val) => (
@@ -155,7 +155,7 @@ const CityBudgetExecutionContainer = () => {
     {
       key: 'achievement',
       title: '现金流达成率',
-      dataIndex: '现金流达成率',
+      dataIndex: 'cash_flow_achievement_ratio_display',
       align: 'right',
       width: '120px',
       render: (val) => <span className="font-medium text-gray-900">{val}</span>
@@ -163,7 +163,7 @@ const CityBudgetExecutionContainer = () => {
     {
       key: 'balance',
       title: '截止当月累计资金结余',
-      dataIndex: '截止当月累计资金结余',
+      dataIndex: 'cumulative_capital_balance',
       align: 'right',
       width: '180px',
       render: (val) => (
@@ -229,7 +229,7 @@ const CityBudgetExecutionContainer = () => {
         <DataTable
           columns={columns}
           data={sortedData}
-          getKey={(item) => item['城市']}
+          getKey={(item) => item['city_name']}
           pagination={false}
           emptyText="暂无数据"
           onSort={handleSort}

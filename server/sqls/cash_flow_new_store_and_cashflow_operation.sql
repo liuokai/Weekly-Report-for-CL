@@ -119,14 +119,14 @@ final_accumulated as (
 
 -- 9. 最终输出
 select
-    month as '月份',
-    city_name as '城市',
-    round(cum_investment, 2) as '截止当月累计新店投资',
-    round(cum_cash_flow_actual, 2) as '截止当月累计经营现金流',
-    round(cum_cash_flow_budget, 2) as '截止当月累计现金流预算值',
+    month as month, -- 原字段：月份
+    city_name as city_name, -- 原字段：城市
+    round(cum_investment, 2) as cumulative_new_store_investment, -- 原字段：截止当月累计新店投资
+    round(cum_cash_flow_actual, 2) as cumulative_cash_flow_actual, -- 原字段：截止当月累计经营现金流
+    round(cum_cash_flow_budget, 2) as cumulative_cash_flow_budget, -- 原字段：截止当月累计现金流预算值
     -- 达成率：转换为百分比字符串
-    concat(round(cum_cash_flow_actual / nullif(cum_cash_flow_budget, 0) * 100, 2), '%') as '现金流达成率',
-    round((init_bal - cum_investment + cum_cash_flow_actual), 2) as '截止当月累计资金结余'
+    concat(round(cum_cash_flow_actual / nullif(cum_cash_flow_budget, 0) * 100, 2), '%') as cash_flow_achievement_ratio_display, -- 原字段：现金流达成率
+    round((init_bal - cum_investment + cum_cash_flow_actual), 2) as cumulative_capital_balance -- 原字段：截止当月累计资金结余
 from final_accumulated
 order by
     month,

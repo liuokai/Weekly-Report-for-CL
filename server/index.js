@@ -217,33 +217,33 @@ app.post('/api/generate-city-budget-summary', async (req, res) => {
     
     // Filter for '合计' rows to get the aggregate numbers
     // In SQL: case when city_name = '合计' then 1 else 0 end -> sorted last
-    // Column name for city is '城市'
-    const totalRows = newStoreAndOperationResults.filter(r => r['城市'] === '合计');
+    // Column name for city is 'city_name'
+    const totalRows = newStoreAndOperationResults.filter(r => r['city_name'] === '合计');
     
     // Sort by month just in case
-    totalRows.sort((a, b) => (a['月份'] > b['月份'] ? 1 : -1));
+    totalRows.sort((a, b) => (a['month'] > b['month'] ? 1 : -1));
     const latestTotalRow = totalRows[totalRows.length - 1];
     
     if (!latestTotalRow) {
          throw new Error("No total row found in cash_flow_new_store_and_cashflow_operation");
     }
     
-    const currentMonth = latestTotalRow['月份'];
-    const a = parseFloat(latestTotalRow['截止当月累计经营现金流'] || 0);
-    const c = parseFloat(latestTotalRow['截止当月累计新店投资'] || 0);
+    const currentMonth = latestTotalRow['month'];
+    const a = parseFloat(latestTotalRow['cumulative_cash_flow_actual'] || 0);
+    const c = parseFloat(latestTotalRow['cumulative_new_store_investment'] || 0);
     
     // Find completed cities in the current month
     // Filter rows for current month and non-total cities
     const achievedCities = newStoreAndOperationResults
-        .filter(r => r['月份'] === currentMonth && r['城市'] !== '合计')
+        .filter(r => r['month'] === currentMonth && r['city_name'] !== '合计')
         .filter(r => {
-            const rateStr = r['现金流达成率']; // e.g. "105.00%"
+            const rateStr = r['cash_flow_achievement_ratio_display']; // e.g. "105.00%"
             if (!rateStr) return false;
             // Remove % and convert to float
             const rate = parseFloat(rateStr.toString().replace('%', ''));
             return rate >= 100;
         })
-        .map(r => r['城市']);
+        .map(r => r['city_name']);
         
     // b) Process budgetResults (b)
     // Sum of 'total_cash_flow_budget' for all records (assuming the query returns all months for the year)
