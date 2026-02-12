@@ -24,10 +24,13 @@ const useFetchData = (queryKey, params = [], initialData = null, options = {}) =
       // Delegate to global DataLoader which handles queuing, caching, and batching
       const result = await dataLoader.fetchData(queryKey, activeParams);
       
-      if (result.status === 'success') {
+      if (result && result.status === 'success') {
         setData(result.data);
+      } else if (result && result.status === 'aborted') {
+        // Silently handle aborted requests
+        console.log(`[useFetchData] Request for ${queryKey} aborted`);
       } else {
-        setError(result.message || 'Failed to fetch data');
+        setError(result?.message || 'Failed to fetch data');
       }
     } catch (err) {
       setError(err.message);

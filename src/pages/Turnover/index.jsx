@@ -91,7 +91,7 @@ const TurnoverReport = () => {
         // 1. Fetch Turnover Overview (Critical for top metrics)
         const dataResult = await dataLoader.fetchData('getTurnoverOverview', []);
 
-        if (isMounted) {
+        if (isMounted && dataResult) {
           if (dataResult.status === 'success') {
             const newData = dataResult.data;
           setTurnoverData(newData);

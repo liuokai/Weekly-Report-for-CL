@@ -34,7 +34,7 @@ const AnnualCostAnalysis = ({ data }) => {
         category.columns.forEach(col => {
           const val = Number(data[col]) || 0;
           value += val;
-          details.push({ name: col, value: val });
+          details.push({ name: costMapping.fieldLabels[col] || col, value: val, key: col });
         });
       } else if (category.subCategories) {
         // Subcategories
@@ -44,7 +44,7 @@ const AnnualCostAnalysis = ({ data }) => {
           sub.columns.forEach(col => {
             const val = Number(data[col]) || 0;
             subValue += val;
-            subDetails.push({ name: col, value: val });
+            subDetails.push({ name: costMapping.fieldLabels[col] || col, value: val, key: col });
           });
           value += subValue;
           details.push({ name: sub.name, value: subValue, subDetails, isSubCategory: true });

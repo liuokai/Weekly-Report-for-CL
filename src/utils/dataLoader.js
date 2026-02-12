@@ -38,6 +38,7 @@ class DataLoader {
 
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeunload', () => {
+        console.log('[DataLoader] Page unloading detected via beforeunload');
         this.isUnloading = true;
       });
     }
@@ -64,6 +65,7 @@ class DataLoader {
    * Enqueue a request and process it when a slot is available
    */
   async fetchData(queryKey, params = []) {
+    if (this.isUnloading) return { status: 'aborted', message: 'Page unloading' };
     const uniqueCacheKey = this._buildCacheKey(queryKey, params);
 
     if (this.memoryCache.has(uniqueCacheKey)) {
@@ -86,21 +88,31 @@ class DataLoader {
           const result = await this._executeRequest(queryKey, params);
           resolve(result);
         } catch (error) {
+          if (this.isUnloading) {
+            resolve({ status: 'aborted', message: 'Page unloading' });
+            return;
+          }
           // Retry logic for 504 or network errors
           if (
             error.message.includes('504') ||
             error.message.includes('timeout') ||
             error.message.includes('Network Error') ||
-            error.message.includes('Failed to fetch')
+            error.message.includes('Failed to fetch') ||
+            error.name === 'AbortError'
           ) {
             console.warn(`[DataLoader] Retry ${queryKey} due to error: ${error.message}`);
             try {
               // Wait 1 second before retry
               await new Promise(r => setTimeout(r, 1000));
+              if (this.isUnloading) {
+                resolve({ status: 'aborted', message: 'Page unloading' });
+                return;
+              }
               const retryResult = await this._executeRequest(queryKey, params);
               resolve(retryResult);
             } catch (retryError) {
-              reject(retryError);
+              if (this.isUnloading) resolve({ status: 'aborted', message: 'Page unloading' });
+              else reject(retryError);
             }
           } else {
             reject(error);
@@ -145,7 +157,10 @@ class DataLoader {
 
     console.log(`[DataLoader] Fetching ${queryKey}...`);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
+    const timeoutId = setTimeout(() => {
+      console.warn(`[DataLoader] Timeout reached for ${queryKey}, aborting...`);
+      controller.abort();
+    }, 300000); // 5 minutes timeout
 
     try {
       const response = await fetch('/api/fetch-data', {
@@ -153,30 +168,48 @@ class DataLoader {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ queryKey, params }),
         signal: controller.signal
+      }).catch(err => {
+        if (err.name === 'AbortError') {
+          console.log(`[DataLoader] Fetch aborted for ${queryKey} (isUnloading: ${this.isUnloading})`);
+        } else {
+          console.error(`[DataLoader] Fetch network error for ${queryKey}:`, err);
+        }
+        throw err;
       });
 
       clearTimeout(timeoutId);
 
+      if (this.isUnloading) return { status: 'aborted', message: 'Page unloading' };
+
       if (!response.ok) {
-        const text = await response.text();
+        const text = await response.text().catch(() => 'No error detail');
         throw new Error(`Server error: ${response.status} ${response.statusText} - ${text}`);
       }
 
       const text = await response.text();
+      if (!text) {
+        throw new Error('Empty response from server');
+      }
+
       let result;
       try {
         result = JSON.parse(text);
       } catch (e) {
         console.error(`[DataLoader] Invalid JSON for ${queryKey}:`, text.substring(0, 100));
-        throw new Error(`Invalid JSON response`);
+        throw new Error(`Invalid JSON response: ${text.substring(0, 50)}...`);
       }
 
       // Cache the result
-      this.memoryCache.set(uniqueCacheKey, result.data);
-      cacheManager.set(uniqueCacheKey, result.data);
-
-      return result;
+      if (result && result.status === 'success') {
+        this.memoryCache.set(uniqueCacheKey, result.data);
+        cacheManager.set(uniqueCacheKey, result.data);
+        return result;
+      } else {
+        throw new Error(result?.message || 'Unknown server error');
+      }
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (this.isUnloading) return { status: 'aborted', message: 'Page unloading' };
       if (error.name === 'AbortError') {
         throw new Error(`Request timeout for ${queryKey}`);
       }
@@ -193,9 +226,9 @@ class DataLoader {
     // Simply delegate to the queue-managed fetchData
     const promises = PRELOAD_QUERIES.map(queryKey => 
       this.fetchData(queryKey, []).catch(err => {
-        if (this.isUnloading) return null;
+        if (this.isUnloading) return { status: 'aborted', message: 'Page unloading' };
         console.error(`[Prefetch] Error for ${queryKey}:`, err);
-        return null;
+        return { status: 'error', message: err.message };
       })
     );
     

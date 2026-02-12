@@ -47,7 +47,8 @@ const server = app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
 server.timeout = 300000; // 5 minutes global timeout
-server.keepAliveTimeout = 300000; // 5 minutes keep-alive timeout
+server.keepAliveTimeout = 305000; // Slightly larger than proxy timeout
+server.headersTimeout = 306000; // Slightly larger than keepAliveTimeout
 
 // API Route: Fetch Data
 app.post('/api/fetch-data', async (req, res) => {

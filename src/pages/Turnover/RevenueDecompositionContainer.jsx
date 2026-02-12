@@ -240,9 +240,9 @@ const RevenueDecompositionContainer = () => {
     if (!values || values.length === 0) return true;
     const lastIndex = values.length - 1;
     const lastItem = rawData && rawData[lastIndex];
-    if (!lastItem || !lastItem.date_range) return true;
+    if (!lastItem || !(lastItem.week_date_range || lastItem.date_range)) return true;
     
-    const parts = lastItem.date_range.split('~');
+    const parts = (lastItem.week_date_range || lastItem.date_range).split('~');
     if (parts.length < 2) return true;
     
     const endDateStr = parts[1].trim();
@@ -269,8 +269,8 @@ const RevenueDecompositionContainer = () => {
       lyKey = null;
     } else if (selectedMetricKey === 'dailyAvgRevenue') {
       currentData = modalAvgDayData;
-      currentKey = '周天均营业额';
-      lyKey = '去年同期天均营业额';
+      currentKey = 'weekly_daily_avg_revenue';
+      lyKey = 'last_year_daily_avg_revenue';
     }
 
     if (currentData && currentData.length > 0) {
@@ -278,17 +278,17 @@ const RevenueDecompositionContainer = () => {
       const series = { [selectedMetricKey]: [] };
       const seriesLY = { [selectedMetricKey]: [] };
       const sortedAll = [...currentData].sort((a, b) => {
-        const ya = Number(a.year || a.s_year || 0);
-        const yb = Number(b.year || b.s_year || 0);
+        const ya = Number(a.stat_year || a.year || a.s_year || 0);
+        const yb = Number(b.stat_year || b.year || b.s_year || 0);
         if (ya !== yb) return ya - yb;
-        const wa = Number(a.week || a.s_week || 0);
-        const wb = Number(b.week || b.s_week || 0);
+        const wa = Number(a.stat_week || a.week || a.s_week || 0);
+        const wb = Number(b.stat_week || b.week || b.s_week || 0);
         return wa - wb;
       });
       const recent12 = sortedAll.slice(-12);
       
       recent12.forEach(row => {
-        const weekNum = String(row.week).padStart(2, '0');
+        const weekNum = String(row.stat_week || row.week || row.s_week).padStart(2, '0');
         labels.push(`第${weekNum}周`);
         
         const val = Number(row[currentKey]) || 0;
@@ -488,11 +488,11 @@ const RevenueDecompositionContainer = () => {
                         showTrend={showTrend}
                         showExtremes={showExtremes}
                         includeLastPointInTrend={LineTrendStyle.computeIncludeLastPointInTrend(
-                          rawData && rawData.length ? rawData[Math.min(rawData.length - 1, (series[selectedMetricKey] || []).length - 1)]?.date_range : null
+                          rawData && rawData.length ? (rawData[Math.min(rawData.length - 1, (series[selectedMetricKey] || []).length - 1)]?.week_date_range || rawData[Math.min(rawData.length - 1, (series[selectedMetricKey] || []).length - 1)]?.date_range) : null
                         )}
                         getHoverSubtitle={(index) => {
-                          if (rawData && rawData[index] && rawData[index].date_range) {
-                            return `日期范围：${rawData[index].date_range}`;
+                          if (rawData && rawData[index] && (rawData[index].week_date_range || rawData[index].date_range)) {
+                            return `日期范围：${rawData[index].week_date_range || rawData[index].date_range}`;
                           }
                           return "";
                         }}
