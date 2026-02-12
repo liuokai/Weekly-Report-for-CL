@@ -49,7 +49,7 @@ const ClosingWarningContainer = () => {
   const groupedStores = useMemo(() => {
     if (!warningList) return {};
     return warningList.reduce((acc, store) => {
-      const city = store['城市名称'] || '其他';
+      const city = store['city_name'] || '其他';
       if (!acc[city]) acc[city] = [];
       acc[city].push(store);
       return acc;
@@ -74,50 +74,30 @@ const ClosingWarningContainer = () => {
           </button>
         )}
       </div>
-      
+
       <div className="p-6">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a40035] mb-2"></div>
-            <p>正在加载预警数据...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-8 bg-red-50 rounded border border-red-100">
-            <div className="flex justify-center mb-2 text-red-400">
-              <IconAlert />
-            </div>
-            <h3 className="text-red-800 font-medium mb-1">数据加载失败</h3>
-            <p className="text-sm text-red-600 mb-3">{error.message || String(error)}</p>
-            <div className="text-xs text-gray-500 max-w-md mx-auto space-y-1">
-              <p>可能原因：</p>
-              <ul className="list-disc list-inside text-left pl-4">
-                <li>后端服务未启动或正在重启</li>
-                <li>后端接口配置未生效（请尝试重启后端服务）</li>
-                <li>数据库连接异常</li>
-              </ul>
-            </div>
-            <button 
-              onClick={() => fetchData()}
-              className="mt-4 px-4 py-2 bg-white border border-red-200 text-red-600 rounded hover:bg-red-50 text-sm transition-colors"
-            >
-              重新加载
-            </button>
+        {loading && count === 0 ? (
+          <div className="text-center py-12 text-gray-400">数据加载中...</div>
+        ) : error && count === 0 ? (
+          <div className="text-center py-12 text-[#a40035]/60 bg-[#a40035]/5 rounded-lg border border-dashed border-[#a40035]/20">
+             加载数据失败，请检查网络或稍后重试
           </div>
         ) : isEmpty ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <IconEmpty />
-            <p className="mt-3 text-sm text-gray-400">暂无触发闭店预警的门店</p>
+          <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+             本季度暂无触发预警的门店
           </div>
         ) : (
           <div className="space-y-8">
-            {Object.entries(groupedStores).map(([city, stores]) => (
-              <div key={city}>
-                <h3 className="text-sm font-bold text-gray-500 mb-3 pl-1 border-l-4 border-[#a40035] leading-tight">
-                  {city} <span className="font-normal text-xs text-gray-400 ml-1">({stores.length}家)</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {stores.map((store, index) => (
-                    <WarningCard key={store['门店编码'] || index} store={store} />
+            {Object.keys(groupedStores).map(city => (
+              <div key={city} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-1 bg-[#a40035] rounded-full"></div>
+                  <h3 className="font-bold text-gray-700">{city}</h3>
+                  <span className="text-xs text-gray-400 font-normal">({groupedStores[city].length} 家)</span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {groupedStores[city].map(store => (
+                    <WarningCard key={store['store_code']} store={store} />
                   ))}
                 </div>
               </div>
@@ -127,6 +107,24 @@ const ClosingWarningContainer = () => {
       </div>
     </div>
   );
+};
+
+// 辅助函数：根据季度字符串计算前几个季度的标签
+// 例如：'2024-Q3' -> '2024-Q2'
+const getPrevQuarterLabel = (quarterStr, offset) => {
+  if (!quarterStr || !quarterStr.includes('-Q')) return '';
+  const [year, q] = quarterStr.split('-Q');
+  let y = parseInt(year);
+  let quarter = parseInt(q);
+  
+  for (let i = 0; i < offset; i++) {
+    quarter--;
+    if (quarter < 1) {
+      quarter = 4;
+      y--;
+    }
+  }
+  return `${y}-Q${quarter}`;
 };
 
 const WarningCard = ({ store }) => {
@@ -139,31 +137,7 @@ const WarningCard = ({ store }) => {
     return String(dateStr).substring(0, 10);
   };
 
-  // 辅助函数：根据当前季度计算前几个季度的绝对名称
-  // currentQuarter 格式为 "YYYY-QX"
-  const getPrevQuarterLabel = (currentQuarter, offset) => {
-    if (!currentQuarter || !currentQuarter.includes('-Q')) return '';
-    
-    try {
-      const [yearStr, qStr] = currentQuarter.split('-Q');
-      let year = parseInt(yearStr);
-      let q = parseInt(qStr);
-      
-      // 计算偏移
-      // 向前推 offset 个季度
-      let totalQ = year * 4 + (q - 1) - offset;
-      
-      const newYear = Math.floor(totalQ / 4);
-      const newQ = (totalQ % 4) + 1;
-      
-      return `${newYear}-Q${newQ}`;
-    } catch (e) {
-      console.error('Quarter parse error', e);
-      return '';
-    }
-  };
-
-  const currentQuarter = store['季度'];
+  const currentQuarter = store['quarter'];
 
   // 辅助组件：财务指标详情块
   const FinanceDetailBlock = ({ label, quarterLabel, ratio, revenue, labor, rent, dataCutoffDate, isLast = false }) => (
@@ -210,11 +184,11 @@ const WarningCard = ({ store }) => {
             <div className="flex items-end gap-2">
               <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
                 <span className="text-[#a40035]/70"><IconStore /></span>
-                {store['门店名称']}
+                {store['store_name']}
               </h3>
               {/* 诉求3: 门店编码标注 */}
               <span className="text-[10px] text-gray-400 font-mono mb-1">
-                {store['门店编码']}
+                {store['store_code']}
               </span>
             </div>
 
@@ -223,19 +197,19 @@ const WarningCard = ({ store }) => {
             <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
                <span className="flex items-center gap-1">
                  <IconCalendar className="w-3 h-3"/> 
-                 <span>开业日期: {fmtDate(store['开业日期'])}</span>
+                 <span>开业日期: {fmtDate(store['opening_date'])}</span>
                </span>
                <span className="w-px h-3 bg-gray-300"></span>
-               <span>城市总: {store['城市总姓名'] || '-'}</span>
+               <span>城市总: {store['city_manager_name'] || '-'}</span>
                <span className="w-px h-3 bg-gray-300"></span>
-               <span>技术副总: {store['技术副总姓名'] || '-'}</span>
+               <span>技术副总: {store['technology_vice_name'] || '-'}</span>
             </div>
           </div>
         </div>
         
         <div className="mt-3 p-2 bg-white border border-[#a40035]/20 rounded text-sm text-[#a40035] font-medium flex gap-2 items-start">
            <span className="shrink-0 mt-0.5"><IconAlert /></span>
-           {store['预警原因']}
+           {store['warning_reason']}
         </div>
       </div>
 
@@ -250,31 +224,31 @@ const WarningCard = ({ store }) => {
            <FinanceDetailBlock 
              label="上上季度"
              quarterLabel={getPrevQuarterLabel(currentQuarter, 2)}
-             ratio={store['上上季度成本占比']}
-             revenue={store['上上季度主营业务收入']}
-             labor={store['上上季度人工成本']}
-             rent={store['上上季度租金成本']}
-             dataCutoffDate={store['上上季度季度末月份']}
+             ratio={store['cost_ratio_prev_last_quarter']}
+             revenue={store['revenue_prev_last_quarter']}
+             labor={store['labor_cost_prev_last_quarter']}
+             rent={store['rent_cost_prev_last_quarter']}
+             dataCutoffDate={store['quarter_end_month']}
            />
 
            <FinanceDetailBlock 
              label="上季度"
              quarterLabel={getPrevQuarterLabel(currentQuarter, 1)}
-             ratio={store['上季度成本占比']}
-             revenue={store['上季度主营业务收入']}
-             labor={store['上季度人工成本']}
-             rent={store['上季度租金成本']}
-             dataCutoffDate={store['上季度季度末月份']}
+             ratio={store['cost_ratio_last_quarter']}
+             revenue={store['revenue_last_quarter']}
+             labor={store['labor_cost_last_quarter']}
+             rent={store['rent_cost_last_quarter']}
+             dataCutoffDate={store['quarter_end_month']}
            />
            
            <FinanceDetailBlock 
              label="当期"
              quarterLabel={currentQuarter}
-             ratio={store['当期成本占比（本季度完整月份）']}
-             revenue={store['主营业务收入（本季度完整月份）']}
-             labor={store['人工成本（本季度完整月份）']}
-             rent={store['租金成本（本季度完整月份）']}
-             dataCutoffDate={store['季度末月份']}
+             ratio={store['cost_ratio_current_quarter']}
+             revenue={store['revenue_current_quarter']}
+             labor={store['labor_cost_current_quarter']}
+             rent={store['rent_cost_current_quarter']}
+             dataCutoffDate={store['quarter_end_month']}
              isLast={true}
            />
         </div>
@@ -286,25 +260,25 @@ const WarningCard = ({ store }) => {
            {/* 诉求4: 调整顺序，先展示累计亏损占比 */}
            <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200">
               <span className="text-gray-800 font-medium text-xs">累计亏损占比</span>
-              <span className="font-bold text-[#a40035]">{store['累计现金流亏损占比']}</span>
+              <span className="font-bold text-[#a40035]">{store['cumulative_cash_flow_loss_ratio']}</span>
            </div>
 
            <div className="bg-white/60 rounded p-2 space-y-1.5 text-xs border border-gray-100/50">
              <div className="flex justify-between items-center">
                 <span className="text-gray-500">总折旧</span>
-                <span className="font-medium text-gray-700">{fmtMoney(store['总折旧'])}</span>
+                <span className="font-medium text-gray-700">{fmtMoney(store['total_depreciation'])}</span>
              </div>
              <div className="flex justify-between items-center">
                 <span className="text-gray-500">累计经营现金流</span>
-                <span className={`font-medium ${store['累计经营现金流'] < 0 ? 'text-green-600' : 'text-[#a40035]'}`}>
-                  {fmtMoney(store['累计经营现金流'])}
+                <span className={`font-medium ${store['cumulative_net_cash_flow'] < 0 ? 'text-green-600' : 'text-[#a40035]'}`}>
+                  {fmtMoney(store['cumulative_net_cash_flow'])}
                 </span>
              </div>
            </div>
            
-           {store['季度末月份'] && (
+           {store['quarter_end_month'] && (
              <div className="mt-1 text-right">
-               <span className="text-[10px] text-gray-400">数据截止至 {store['季度末月份']}</span>
+               <span className="text-[10px] text-gray-400">数据截止至 {store['quarter_end_month']}</span>
              </div>
            )}
         </div>

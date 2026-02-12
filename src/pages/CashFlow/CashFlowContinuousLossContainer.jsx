@@ -32,8 +32,8 @@ const CashFlowContinuousLossContainer = () => {
   const groupedByCity = useMemo(() => {
     if (!lossList) return {};
     return lossList.reduce((acc, item) => {
-      const city = item['城市名称'] || '其他';
-      const storeCode = item['门店编码'];
+      const city = item['city_name'] || '其他';
+      const storeCode = item['store_code'];
       if (!acc[city]) acc[city] = {};
       if (!acc[city][storeCode]) {
         acc[city][storeCode] = { info: item, records: [] };
@@ -92,11 +92,11 @@ const CashFlowContinuousLossContainer = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {storeCodes.map(code => {
                       const { info, records } = storesMap[code];
-                      const sortedRecords = records.sort((a, b) => a['季度'].localeCompare(b['季度']));
-                      const totalNetProfit = sortedRecords.reduce((sum, r) => sum + (Number(r['季度净利润']) || 0), 0);
-                      const totalDep = sortedRecords.reduce((sum, r) => sum + (Number(r['季度折旧']) || 0), 0);
-                      const totalCash = sortedRecords.reduce((sum, r) => sum + (Number(r['季度现金流']) || 0), 0);
-                      const totalDeduction = sortedRecords.reduce((sum, r) => sum + (Number(r['季度现金流考核扣款']) || 0), 0);
+                      const sortedRecords = records.sort((a, b) => a['quarter'].localeCompare(b['quarter']));
+                      const totalNetProfit = sortedRecords.reduce((sum, r) => sum + (Number(r['quarterly_net_profit']) || 0), 0);
+                      const totalDep = sortedRecords.reduce((sum, r) => sum + (Number(r['quarterly_depreciation']) || 0), 0);
+                      const totalCash = sortedRecords.reduce((sum, r) => sum + (Number(r['quarterly_cash_flow']) || 0), 0);
+                      const totalDeduction = sortedRecords.reduce((sum, r) => sum + (Number(r['quarterly_cash_flow_deduction_amount']) || 0), 0);
 
                       return (
                         <div key={code} className="border border-gray-200 rounded-lg bg-gray-50/30 overflow-hidden">
@@ -107,17 +107,17 @@ const CashFlowContinuousLossContainer = () => {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <h4 className="font-bold text-gray-800 truncate">{info['门店名称']}</h4>
+                                  <h4 className="font-bold text-gray-800 truncate">{info['store_name']}</h4>
                                   <span className="text-xs text-gray-400 font-mono px-1.5 py-0.5 bg-gray-100 rounded">{code}</span>
                                 </div>
                                 <div className="text-xs text-gray-600 mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                                  <span>城市总: {info['城市总'] || '-'}</span>
-                                  <span>技术副总: {info['技术副总'] || '-'}</span>
+                                  <span>城市总: {info['city_manager_name'] || '-'}</span>
+                                  <span>技术副总: {info['technology_vice_name'] || '-'}</span>
                                 </div>
                                 <div className="text-xs text-gray-600 mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                                  <span>开业日期: {info['开业日期']?.split('T')[0] || '-'}</span>
-                                  <span>新店爬坡期: {info['爬坡期']}</span>
-                                  <span>爬坡期结束月份: {info['爬坡期结束月份']}</span>
+                                  <span>开业日期: {info['opening_date']?.split('T')[0] || '-'}</span>
+                                  <span>新店爬坡期: {info['ramp_up_period_months']}</span>
+                                  <span>爬坡期结束月份: {info['ramp_up_end_month']}</span>
                                 </div>
                               </div>
                             </div>
@@ -139,14 +139,14 @@ const CashFlowContinuousLossContainer = () => {
                                 <tbody className="divide-y divide-gray-100">
                                   {sortedRecords.map((r, idx) => (
                                     <tr key={idx} className="hover:bg-gray-50/50">
-                                      <td className="py-2.5 pl-2 font-medium text-gray-700">{r['季度']}</td>
-                                      <td className="py-2.5 text-right text-gray-600">{fmtMoney(r['季度净利润'])}</td>
-                                      <td className="py-2.5 text-right text-gray-600">{fmtMoney(r['季度折旧'])}</td>
-                                      <td className={`py-2.5 text-right font-medium ${Number(r['季度现金流']) < 0 ? 'text-green-600' : 'text-[#a40035]'}`}>
-                                        {fmtMoney(r['季度现金流'])}
+                                      <td className="py-2.5 pl-2 font-medium text-gray-700">{r['quarter']}</td>
+                                      <td className="py-2.5 text-right text-gray-600">{fmtMoney(r['quarterly_net_profit'])}</td>
+                                      <td className="py-2.5 text-right text-gray-600">{fmtMoney(r['quarterly_depreciation'])}</td>
+                                      <td className={`py-2.5 text-right font-medium ${Number(r['quarterly_cash_flow']) < 0 ? 'text-green-600' : 'text-[#a40035]'}`}>
+                                        {fmtMoney(r['quarterly_cash_flow'])}
                                       </td>
-                                      <td className="py-2.5 text-right text-gray-600">{r['季度现金流考核扣款标准']}</td>
-                                      <td className="py-2.5 text-right pr-2 text-[#a40035] font-medium">{fmtMoney(r['季度现金流考核扣款'])}</td>
+                                      <td className="py-2.5 text-right text-gray-600">{r['quarterly_cash_flow_deduction_standard']}</td>
+                                      <td className="py-2.5 text-right pr-2 text-[#a40035] font-medium">{fmtMoney(r['quarterly_cash_flow_deduction_amount'])}</td>
                                     </tr>
                                   ))}
                                 </tbody>
