@@ -14,6 +14,8 @@ export const BusinessTargets = {
   // 营业额概览 (Turnover Overview)
   // =================================================================
   turnover: {
+    // 统计年份参数
+    targetYear: "2026",
     // 本年累计营业额目标值（单位：万元）
     annualTarget: 48000,
     // 城市年度营业额目标（单位：元），按城市名称映射

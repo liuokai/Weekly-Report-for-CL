@@ -81,7 +81,45 @@ app.post('/api/fetch-data', async (req, res) => {
     await connection.query('SET enable_fallback_to_original_planner = true');
     await connection.query('SET enable_nereids_planner = false');
     // Use .query() instead of .execute() because Doris might not support prepared statements
-    const [rows] = await connection.query(queryConfig.sql, params);
+    let [rows] = await connection.query(queryConfig.sql, params);
+
+    // Special handling for getTurnoverOverview to include annual target from cash_flow_budget.sql
+    if (queryKey === 'getTurnoverOverview') {
+      try {
+        const budgetConfig = queryRegistry['getCashFlowBudgetMonthly'];
+        if (budgetConfig && budgetConfig.sql) {
+          const [budgetRows] = await connection.query(budgetConfig.sql);
+          
+          // 直接从配置文件中提取 targetYear
+          const configPath = path.join(__dirname, '../src/config/businessTargets.js');
+          const configContent = fs.readFileSync(configPath, 'utf8');
+          const targetYear = configContent.match(/targetYear:\s*["'](\d{4})["']/)[1];
+
+          // Calculate annual target by summing total_revenue_budget across all cities and months for the target year
+          const annualTarget = budgetRows.reduce((sum, r) => {
+            // SQL 结果中的 month 格式通常为 'YYYY-MM'
+            if (r.month && r.month.startsWith(targetYear)) {
+              return sum + parseFloat(r.total_revenue_budget || 0);
+            }
+            return sum;
+          }, 0);
+          
+          // Add annual_target to the rows (specifically the one for the target year)
+          // 营业额目标要求仅保留整数部分
+          const roundedAnnualTarget = Math.floor(annualTarget);
+
+          rows = rows.map(row => {
+            if (row.year && row.year.toString() === targetYear) {
+              return { ...row, annual_target: roundedAnnualTarget };
+            }
+            return row;
+          });
+        }
+      } catch (budgetError) {
+        console.error('Failed to fetch annual budget for turnover overview:', budgetError);
+      }
+    }
+
     connection.release();
     const duration = Date.now() - startTime;
     console.log(`[Query End] ${queryKey} - ${duration}ms - Rows: ${rows ? rows.length : 0}`);

@@ -32,21 +32,12 @@ const TurnoverReport = () => {
   const [revenueMetrics, setRevenueMetrics] = useState(() => {
     // Priority: Session Cache -> LocalStorage -> Default
     if (sessionCache.revenueMetrics) {
-      // Ensure target is synced with config even if cached
-      return {
-        ...sessionCache.revenueMetrics,
-        target: BusinessTargets.turnover.annualTarget
-      };
+      return sessionCache.revenueMetrics;
     }
     
     const saved = localStorage.getItem('revenueMetrics');
     if (saved) {
-      const parsed = JSON.parse(saved);
-      // Ensure target is synced with config even if loaded from storage
-      return {
-        ...parsed,
-        target: BusinessTargets.turnover.annualTarget
-      };
+      return JSON.parse(saved);
     }
 
     return {
@@ -128,9 +119,16 @@ const TurnoverReport = () => {
               yoy = ((currentTurnover - prevSamePeriodTurnover) / prevSamePeriodTurnover) * 100;
             }
 
+            // 3. 目标值 (优先使用后端返回的 annual_target，否则回退到本地配置)
+            let annualTargetInWan = BusinessTargets.turnover.annualTarget;
+            if (currentYearData && currentYearData.annual_target != null) {
+                // 后端已经按万元计算并取整
+                annualTargetInWan = Math.floor(parseFloat(currentYearData.annual_target) / 10000);
+            }
+
             const newMetrics = {
               actual: parseFloat(actualInWan.toFixed(2)),
-              target: BusinessTargets.turnover.annualTarget,
+              target: annualTargetInWan,
               lastYearSamePeriod: parseFloat(lastYearSamePeriodInWan.toFixed(2)),
               // 直接使用数值，不要再次 toFixed(1) 导致精度丢失或四舍五入
               yoy: yoy
