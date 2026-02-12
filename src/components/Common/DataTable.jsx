@@ -49,8 +49,8 @@ const DataTable = ({
                     </span>
                   )}
                   {onSort && (!sortConfig || sortConfig.key !== column.key) && (
-                    <span className="text-gray-300 opacity-0 group-hover:opacity-100">
-                      ↕
+                    <span className="text-gray-500 opacity-0 group-hover:opacity-100">
+                      ⇅
                     </span>
                   )}
                 </div>
