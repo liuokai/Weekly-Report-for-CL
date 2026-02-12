@@ -12,6 +12,8 @@ const LineTrendChart = ({
   showAverage = false,
   showExtremes = true,
   yAxisFormatter,
+  yAxisMin,
+  yAxisMax,
 
   xAxisFormatter,
   valueFormatter = (v) => v,
@@ -62,11 +64,20 @@ const LineTrendChart = ({
 
   const dataMax = Math.max(...allValues);
   const dataMin = Math.min(...allValues);
-  // Ensure we have a small buffer even for flat lines
-  const range = dataMax - dataMin;
-  const paddingVal = (range === 0 ? (Math.abs(dataMax) || 1) * 0.1 : range * 0.05);
-  const maxVal = dataMax + paddingVal;
-  const minVal = dataMin - paddingVal;
+  
+  // 2. Y-Axis Scaling Logic
+  let minVal, maxVal;
+
+  if (yAxisMin !== undefined && yAxisMax !== undefined) {
+    minVal = yAxisMin;
+    maxVal = yAxisMax;
+  } else {
+    // Ensure we have a small buffer even for flat lines
+    const range = dataMax - dataMin;
+    const paddingVal = (range === 0 ? (Math.abs(dataMax) || 1) * 0.1 : range * 0.05);
+    maxVal = dataMax + paddingVal;
+    minVal = dataMin - paddingVal;
+  }
 
   const getX = (index) => padding.left + (index / (Math.max(safeValues.length - 1, 1))) * graphWidth;
   const getY = (value) => {

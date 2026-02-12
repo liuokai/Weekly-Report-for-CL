@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import LineTrendChart from "../../components/Common/LineTrendChart";
+import RechartsLineTrend from "../../components/Common/RechartsLineTrend";
 import LineTrendStyle from "../../components/Common/LineTrendStyleConfig";
 import useFetchData from "../../hooks/useFetchData";
 
@@ -23,14 +23,34 @@ const WeeklyTurnoverChart = () => {
 
   useEffect(() => {
     if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
-      // Process fetched data - standardize fields
-      // Requirement: Only show last 12 weeks, ordered by week number ascending (oldest to newest)
-      // The SQL returns data ordered by Year DESC, Week DESC (Newest to Oldest)
-      // So we slice the first 12 items (which are the newest), then reverse them to be chronological.
-      
-      const processed = fetchedData
-        .slice(0, 12) // Take latest 12 records
-        .reverse()    // Sort chronological (Ascending)
+      // 1. 基础过滤：仅展示已结束的周
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(23, 59, 59, 999);
+
+      const filteredByEndOfWeek = fetchedData.filter(row => {
+        if (!row.date_range) return true;
+        const parts = row.date_range.split('~');
+        if (parts.length < 2) return true;
+        const endDate = new Date(parts[1].trim());
+        endDate.setHours(23, 59, 59, 999);
+        return yesterday >= endDate;
+      });
+
+      // 2. 年度累计营业额特殊逻辑：优化跨年断崖
+      let finalData = filteredByEndOfWeek;
+      if (selectedMetricKey === 'ytdRevenue') {
+        const latestYear = Math.max(...filteredByEndOfWeek.map(r => Number(r.year)));
+        const latestYearData = filteredByEndOfWeek.filter(r => Number(r.year) === latestYear);
+        if (latestYearData.length > 0) {
+          finalData = filteredByEndOfWeek.filter(r => Number(r.year) === latestYear);
+        }
+      }
+
+      // 3. 取最近12个有效数据节点
+      const processed = finalData
+        .slice(0, 12)
+        .reverse()
         .map((row) => ({
           weekNum: row.week,
           weekLabel: `第${row.week}周`,
@@ -39,51 +59,53 @@ const WeeklyTurnoverChart = () => {
           value: Number(row.current_value) || 0,
           valueLastYear: Number(row.last_year_value) || 0,
           yoyChange: row.yoy_change,
-          // Extra fields for specific metrics
           activeDays: row.active_days
         }));
       setChartData(processed);
     } else {
       setChartData([]);
     }
-  }, [fetchedData]);
-  
-  // Prepare data for chart
-  const currentDataValues = chartData.map(d => d.value);
-  const lastYearDataValues = chartData.map(d => d.valueLastYear);
+  }, [fetchedData, selectedMetricKey]);
 
-  // Determine if we should include the last data point in trend calculation
-  const shouldIncludeLastPointInTrend = () => {
-    if (chartData.length === 0) return true;
+  // Calculate custom Y-axis range for stability
+  const getCustomYAxisRange = () => {
+    if (chartData.length === 0) return { min: undefined, max: undefined };
     
-    // Get the last data point (which corresponds to the most recent week)
-    // Note: chartData is already reversed to chronological order (oldest -> newest), 
-    // so the last element is the newest week.
-    const lastPoint = chartData[chartData.length - 1];
-    if (!lastPoint || !lastPoint.dateRange) return true;
-
-    try {
-      // Parse date range string "YYYY-MM-DD ~ YYYY-MM-DD"
-      const parts = lastPoint.dateRange.split('~');
-      if (parts.length < 2) return true;
-      
-      const endDateStr = parts[1].trim();
-      const endDate = new Date(endDateStr);
-      // Set time to end of day for accurate comparison
-      endDate.setHours(23, 59, 59, 999);
-      
-      const today = new Date();
-      // If end date is in the future or is today, the week is not over.
-      // So we exclude it from trend calculation.
-      // If end date < today, the week is fully past.
-      return endDate < today;
-    } catch (e) {
-      console.warn('Failed to parse date range for trend logic', e);
-      return true;
+    const values = chartData.map(d => d.value);
+    if (showYoY) {
+      values.push(...chartData.map(d => d.valueLastYear));
     }
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+
+    // For YTD Revenue, use a different scaling strategy to make it look "slowly rising"
+    if (selectedMetricKey === 'ytdRevenue') {
+      // 策略：年度累计通常从 0 或一个小值涨到很大。为了让它显得上升缓慢，
+      // 我们将 Y 轴的最大值设为当前最大累计值的 2 倍左右，或者在顶部留出巨大空间。
+      return { 
+        min: 0, 
+        max: dataMax * 1.5 // 在上方留出 50% 的空白空间，使折线坡度变缓
+      };
+    }
+    
+    // 策略：通过大幅扩大 Y 轴展示范围（取平均值的 50% 作为窗口）来压低折线波动感
+    // 这样即便有几万元的波动，在数百万/千万的坐标系下也会显得非常平稳
+    const targetRange = avg * 0.50;
+    
+    // 居中展示
+    let min = avg - targetRange / 2;
+    let max = avg + targetRange / 2;
+    
+    // 确保所有数据点仍可见（安全溢出处理）
+    if (dataMin < min) min = dataMin * 0.95;
+    if (dataMax > max) max = dataMax * 1.05;
+    
+    // 对于金额类数据，通常不希望看到负数坐标轴
+    return { min: Math.max(0, min), max };
   };
 
-  const includeLastPoint = shouldIncludeLastPointInTrend();
+  const { min: yAxisMin, max: yAxisMax } = getCustomYAxisRange();
 
   const width = LineTrendStyle.DIMENSIONS.width;
   const height = LineTrendStyle.DIMENSIONS.height;
@@ -107,32 +129,18 @@ const WeeklyTurnoverChart = () => {
       {loading ? (
         <div className="flex justify-center items-center h-[320px] text-gray-400">加载中...</div>
       ) : chartData.length > 0 ? (
-        <LineTrendChart
-          values={currentDataValues}
-          valuesYoY={lastYearDataValues}
-          xLabels={chartData.map(d => d.weekLabel)}
+        <RechartsLineTrend
+          data={chartData}
           showYoY={showYoY}
           showTrend={showTrend}
           showExtremes={showExtremes}
+          yAxisMin={yAxisMin}
+          yAxisMax={yAxisMax}
           yAxisFormatter={currentMetric.axisFormat}
           valueFormatter={currentMetric.format}
-          width={width}
-          height={height}
-          padding={padding}
           colorPrimary={LineTrendStyle.COLORS.primary}
           colorYoY={LineTrendStyle.COLORS.yoy}
-          includeLastPointInTrend={LineTrendStyle.computeIncludeLastPointInTrend(
-            chartData[chartData.length - 1]?.dateRange
-          )}
-          getHoverTitle={(i) => chartData[i] ? chartData[i].fullWeekLabel : ''}
-          getHoverSubtitle={(i) => {
-             if (!chartData[i]) return '';
-             let sub = `日期范围：${chartData[i].dateRange || '--'}`;
-             if (selectedMetricKey === 'dailyAvgRevenue' && chartData[i].activeDays) {
-                sub += `\n营业天数：${chartData[i].activeDays}天`;
-             }
-             return sub;
-          }}
+          height={height}
         />
       ) : (
         <div className="flex justify-center items-center h-[320px] text-gray-400">暂无数据</div>
