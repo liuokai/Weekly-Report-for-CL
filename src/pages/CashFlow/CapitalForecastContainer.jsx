@@ -124,15 +124,15 @@ const CapitalForecastContainer = () => {
       }
 
       // 预算值：累加当前年份的全年目标
-      totalNewStoresBudget += Number(row['新店目标'] || 0);
-      totalReinstallsBudget += Number(row['重装目标'] || 0);
+      totalNewStoresBudget += Number(row['new_store_target'] || 0);
+      totalReinstallsBudget += Number(row['reinstall_target'] || 0);
 
       // 已发生值：只统计当年 1 月至今（<=当前月份）的实际数量
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       
       if (row.month <= currentMonth) {
-        totalNewStoresActual += Number(row['新店数量'] || 0);
-        totalReinstallsActual += Number(row['重装数量'] || 0);
+        totalNewStoresActual += Number(row['new_store_count'] || 0);
+        totalReinstallsActual += Number(row['reinstall_count'] || 0);
       }
     }
 

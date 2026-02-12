@@ -67,25 +67,25 @@ cost_agg AS (
 
 -- 5. 最终合并结果集
 SELECT
-    r.city_name                             AS `城市`,
-    r.store_name                            AS `门店名称`,
-    r.store_code                            AS `门店编码`,
-    r.opening_date                          AS `开业日期`,
-    m.city_manager_name                     AS `城市经理`,
-    m.technology_vice_name                  AS `技术副总`,
-    r.ramp_up_period                        AS `爬坡期长度`,
+    r.city_name                             AS city_name, -- 原字段：城市
+    r.store_name                            AS store_name, -- 原字段：门店名称
+    r.store_code                            AS store_code, -- 原字段：门店编码
+    r.opening_date                          AS opening_date, -- 原字段：开业日期
+    m.city_manager_name                     AS city_manager_name, -- 原字段：城市经理
+    m.technology_vice_name                  AS tech_vice_president_name, -- 原字段：技术副总
+    r.ramp_up_period                        AS ramp_up_period_months, -- 原字段：爬坡期长度
     ( (CAST(LEFT(DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'), 4) AS INT) * 12
        + CAST(RIGHT(DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'), 2) AS INT))
       - (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
-    )                                       AS `当前爬坡期`,
+    )                                       AS current_ramp_up_month_index, -- 原字段：当前爬坡期
 
     -- 1. 现金流数据
-    ROUND(b.total_cash_flow_budget, 2)      AS `现金流目标值`,
-    ROUND(COALESCE(a.actual_cash_flow_to_date, 0), 2) AS `爬坡期现金流实际值`,
-    ROUND((COALESCE(a.actual_cash_flow_to_date, 0) - b.total_cash_flow_budget), 2) AS `现金流差异`,
+    ROUND(b.total_cash_flow_budget, 2)      AS cash_flow_budget_total, -- 原字段：现金流目标值
+    ROUND(COALESCE(a.actual_cash_flow_to_date, 0), 2) AS cash_flow_actual_to_date, -- 原字段：爬坡期现金流实际值
+    ROUND((COALESCE(a.actual_cash_flow_to_date, 0) - b.total_cash_flow_budget), 2) AS cash_flow_variance, -- 原字段：现金流差异
 
     -- 2. 营销费用相关
-    ROUND(COALESCE(c.total_marketing_est, 0), 2)      AS `营销费预算`,
+    ROUND(COALESCE(c.total_marketing_est, 0), 2)      AS marketing_budget_total, -- 原字段：营销费预算
     ROUND(
         COALESCE(c.total_ad_fee, 0) +
         COALESCE(c.total_group_buy_discount, 0) +
@@ -93,7 +93,7 @@ SELECT
         COALESCE(c.total_new_guest_discount, 0) +
         COALESCE(c.total_exhibition_fee, 0) +
         COALESCE(c.total_masseur_commission, 0)
-    , 2)                                              AS `营销费合计`,
+    , 2)                                              AS marketing_actual_total, -- 原字段：营销费合计
 
     -- 营销费使用率：保留1位小数的百分数格式
     CASE
@@ -103,26 +103,26 @@ SELECT
              COALESCE(c.total_new_guest_discount, 0) + COALESCE(c.total_exhibition_fee, 0) + COALESCE(c.total_masseur_commission, 0))
             / c.total_marketing_est * 100
         , 1), '%')
-    END                                               AS `营销费使用率`,
+    END                                               AS marketing_usage_ratio_display, -- 原字段：营销费使用率
 
-    ROUND(COALESCE(c.total_ad_fee, 0), 2)             AS `广告费`,
-    ROUND(COALESCE(c.total_group_buy_discount, 0), 2) AS `团购优惠`,
-    ROUND(COALESCE(c.total_offline_ad_fee, 0), 2)     AS `线下广告`,
-    ROUND(COALESCE(c.total_new_guest_discount, 0), 2) AS `新客优惠`,
-    ROUND(COALESCE(c.total_exhibition_fee, 0), 2)     AS `布展`,
-    ROUND(COALESCE(c.total_masseur_commission, 0), 2) AS `推拿师提成`,
+    ROUND(COALESCE(c.total_ad_fee, 0), 2)             AS ad_fee_actual, -- 原字段：广告费
+    ROUND(COALESCE(c.total_group_buy_discount, 0), 2) AS group_buy_discount_actual, -- 原字段：团购优惠
+    ROUND(COALESCE(c.total_offline_ad_fee, 0), 2)     AS offline_ad_fee_actual, -- 原字段：线下广告
+    ROUND(COALESCE(c.total_new_guest_discount, 0), 2) AS new_guest_discount_actual, -- 原字段：新客优惠
+    ROUND(COALESCE(c.total_exhibition_fee, 0), 2)     AS exhibition_fee_actual, -- 原字段：布展
+    ROUND(COALESCE(c.total_masseur_commission, 0), 2) AS masseur_commission_actual, -- 原字段：推拿师提成
 
     -- 3. 激励费用相关
-    ROUND(COALESCE(c.total_incentive_est, 0), 2)      AS `激励费预算`,
-    ROUND(COALESCE(c.total_incentive_actual, 0), 2)   AS `激励费实际`,
+    ROUND(COALESCE(c.total_incentive_est, 0), 2)      AS incentive_budget_total, -- 原字段：激励费预算
+    ROUND(COALESCE(c.total_incentive_actual, 0), 2)   AS incentive_actual_total, -- 原字段：激励费实际
 
     -- 激励费使用率：保留1位小数的百分数格式
     CASE
         WHEN c.total_incentive_est IS NULL OR c.total_incentive_est = 0 THEN NULL
         ELSE CONCAT(ROUND(COALESCE(c.total_incentive_actual, 0) / c.total_incentive_est * 100, 1), '%')
-    END                                               AS `激励费使用率`,
+    END                                               AS incentive_usage_ratio_display, -- 原字段：激励费使用率
 
-    ROUND(COALESCE(c.total_incentive_actual, 0) - COALESCE(c.total_incentive_est, 0), 2) AS `激励费差异`
+    ROUND(COALESCE(c.total_incentive_actual, 0) - COALESCE(c.total_incentive_est, 0), 2) AS incentive_variance -- 原字段：激励费差异
 
 FROM ramp_config r
 LEFT JOIN budget_agg b ON r.store_code = b.store_code

@@ -10,19 +10,19 @@ const NewStoreSupplyContainer = () => {
   const { tableData, summaryRow } = useMemo(() => {
     if (!data || data.length === 0) return { tableData: [], summaryRow: null };
 
-    const summary = data.find(item => item['统计城市'] === '合计');
-    const rows = data.filter(item => item['统计城市'] !== '合计');
+    const summary = data.find(item => item.city_name === '合计');
+    const rows = data.filter(item => item.city_name !== '合计');
 
     return { tableData: rows, summaryRow: summary };
   }, [data]);
 
   const columns = [
-    { key: 'city', title: '统计城市', dataIndex: '统计城市' },
-    { key: 'store_count', title: '门店数量', dataIndex: '门店数量', align: 'right' },
-    { key: 'avg_area', title: '店均面积', dataIndex: '店均面积', align: 'right' },
-    { key: 'avg_bed', title: '店均床位数', dataIndex: '店均床位数', align: 'right' },
-    { key: 'area_per_bed', title: '单床位面积', dataIndex: '单床位面积', align: 'right' },
-    { key: 'space_utilization', title: '空间利用率', dataIndex: '空间利用率', align: 'right' },
+    { key: 'city', title: '统计城市', dataIndex: 'city_name' },
+    { key: 'store_count', title: '门店数量', dataIndex: 'store_count', align: 'right' },
+    { key: 'avg_area', title: '店均面积', dataIndex: 'avg_area_per_store', align: 'right' },
+    { key: 'avg_bed', title: '店均床位数', dataIndex: 'avg_bed_per_store', align: 'right' },
+    { key: 'area_per_bed', title: '单床位面积', dataIndex: 'area_per_bed', align: 'right' },
+    { key: 'space_utilization', title: '空间利用率', dataIndex: 'space_utilization_rate', align: 'right' },
   ];
 
   const { sortedData, sortConfig, handleSort } = useTableSorting(columns, tableData);

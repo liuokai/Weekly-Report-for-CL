@@ -1,16 +1,16 @@
 -- 新店供应总结
 
 SELECT
-    IFNULL(hidden_city_name, '合计') AS '统计城市',
-    COUNT(store_code) AS '门店数量',
+    IFNULL(hidden_city_name, '合计') AS city_name, -- 原字段：统计城市
+    COUNT(store_code) AS store_count, -- 原字段：门店数量
     -- 店均面积：城市总面积 / 门店数量
-    ROUND(SUM(suite_area) / COUNT(store_code), 2) AS '店均面积',
+    ROUND(SUM(suite_area) / COUNT(store_code), 2) AS avg_area_per_store, -- 原字段：店均面积
     -- 店均床位数：城市总床位数 / 门店数量
-    ROUND(SUM(bed_count) / COUNT(store_code), 2) AS '店均床位数',
+    ROUND(SUM(bed_count) / COUNT(store_code), 2) AS avg_bed_per_store, -- 原字段：店均床位数
     -- 单床位面积：店均面积 / 店均床位数
-    ROUND(SUM(suite_area) / SUM(bed_count), 2) AS '单床位面积',
+    ROUND(SUM(suite_area) / SUM(bed_count), 2) AS area_per_bed, -- 原字段：单床位面积
     -- 空间利用率：(店均床位数 * 10 / 店均面积) * 100%，保留整数百分数
-    CONCAT(ROUND((SUM(bed_count) * 10 / SUM(suite_area)) * 100, 0), '%') AS '空间利用率'
+    CONCAT(ROUND((SUM(bed_count) * 10 / SUM(suite_area)) * 100, 0), '%') AS space_utilization_rate -- 原字段：空间利用率
 FROM (
     -- 基础数据层：保留去重和过滤逻辑
     SELECT

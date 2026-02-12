@@ -63,19 +63,19 @@ async function generateNewStoreAnalysis(deepseekClient, newStoreData, currentTot
     const ytdData = newStoreData.filter(d => d.month <= latestMonth && d.month.startsWith(currentYear));
 
     // Calculate Global Metrics (from '月度合计' rows)
-    // NOTE: The SQL aliases are Chinese: "month", "city_name", "新店目标", "新店数量", "重装目标", "重装数量", "门店数量"
+    // NOTE: The SQL aliases are now snake_case: "month", "city_name", "new_store_target", "new_store_count", "reinstall_target", "reinstall_count", "total_store_count"
     const monthlyTotals = ytdData.filter(d => d.city_name === '月度合计');
     
     // A: Total stores currently (Passed from frontend to ensure consistency)
     const totalStores = currentTotalStores !== undefined ? currentTotalStores : 0;
 
     // B & C: New Store Target & Actual (Cumulative)
-    const totalNewTarget = monthlyTotals.reduce((sum, d) => sum + (Number(d['新店目标']) || 0), 0);
-    const totalNewActual = monthlyTotals.reduce((sum, d) => sum + (Number(d['新店数量']) || 0), 0);
+    const totalNewTarget = monthlyTotals.reduce((sum, d) => sum + (Number(d['new_store_target']) || 0), 0);
+    const totalNewActual = monthlyTotals.reduce((sum, d) => sum + (Number(d['new_store_count']) || 0), 0);
 
     // I & J: Reinstall Target & Actual (Cumulative)
-    const totalReinstallTarget = monthlyTotals.reduce((sum, d) => sum + (Number(d['重装目标']) || 0), 0);
-    const totalReinstallActual = monthlyTotals.reduce((sum, d) => sum + (Number(d['重装数量']) || 0), 0);
+    const totalReinstallTarget = monthlyTotals.reduce((sum, d) => sum + (Number(d['reinstall_target']) || 0), 0);
+    const totalReinstallActual = monthlyTotals.reduce((sum, d) => sum + (Number(d['reinstall_count']) || 0), 0);
 
     // City Details
     // Filter detail rows (exclude '月度合计')
@@ -86,10 +86,10 @@ async function generateNewStoreAnalysis(deepseekClient, newStoreData, currentTot
       const cityRows = detailRows.filter(d => d.city_name === city);
       return {
         name: city,
-        newTarget: cityRows.reduce((sum, d) => sum + (Number(d['新店目标']) || 0), 0),
-        newActual: cityRows.reduce((sum, d) => sum + (Number(d['新店数量']) || 0), 0),
-        reinstallTarget: cityRows.reduce((sum, d) => sum + (Number(d['重装目标']) || 0), 0),
-        reinstallActual: cityRows.reduce((sum, d) => sum + (Number(d['重装数量']) || 0), 0)
+        newTarget: cityRows.reduce((sum, d) => sum + (Number(d['new_store_target']) || 0), 0),
+        newActual: cityRows.reduce((sum, d) => sum + (Number(d['new_store_count']) || 0), 0),
+        reinstallTarget: cityRows.reduce((sum, d) => sum + (Number(d['reinstall_target']) || 0), 0),
+        reinstallActual: cityRows.reduce((sum, d) => sum + (Number(d['reinstall_count']) || 0), 0)
       };
     });
 

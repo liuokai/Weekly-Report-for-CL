@@ -270,7 +270,7 @@ app.post('/api/generate-city-budget-summary', async (req, res) => {
     const validMonthsProcessRows = newStoreProcessResults.filter(r => r['month'] <= currentMonth);
     const monthlyTotalRows = validMonthsProcessRows.filter(r => r['city_name'] === '月度合计'); 
     
-    const d = monthlyTotalRows.reduce((sum, r) => sum + parseFloat(r['新店数量'] || 0), 0);
+    const d = monthlyTotalRows.reduce((sum, r) => sum + parseFloat(r['new_store_count'] || 0), 0);
     
     // Calculate e
     const e = d > 0 ? (c / d).toFixed(1) : "0.0";

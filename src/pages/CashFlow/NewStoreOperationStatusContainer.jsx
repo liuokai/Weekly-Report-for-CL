@@ -6,30 +6,30 @@ const NewStoreOperationStatusContainer = () => {
   const { data, loading, error, fetchData } = useFetchData('getNewStoreOperationStatus', []);
 
   const columns = [
-    { key: '城市', label: '城市', dataIndex: '城市' },
-    { key: '门店名称', label: '门店名称', dataIndex: '门店名称' },
-    { key: '门店编码', label: '门店编码', dataIndex: '门店编码' },
-    { key: '开业日期', label: '开业日期', dataIndex: '开业日期' },
-    { key: '城市经理', label: '城市经理', dataIndex: '城市经理' },
-    { key: '技术副总', label: '技术副总', dataIndex: '技术副总' },
-    { key: '爬坡期长度', label: '爬坡期长度', dataIndex: '爬坡期长度' },
-    { key: '当前爬坡期', label: '当前爬坡期', dataIndex: '当前爬坡期' },
-    { key: '现金流目标值', label: '现金流目标值', dataIndex: '现金流目标值' },
-    { key: '爬坡期现金流实际值', label: '爬坡期现金流实际值', dataIndex: '爬坡期现金流实际值' },
-    { key: '现金流差异', label: '现金流差异', dataIndex: '现金流差异' },
-    { key: '营销费预算', label: '营销费预算', dataIndex: '营销费预算' },
-    { key: '营销费合计', label: '营销费合计', dataIndex: '营销费合计' },
-    { key: '营销费使用率', label: '营销费使用率', dataIndex: '营销费使用率' },
-    { key: '广告费', label: '广告费', dataIndex: '广告费' },
-    { key: '团购优惠', label: '团购优惠', dataIndex: '团购优惠' },
-    { key: '线下广告', label: '线下广告', dataIndex: '线下广告' },
-    { key: '新客优惠', label: '新客优惠', dataIndex: '新客优惠' },
-    { key: '布展', label: '布展', dataIndex: '布展' },
-    { key: '推拿师提成', label: '推拿师提成', dataIndex: '推拿师提成' },
-    { key: '激励费预算', label: '激励费预算', dataIndex: '激励费预算' },
-    { key: '激励费实际', label: '激励费实际', dataIndex: '激励费实际' },
-    { key: '激励费使用率', label: '激励费使用率', dataIndex: '激励费使用率' },
-    { key: '激励费差异', label: '激励费差异', dataIndex: '激励费差异' },
+    { key: 'city_name', label: '城市', dataIndex: 'city_name' },
+    { key: 'store_name', label: '门店名称', dataIndex: 'store_name' },
+    { key: 'store_code', label: '门店编码', dataIndex: 'store_code' },
+    { key: 'opening_date', label: '开业日期', dataIndex: 'opening_date' },
+    { key: 'city_manager_name', label: '城市经理', dataIndex: 'city_manager_name' },
+    { key: 'tech_vice_president_name', label: '技术副总', dataIndex: 'tech_vice_president_name' },
+    { key: 'ramp_up_period_months', label: '爬坡期长度', dataIndex: 'ramp_up_period_months' },
+    { key: 'current_ramp_up_month_index', label: '当前爬坡期', dataIndex: 'current_ramp_up_month_index' },
+    { key: 'cash_flow_budget_total', label: '现金流目标值', dataIndex: 'cash_flow_budget_total' },
+    { key: 'cash_flow_actual_to_date', label: '爬坡期现金流实际值', dataIndex: 'cash_flow_actual_to_date' },
+    { key: 'cash_flow_variance', label: '现金流差异', dataIndex: 'cash_flow_variance' },
+    { key: 'marketing_budget_total', label: '营销费预算', dataIndex: 'marketing_budget_total' },
+    { key: 'marketing_actual_total', label: '营销费合计', dataIndex: 'marketing_actual_total' },
+    { key: 'marketing_usage_ratio_display', label: '营销费使用率', dataIndex: 'marketing_usage_ratio_display' },
+    { key: 'ad_fee_actual', label: '广告费', dataIndex: 'ad_fee_actual' },
+    { key: 'group_buy_discount_actual', label: '团购优惠', dataIndex: 'group_buy_discount_actual' },
+    { key: 'offline_ad_fee_actual', label: '线下广告', dataIndex: 'offline_ad_fee_actual' },
+    { key: 'new_guest_discount_actual', label: '新客优惠', dataIndex: 'new_guest_discount_actual' },
+    { key: 'exhibition_fee_actual', label: '布展', dataIndex: 'exhibition_fee_actual' },
+    { key: 'masseur_commission_actual', label: '推拿师提成', dataIndex: 'masseur_commission_actual' },
+    { key: 'incentive_budget_total', label: '激励费预算', dataIndex: 'incentive_budget_total' },
+    { key: 'incentive_actual_total', label: '激励费实际', dataIndex: 'incentive_actual_total' },
+    { key: 'incentive_usage_ratio_display', label: '激励费使用率', dataIndex: 'incentive_usage_ratio_display' },
+    { key: 'incentive_variance', label: '激励费差异', dataIndex: 'incentive_variance' },
   ];
 
   const { sortedData, sortConfig, handleSort } = useTableSorting(columns, data || []);
@@ -96,33 +96,33 @@ const NewStoreOperationStatusContainer = () => {
                 ) : (
                     sortedData.map((item, index) => (
                         <tr key={index} className="bg-white border-b hover:bg-gray-50/50">
-                            <td className="px-6 py-4 font-medium text-gray-900">{item['城市']}</td>
-                            <td className="px-6 py-4 text-gray-900">{item['门店名称']}</td>
-                            <td className="px-6 py-4 text-gray-500 text-xs">{item['门店编码']}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{formatDate(item['开业日期'])}</td>
-                            <td className="px-6 py-4">{item['城市经理'] || '-'}</td>
-                            <td className="px-6 py-4">{item['技术副总'] || '-'}</td>
-                            <td className="px-6 py-4 text-center">{item['爬坡期长度']}</td>
-                            <td className="px-6 py-4 text-center">{item['当前爬坡期']}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['现金流目标值'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['爬坡期现金流实际值'])}</td>
-                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['现金流差异'] < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                {formatCurrency(item['现金流差异'])}
+                            <td className="px-6 py-4 font-medium text-gray-900">{item['city_name']}</td>
+                            <td className="px-6 py-4 text-gray-900">{item['store_name']}</td>
+                            <td className="px-6 py-4 text-gray-500 text-xs">{item['store_code']}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{formatDate(item['opening_date'])}</td>
+                            <td className="px-6 py-4">{item['city_manager_name'] || '-'}</td>
+                            <td className="px-6 py-4">{item['tech_vice_president_name'] || '-'}</td>
+                            <td className="px-6 py-4 text-center">{item['ramp_up_period_months']}</td>
+                            <td className="px-6 py-4 text-center">{item['current_ramp_up_month_index']}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['cash_flow_budget_total'])}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['cash_flow_actual_to_date'])}</td>
+                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['cash_flow_variance'] < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                {formatCurrency(item['cash_flow_variance'])}
                             </td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['营销费预算'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['营销费合计'])}</td>
-                            <td className="px-6 py-4 text-right font-mono text-gray-500">{item['营销费使用率'] || '-'}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['广告费'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['团购优惠'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['线下广告'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['新客优惠'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['布展'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['推拿师提成'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['激励费预算'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['激励费实际'])}</td>
-                            <td className="px-6 py-4 text-right font-mono text-gray-500">{item['激励费使用率'] || '-'}</td>
-                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['激励费差异'] > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                {formatCurrency(item['激励费差异'])}
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['marketing_budget_total'])}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['marketing_actual_total'])}</td>
+                            <td className="px-6 py-4 text-right font-mono text-gray-500">{item['marketing_usage_ratio_display'] || '-'}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['ad_fee_actual'])}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['group_buy_discount_actual'])}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['offline_ad_fee_actual'])}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['new_guest_discount_actual'])}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['exhibition_fee_actual'])}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['masseur_commission_actual'])}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['incentive_budget_total'])}</td>
+                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['incentive_actual_total'])}</td>
+                            <td className="px-6 py-4 text-right font-mono text-gray-500">{item['incentive_usage_ratio_display'] || '-'}</td>
+                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['incentive_variance'] > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                {formatCurrency(item['incentive_variance'])}
                             </td>
                         </tr>
                     ))
