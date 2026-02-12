@@ -27,6 +27,7 @@ existing_store_base AS (
     CROSS JOIN current_info c
     LEFT JOIN data_warehouse.dws_profit_store_detail_monthly b
         ON a.month = b.month AND a.store_code = b.store_code
+    where a.open_date < '2026-01-01'
 ),
 -- 2. 新开门店基础数据
 new_store_mapping AS (
