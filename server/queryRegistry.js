@@ -240,10 +240,6 @@ const queryRegistry = {
     description: '按月、城市维度统计推拿师天均服务时长不达标占比（含去年同期与同比），近12个月'
   },
 
-  getClosingStoreList: {
-    sql: loadSql('closing_store_list.sql'),
-    description: '闭店预警门店列表'
-  },
   getCashFlowNewStoreProcess: {
     sql: loadSql('cash_flow_new_store_process.sql'),
     description: '新店目标完成情况'
