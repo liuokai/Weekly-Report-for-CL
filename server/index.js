@@ -83,8 +83,8 @@ app.post('/api/fetch-data', async (req, res) => {
     // Use .query() instead of .execute() because Doris might not support prepared statements
     let [rows] = await connection.query(queryConfig.sql, params);
 
-    // Special handling for getTurnoverOverview to include annual target from cash_flow_budget.sql
-    if (queryKey === 'getTurnoverOverview') {
+    // Special handling for getTurnoverOverview and getCityTurnover to include targets from cash_flow_budget.sql
+    if (queryKey === 'getTurnoverOverview' || queryKey === 'getCityTurnover') {
       try {
         const budgetConfig = queryRegistry['getCashFlowBudgetMonthly'];
         if (budgetConfig && budgetConfig.sql) {
@@ -93,30 +93,53 @@ app.post('/api/fetch-data', async (req, res) => {
           // 直接从配置文件中提取 targetYear
           const configPath = path.join(__dirname, '../src/config/businessTargets.js');
           const configContent = fs.readFileSync(configPath, 'utf8');
-          const targetYear = configContent.match(/targetYear:\s*["'](\d{4})["']/)[1];
+          const targetYearMatch = configContent.match(/targetYear:\s*["'](\d{4})["']/);
+          const targetYear = targetYearMatch ? targetYearMatch[1] : null;
 
-          // Calculate annual target by summing total_revenue_budget across all cities and months for the target year
-          const annualTarget = budgetRows.reduce((sum, r) => {
-            // SQL 结果中的 month 格式通常为 'YYYY-MM'
-            if (r.month && r.month.startsWith(targetYear)) {
-              return sum + parseFloat(r.total_revenue_budget || 0);
-            }
-            return sum;
-          }, 0);
-          
-          // Add annual_target to the rows (specifically the one for the target year)
-          // 营业额目标要求仅保留整数部分
-          const roundedAnnualTarget = Math.floor(annualTarget);
+          if (targetYear) {
+            if (queryKey === 'getTurnoverOverview') {
+              // Calculate annual target by summing total_revenue_budget across all cities and months for the target year
+              const annualTarget = budgetRows.reduce((sum, r) => {
+                // SQL 结果中的 month 格式通常为 'YYYY-MM'
+                if (r.month && r.month.startsWith(targetYear)) {
+                  return sum + parseFloat(r.total_revenue_budget || 0);
+                }
+                return sum;
+              }, 0);
+              
+              // Add annual_target to the rows (specifically the one for the target year)
+              // 营业额目标要求仅保留整数部分
+              const roundedAnnualTarget = Math.floor(annualTarget);
 
-          rows = rows.map(row => {
-            if (row.year && row.year.toString() === targetYear) {
-              return { ...row, annual_target: roundedAnnualTarget };
+              rows = rows.map(row => {
+                if (row.year && row.year.toString() === targetYear) {
+                  return { ...row, annual_target: roundedAnnualTarget };
+                }
+                return row;
+              });
+            } else if (queryKey === 'getCityTurnover') {
+              // Calculate city annual targets for the target year
+              const cityTargets = {};
+              budgetRows.forEach(r => {
+                if (r.month && r.month.startsWith(targetYear) && r.city_name) {
+                  cityTargets[r.city_name] = (cityTargets[r.city_name] || 0) + parseFloat(r.total_revenue_budget || 0);
+                }
+              });
+
+              // Add city_annual_target to the rows for the target year
+              rows = rows.map(row => {
+                const rowYear = row.year || row.s_year;
+                const cityName = row.statistics_city_name || row.city_name || row.city;
+                if (rowYear && rowYear.toString() === targetYear && cityName && cityTargets[cityName] !== undefined) {
+                  return { ...row, city_annual_target: Math.floor(cityTargets[cityName]) };
+                }
+                return row;
+              });
             }
-            return row;
-          });
+          }
         }
       } catch (budgetError) {
-        console.error('Failed to fetch annual budget for turnover overview:', budgetError);
+        console.error(`Failed to fetch budget for ${queryKey}:`, budgetError);
       }
     }
 
@@ -417,6 +440,54 @@ app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
     // 2. Fetch Data for all variables
     const dataContext = {};
     
+    // --- START: Dynamic Budget Injection for static_turnover_targets ---
+    let finalStaticData = JSON.parse(JSON.stringify(staticData)); // Deep copy
+    
+    if (finalStaticData.static_turnover_targets) {
+      let cityTargetsFromSql = null;
+      
+      try {
+        const budgetConfig = queryRegistry['getCashFlowBudgetMonthly'];
+        if (budgetConfig && budgetConfig.sql) {
+          const [budgetRows] = await pool.query(budgetConfig.sql);
+          
+          // 获取 targetYear
+          const configPath = path.join(__dirname, '../src/config/businessTargets.js');
+          const configContent = fs.readFileSync(configPath, 'utf8');
+          const targetYearMatch = configContent.match(/targetYear:\s*["'](\d{4})["']/);
+          const targetYear = targetYearMatch ? targetYearMatch[1] : null;
+
+          if (targetYear && budgetRows.length > 0) {
+            const tempCityTargets = {};
+            budgetRows.forEach(r => {
+              if (r.month && r.month.startsWith(targetYear) && r.city_name) {
+                tempCityTargets[r.city_name] = (tempCityTargets[r.city_name] || 0) + parseFloat(r.total_revenue_budget || 0);
+              }
+            });
+
+            if (Object.keys(tempCityTargets).length > 0) {
+              // 格式化为整数
+              cityTargetsFromSql = {};
+              Object.keys(tempCityTargets).forEach(city => {
+                cityTargetsFromSql[city] = Math.floor(tempCityTargets[city]);
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch dynamic budget from SQL:', err);
+      }
+
+      // 优先级逻辑：优先使用 SQL 结果，否则使用静态配置
+      const finalCityTargets = cityTargetsFromSql || (finalStaticData.static_turnover_targets.cityTargets || {});
+      
+      // 最终重置对象，确保只包含 cityTargets
+      finalStaticData.static_turnover_targets = {
+        cityTargets: finalCityTargets
+      };
+    }
+    // --- END: Dynamic Budget Injection ---
+
     if (hasVariables) {
       for (const key of variableKeys) {
         try {
@@ -433,13 +504,20 @@ app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
 
     // Merge static data if provided
     if (hasStaticData) {
-      Object.assign(dataContext, staticData);
+      Object.assign(dataContext, finalStaticData);
     }
 
     // 3. Call Dify
+    // Clean up finalStaticData to only keep static_turnover_targets and ensure it's in context_data
+    const cleanedStaticData = {};
+    if (finalStaticData.static_turnover_targets) {
+      cleanedStaticData.static_turnover_targets = finalStaticData.static_turnover_targets;
+    }
+
     // We pass the aggregated data as a JSON string in the 'context_data' input
     const difyInputs = {
-      context_data: JSON.stringify(dataContext, null, 2)
+      context_data: JSON.stringify(dataContext, null, 2),
+      user_name: user || 'User'
     };
 
     const requestBody = {

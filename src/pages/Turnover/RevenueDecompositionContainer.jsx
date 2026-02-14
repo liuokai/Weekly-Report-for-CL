@@ -48,11 +48,19 @@ const RevenueDecompositionContainer = () => {
         // Fallback logic for city name if statistics_city_name is missing/null
         const city = item.statistics_city_name || item.city || '未知城市';
         
-        // Use actual_turnover from SQL；目标仅由配置控制
+        // Use actual_turnover from SQL；目标优先从后端获取，兜底从配置控制
         const revenue = Number(item.actual_turnover) || 0;
-        const configTargets = BusinessTargets?.turnover?.cityTargets || {};
-        const targetFromConfig = configTargets[city];
-        const target = targetFromConfig != null ? Number(targetFromConfig) : 0;
+        
+        // 优先使用后端返回的城市年度预算 (来自 cash_flow_budget.sql)
+        let target = 0;
+        if (item.city_annual_target != null) {
+          target = Number(item.city_annual_target);
+        } else {
+          // 兜底逻辑：从配置文件中获取
+          const configTargets = BusinessTargets?.turnover?.cityTargets || {};
+          const targetFromConfig = configTargets[city];
+          target = targetFromConfig != null ? Number(targetFromConfig) : 0;
+        }
         
         // Budget data is not available in SQL yet, showing as missing per user request
         const budget = null;
@@ -326,18 +334,21 @@ const RevenueDecompositionContainer = () => {
       key: "revTarget", 
       title: "营业额目标", 
       dataIndex: "营业额目标",
+      align: "right",
       render: (value) => value ? Number(value).toLocaleString() : value
     },
     { 
       key: "rev", 
       title: "营业额", 
       dataIndex: "营业额",
+      align: "right",
       render: (value) => value ? Number(value).toLocaleString() : value
     },
     { 
       key: "revRate", 
       title: "营业额完成率", 
       dataIndex: "营业额完成率",
+      align: "right",
       render: (value, row) => {
         const rateNum = parseFloat(value);
         const timeNum = parseFloat(row?.["时间进度"] || "0");
@@ -346,13 +357,14 @@ const RevenueDecompositionContainer = () => {
         return <span className={cls}>{value}</span>;
       }
     },
-    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度" },
-    { key: "budget", title: "预算金额", dataIndex: "预算金额" },
-    { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额" },
+    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度", align: "right" },
+    { key: "budget", title: "预算金额", dataIndex: "预算金额", align: "right" },
+    { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额", align: "right" },
     { 
       key: "budgetRate", 
       title: "预算消耗率", 
       dataIndex: "预算消耗率",
+      align: "right",
       render: (value) => {
         const num = parseFloat(value);
         const isOver = num > 100;
@@ -368,18 +380,21 @@ const RevenueDecompositionContainer = () => {
       key: "revTarget", 
       title: "营业额目标", 
       dataIndex: "营业额目标",
+      align: "right",
       render: (value) => value ? Number(value).toLocaleString() : value
     },
     {
       key: "annualRev",
       title: "年度营业额",
       dataIndex: "年度营业额",
+      align: "right",
       render: (value) => value ? Number(value).toLocaleString() : value
     },
     { 
       key: "revRate", 
       title: "营业额完成率", 
       dataIndex: "营业额完成率",
+      align: "right",
       render: (value, row) => {
         if (!value) return '-';
         const rateNum = parseFloat(value);
@@ -393,12 +408,14 @@ const RevenueDecompositionContainer = () => {
       key: "rev", 
       title: "本周营业额", 
       dataIndex: "本周营业额",
+      align: "right",
       render: (value) => value ? Number(value).toLocaleString() : value
     },
     {
       key: "revYoY",
       title: "本周营业额同比",
       dataIndex: "本周营业额同比",
+      align: "right",
       render: (value) => {
         if (!value || value === '-') return '-';
         const num = parseFloat(value);
@@ -406,13 +423,14 @@ const RevenueDecompositionContainer = () => {
         return <span className={`${color} font-medium`}>{value}</span>;
       }
     },
-    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度" },
-    { key: "budget", title: "预算金额", dataIndex: "预算金额" },
-    { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额" },
+    { key: "timeProgress", title: "时间进度", dataIndex: "时间进度", align: "right" },
+    { key: "budget", title: "预算金额", dataIndex: "预算金额", align: "right" },
+    { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额", align: "right" },
     { 
       key: "budgetRate", 
       title: "预算消耗率", 
       dataIndex: "预算消耗率",
+      align: "right",
       render: (value) => {
         if (!value) return '-';
         const num = parseFloat(value);
