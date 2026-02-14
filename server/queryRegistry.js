@@ -116,11 +116,11 @@ const queryRegistry = {
     description: '周维度项目回头率统计'
   },
   getRepurchaseRateCityWeekly: {
-    sql: loadSql('repurchase_reate_city_weekly_yoy.sql'),
+    sql: loadSql('repurchase_rate_city_weekly_yoy.sql'),
     description: '城市维度项目回头率统计'
   },
   getRepurchaseRateStoreWeekly: {
-    sql: loadSql('repurchase_reate_store_weekly_yoy.sql'),
+    sql: loadSql('repurchase_rate_store_weekly_yoy.sql'),
     description: '门店维度项目回头率统计'
   },
   // 活跃会员数相关
