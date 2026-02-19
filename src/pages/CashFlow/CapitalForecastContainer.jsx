@@ -1,9 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import BusinessTargets from '../../config/businessTargets';
 import DataContainer from '../../components/Common/DataContainer';
-import DataTable from '../../components/Common/DataTable';
 import FilterDropdown from '../../components/Common/FilterDropdown';
 import useFetchData from '../../hooks/useFetchData';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, LabelList } from 'recharts';
 
 /**
  * 2026年公司总部及城市维度资金测算周报容器
@@ -294,132 +294,60 @@ const CapitalForecastContainer = () => {
     return rows;
   }, [selectedCity, storeCashFlowAnnual, safetyLineTotal, openingExpenditure]);
 
-  // 格式化金额
   const formatMoney = (val) => {
     if (val === null || val === undefined) return '-';
     return val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
-
-  // 渲染差异列
-  const renderDiff = (row) => {
-    // 只有滚动值和预算值都存在时才比较
-    if (row.col_2026_rolling === null || row.col_2026_budget === null) return '-';
-    
-    const diff = row.col_2026_rolling - row.col_2026_budget;
-    const pct = row.col_2026_budget !== 0 ? (diff / row.col_2026_budget) * 100 : 0;
-    
-    // 差异值的颜色逻辑：通常正差异（结余更多）为绿，负差异为红
-    // 除非是支出项（如开店支出），如果支出多了（正差异），反而是坏事？
-    // 但需求只说“差异值为滚动-预算”，未指定颜色方向，这里沿用通用的红绿逻辑：
-    // 大于等于0为绿（或默认黑），小于0为红？
-    // 用户之前的逻辑是：滚动<预算为红，滚动>预算为绿。
-    let colorClass = diff >= 0 ? 'text-green-600' : 'text-red-600';
-    
-    // 如果该行被标记为灰色，则覆盖差异颜色
-    if (row.isGray) {
-      colorClass = 'text-gray-400';
-    }
-
-    const sign = diff > 0 ? '+' : '';
-    
-    return (
-      <div className={`flex flex-col items-end ${colorClass}`}>
-        <span className="font-medium">{formatMoney(diff)}</span>
-        <span className="text-xs opacity-80">({sign}{pct.toFixed(2)}%)</span>
-      </div>
-    );
+  const formatWan = (val) => {
+    if (val === null || val === undefined) return '-';
+    const wan = Number(val) / 10000;
+    return `${wan.toLocaleString('zh-CN', { maximumFractionDigits: 0 })} 万`;
   };
-
-  const columns = [
-    {
-      key: 'subject',
-      title: '资金预测科目',
-      dataIndex: 'subject',
-      width: '240px',
-      fixed: 'left',
-      render: (text, row) => {
-        let className = 'block ';
-        if (row.isHighlight) {
-          className += 'font-bold text-gray-900';
-        } else if (row.isGray) {
-          className += 'text-gray-400';
-        } else {
-          className += 'text-gray-700';
-        }
-        
-        if (row.isIndent) {
-          className += ' pl-8';
-        }
-        
-        return (
-          <span className={className}>
-            {text}
-          </span>
-        );
-      }
-    },
-    {
-      key: 'col_2025_end',
-      title: '2025年末值',
-      dataIndex: 'col_2025_end',
-      align: 'right',
-      width: '150px',
-      render: (val, row) => <span className={row.isGray ? "text-gray-400" : "text-gray-600"}>{formatMoney(val)}</span>
-    },
-    {
-      key: 'col_2026_occurred',
-      title: '2026年已发生值',
-      dataIndex: 'col_2026_occurred',
-      align: 'right',
-      width: '150px',
-      className: 'bg-blue-50/30', // 微弱淡蓝底色
-      render: (val, row) => (
-        <span className={`${row.isHighlight ? 'font-semibold' : ''} ${row.isGray ? 'text-gray-400' : 'text-gray-700'}`}>
-          {formatMoney(val)}
-        </span>
-      )
-    },
-    {
-      key: 'col_2026_pending',
-      title: '2026年待发生值',
-      dataIndex: 'col_2026_pending',
-      align: 'right',
-      width: '150px',
-      className: 'bg-gray-50/50', // 微弱淡灰底色
-      render: (val, row) => (
-        <span className={`${row.isHighlight ? 'font-semibold' : ''} ${row.isGray ? 'text-gray-400' : 'text-gray-700'}`}>
-          {formatMoney(val)}
-        </span>
-      )
-    },
-    {
-      key: 'col_2026_rolling',
-      title: '2026年滚动全年值',
-      dataIndex: 'col_2026_rolling',
-      align: 'right',
-      width: '160px',
-      render: (val, row) => (
-        <span className={`font-bold ${row.isGray ? 'text-gray-400' : 'text-gray-900'}`}>
-          {formatMoney(val)}
-        </span>
-      )
-    },
-    {
-      key: 'col_2026_budget',
-      title: '2026年初预算值',
-      dataIndex: 'col_2026_budget',
-      align: 'right',
-      width: '150px',
-      render: (val, row) => <span className={row.isGray ? "text-gray-400" : "text-gray-600"}>{formatMoney(val)}</span>
-    },
-    {
-      key: 'diff',
-      title: '差异',
-      width: '140px',
-      align: 'right',
-      render: (_, row) => renderDiff(row)
+  const formatWanAxis = (val) => {
+    const wan = Number(val) / 10000;
+    return `${wan.toFixed(0)}万`;
+  };
+  const formatYuan = (val) => {
+    if (val === null || val === undefined) return '-';
+    return `¥ ${Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  };
+  const configData = useMemo(() => getConfigurationData(selectedCity), [selectedCity]);
+  const balance2025 = configData.balance2025 || 0;
+  const operatingTotal = (storeCashFlowAnnual.rolling || 0) + (selectedCity === '总部' ? (configData.hqProfitBudget || 0) : 0);
+  const operatingOccurred = storeCashFlowAnnual.occurred || 0;
+  const operatingPending = Math.max((operatingTotal || 0) - (operatingOccurred || 0), 0);
+  const safetyLine = safetyLineTotal || 0;
+  const availableFunds = (balance2025 || 0) + (operatingTotal || 0) - (safetyLine || 0);
+  const openSpendBudget = openingExpenditure.budget || 0;
+  const openSpendOccurred = openingExpenditure.occurred || 0;
+  const openSpendPending = Math.max((openSpendBudget || 0) - (openSpendOccurred || 0), 0);
+  const finalBalance = (availableFunds || 0) - (openSpendBudget || 0);
+  const waterfallData = useMemo(() => {
+    const step1 = balance2025;
+    const step2 = step1 + operatingTotal;
+    const step3 = step2 - safetyLine;
+    const step4 = step3 - openSpendBudget;
+    return [
+      { name: '2025年末资金结余', base: 0, delta: step1, type: 'total' },
+      { name: '预计2026年经营资金结余', base: step1, delta: operatingTotal, type: 'increase' },
+      { name: '预计2026年资金安全线', base: step2, delta: -safetyLine, type: 'decrease' },
+      { name: '预计2026年开店支出', base: step3, delta: -openSpendBudget, type: 'decrease' },
+      { name: '预计2026年实际结余资金', base: 0, delta: step4, type: 'total' }
+    ];
+  }, [balance2025, operatingTotal, safetyLine, openSpendBudget]);
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const p = payload.find(d => d.dataKey === 'delta');
+      if (!p) return null;
+      return (
+        <div className="bg-white p-3 border border-gray-200 shadow-lg rounded-md text-sm">
+          <div className="font-bold text-gray-800 mb-1">{label}</div>
+          <div className="text-gray-600">数值：<span className="font-medium text-gray-900">{formatWan(p.value)}</span></div>
+        </div>
+      );
     }
-  ];
+    return null;
+  };
 
   const renderFilters = () => (
     <div className="flex flex-row relative z-40">
@@ -439,13 +367,63 @@ const CapitalForecastContainer = () => {
       renderFilters={renderFilters}
       maxHeight="none"
     >
-      <DataTable
-        columns={columns}
-        data={data}
-        rowClassName={(row) => row.isHighlight ? 'bg-[#a40035]/5 hover:bg-[#a40035]/10' : ''}
-        // 禁用默认分页，展示所有行
-        pagination={false}
-      />
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <div className="text-xs text-gray-500 mb-1">2025年末资金结余</div>
+            <div className="text-2xl font-bold text-gray-900">{formatWan(balance2025)}</div>
+          </div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <div className="text-xs text-gray-500 mb-1">预计2026年经营资金结余</div>
+            <div className="text-2xl font-bold text-green-600">{formatWan(operatingTotal)}</div>
+            <div className="text-xs text-gray-500 mt-1">已发生：{formatWan(operatingOccurred)}</div>
+            <div className="text-xs text-gray-500">待发生：{formatWan(operatingPending)}</div>
+          </div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <div className="text-xs text-gray-500 mb-1">预计2026年资金安全线</div>
+            <div className="text-2xl font-bold text-red-600">{formatWan(safetyLine)}</div>
+          </div>
+          <div className="p-4 rounded-lg border border-[#a40035] bg-[#a40035]/5">
+            <div className="text-xs text-[#a40035] mb-1">预计2026年自有资金可用金额</div>
+            <div className="text-2xl font-bold text-[#a40035]">{formatWan(availableFunds)}</div>
+          </div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <div className="text-xs text-gray-500 mb-1">预计2026年开店支出</div>
+            <div className="text-2xl font-bold text-red-600">{formatWan(openSpendBudget)}</div>
+            <div className="text-xs text-gray-500 mt-1">已发生：{formatWan(openSpendOccurred)}</div>
+            <div className="text-xs text-gray-500">待发生：{formatWan(openSpendPending)}</div>
+          </div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <div className="text-xs text-gray-500 mb-1">预计2026年实际结余资金</div>
+            <div className="text-2xl font-bold text-gray-900">{formatWan(finalBalance)}</div>
+          </div>
+        </div>
+
+        <div className="w-full h-[420px] rounded-lg border border-gray-200 bg-white p-4">
+          <div className="text-sm font-bold text-gray-700 mb-3">资金流向瀑布图（单位：万元）</div>
+          <div className="w-full h-[340px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={waterfallData} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6b7280' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
+                <YAxis tickFormatter={formatWanAxis} tick={{ fontSize: 12, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="base" stackId="stack" fill="#e5e7eb" />
+                <Bar dataKey="delta" stackId="stack">
+                  {waterfallData.map((entry, index) => {
+                    const type = entry.type;
+                    let fill = '#a40035';
+                    if (type === 'increase') fill = '#16a34a';
+                    if (type === 'decrease') fill = '#ef4444';
+                    return <Cell key={`cell-${index}`} fill={fill} />;
+                  })}
+                  <LabelList dataKey="delta" position="top" formatter={(v) => (Number(v) / 10000).toFixed(0) + '万'} className="text-xs fill-gray-700" />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
     </DataContainer>
   );
 };
