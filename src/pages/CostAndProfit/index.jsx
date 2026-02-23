@@ -5,7 +5,7 @@ import DataTable from '../../components/Common/DataTable';
 import UnifiedProgressBar from '../../components/Common/UnifiedProgressBar';
 import BusinessTargets from '../../config/businessTargets';
 import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
-import CostStructureContainer from '../CashFlow/CostStructureContainer';
+import CostStructureContainer from './CostStructureContainer';
 import AnnualCostAnalysis from './AnnualCostAnalysis';
 import HeadquartersCostBudget from './HeadquartersCostBudget';
 import useFetchData from '../../hooks/useFetchData';

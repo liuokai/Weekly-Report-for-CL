@@ -1,6 +1,83 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 
+const FIELD_LABELS = {
+  city_name: '城市名称',
+  store_name: '门店名称',
+  revenue: '营业额',
+  net_profit: '净利润',
+  masseur_cost: '推拿师成本',
+  manager_cost: '客户经理成本',
+  service_fee: '服务费',
+  material_cost: '物资成本',
+  asset_maintenance_fee: '资产维护费',
+  utility_fee: '水电费',
+  broadband_fee: '宽带费',
+  tax_and_surcharge: '税金及附加费',
+  profit_rate: '利润率',
+  actual_profit_rate: '实际利润率',
+  cash_flow_target: '现金流目标',
+  net_cash_flow: '经营净现金流',
+  payback_period: '投资回收期',
+  labor_cost: '人工成本',
+  fixed_cost: '固定成本',
+  variable_cost: '变动成本',
+  project_commission: '项目提成',
+  over_production_bonus: '超产值奖金',
+  promotion_subsidy: '促销补贴',
+  incentive_fee: '激励费用',
+  repeat_customer_incentive: '回头客激励',
+  masseur_reception_commission: '推拿师接待提成',
+  recruitment_fee: '招聘费',
+  pre_job_training: '岗前培训',
+  masseur_housing_subsidy: '推拿师住房补贴',
+  masseur_social_security: '推拿师社保费用',
+  uniform_fee: '工作服',
+  manager_shift_commission: '客户经理班次提成',
+  manager_new_customer_commission: '客户经理新客提成',
+  manager_reception_commission: '客户经理接待提成',
+  manager_rating_commission: '客户经理评价提成',
+  manager_supplies_commission: '客户经理物资提成',
+  manager_housing_subsidy: '客户经理住房补贴',
+  manager_social_security: '客户经理社保费用',
+  hygiene_maintenance: '卫生维护',
+  clean_toilet: '打扫厕所',
+  clean_room: '打扫房间',
+  overtime_subsidy: '加班补贴',
+  fixed_rent: '固定租金',
+  percentage_rent: '提成租金',
+  promotion_fee: '推广费',
+  property_fee: '物管费',
+  depreciation_fee: '折旧费',
+  linen_purchase_fee: '布草采购费',
+  offline_ad_fee: '线下广告费',
+  online_ad_fee: '线上广告费',
+  other_expenses_remark: '其他费用',
+  after_sales_cost: '售后费用',
+  profit_before_tax: '税前利润',
+  income_tax_amount: '所得税金额',
+  washing_fee: '布草洗涤费',
+  consumables_purchase_fee: '消耗品采购费',
+  utilities_fee: '水电费',
+  asset_maintenance_fee: '资产维护费',
+  linen_washing_fee: '布草洗涤费',
+  store_profit: '门店利润',
+  other_subsidy: '其他补贴',
+  shift_substitution_subsidy: '顶班补贴',
+  refund_subsidy: '退单补贴',
+  pre_job_training_reward: '岗前培训奖励',
+  cleaning_wage_income: '保洁工资收入',
+  manager_other_subsidy: '客户经理其他补贴',
+  dormitory_rent_cost: '宿舍租金成本',
+  external_support_travel_expense: '外部支援差旅费',
+  level3_partner_bean_gain: '三级合伙人获豆',
+  monitoring_fee: '监控费',
+  team_building_fee: '团建费',
+  travel_expense: '差旅费',
+  masseur_guaranteed_subsidy_bean: '调理师保底补贴豆',
+  original_masseur_variance: '推拿师成本差异'
+};
+
 const MonthDropdown = ({ months, selectedMonth, onSelect }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -102,7 +179,6 @@ const FilterDropdown = ({ options, selected, onSelect, placeholder = '全部' })
   );
 };
 
-// Dimension Toggle Component
 const DimensionToggle = ({ dimension, onChange }) => {
   return (
     <div className="flex bg-gray-100 p-1 rounded-lg">
@@ -130,7 +206,6 @@ const DimensionToggle = ({ dimension, onChange }) => {
   );
 };
 
-// Styled Filter Dropdown (Matches DimensionToggle style)
 const StyledFilterDropdown = ({ options, selected, onSelect, placeholder }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -195,10 +270,8 @@ const CostStructureContainer = () => {
   const [startMonth, setStartMonth] = useState('');
   const [endMonth, setEndMonth] = useState('');
   
-  // Dimension State
-  const [viewDimension, setViewDimension] = useState('city'); // 'city' | 'store'
+  const [viewDimension, setViewDimension] = useState('city');
   
-  // Filters
   const [selectedCityFilter, setSelectedCityFilter] = useState('全部');
   const [selectedStoreFilter, setSelectedStoreFilter] = useState('全部');
   const [error, setError] = useState(null);
@@ -207,22 +280,15 @@ const CostStructureContainer = () => {
     fetchData();
   }, []);
 
-  // Reset filters when dimension changes
   useEffect(() => {
     if (viewDimension === 'city') {
       setSelectedStoreFilter('全部');
-      // Keep City Filter as it might be useful, or reset it if desired. 
-      // User requirement: "Default shows 9 cities aggregated values". 
-      // Let's reset to 'All' to show all 9 cities by default when switching back.
       setSelectedCityFilter('全部'); 
     } else {
-      // When switching to Store dimension, maybe keep the city filter if set?
-      // Let's reset store filter to ensure clean state.
       setSelectedStoreFilter('全部');
     }
   }, [viewDimension]);
 
-  // Reset store filter when city changes (in Store dimension)
   useEffect(() => {
     if (viewDimension === 'store') {
       setSelectedStoreFilter('全部');
@@ -258,21 +324,16 @@ const CostStructureContainer = () => {
     const start = startMonth <= endMonth ? startMonth : endMonth;
     const end = startMonth <= endMonth ? endMonth : startMonth;
 
-    // 1. Filter by Month
     let filteredRows = allRows.filter(r => {
       const m = r.report_month;
       return m && m >= start && m <= end;
     });
 
-    // 2. Apply Dimension-Specific Filters
     if (viewDimension === 'city') {
-       // In City Mode, we show all cities by default (aggregated).
-       // If City Filter is used, we filter by it.
-       if (selectedCityFilter !== '全部') {
-         filteredRows = filteredRows.filter(r => r.city_name === selectedCityFilter);
-       }
+      if (selectedCityFilter !== '全部') {
+        filteredRows = filteredRows.filter(r => r.city_name === selectedCityFilter);
+      }
     } else {
-      // In Store Mode
       if (selectedCityFilter !== '全部') {
         filteredRows = filteredRows.filter(r => r.city_name === selectedCityFilter);
       }
@@ -283,13 +344,11 @@ const CostStructureContainer = () => {
 
     if (filteredRows.length === 0) return null;
 
-    // 3. Determine Columns
     const sampleRow = filteredRows[0];
     const allKeys = Object.keys(sampleRow);
     const dimensionKeys = ['report_month', 'store_code', 'city_name', 'store_name', 'opening_date', 'store_operation_stage'];
     const metricKeys = allKeys.filter(k => !dimensionKeys.includes(k));
 
-    // 4. Aggregation Logic
     const groupByKey = viewDimension === 'city' ? 'city_name' : 'store_name';
     const aggregationMap = {};
     
@@ -301,7 +360,6 @@ const CostStructureContainer = () => {
           [groupByKey]: key,
           _count: 0
         };
-        // For Store dimension, preserve static attributes like City if needed
         if (viewDimension === 'store') {
             aggregationMap[key].city_name = row.city_name;
         }
@@ -317,7 +375,6 @@ const CostStructureContainer = () => {
       });
     });
 
-    // 5. Recalculate Ratios and Format
     const finalRows = Object.values(aggregationMap).map(row => {
       const revenue = row.revenue_actual || row.revenue || 0;
       const netProfit = row.net_profit_actual || row.net_profit || 0;
@@ -333,7 +390,6 @@ const CostStructureContainer = () => {
       return row;
     });
 
-    // 6. Create Summary Row
     const summaryRow = {
       [groupByKey]: '合计',
       isSummary: true
@@ -348,7 +404,6 @@ const CostStructureContainer = () => {
       });
     });
 
-    // Recalculate Summary Ratios
     const totalRevenue = summaryRow.revenue_actual || summaryRow.revenue || 0;
     const totalNetProfit = summaryRow.net_profit_actual || summaryRow.net_profit || 0;
     
@@ -359,9 +414,6 @@ const CostStructureContainer = () => {
         summaryRow.profit_rate = totalRevenue !== 0 ? (totalNetProfit / totalRevenue * 100) : 0;
     }
 
-    // Sort rows (optional, but good for UX)
-    // City mode: Sort by City Name (usually default) or maybe Revenue?
-    // Store mode: Sort by Store Name
     finalRows.sort((a, b) => (a[groupByKey] || '').localeCompare(b[groupByKey] || ''));
 
     return {
@@ -371,7 +423,6 @@ const CostStructureContainer = () => {
     };
   }, [allRows, startMonth, endMonth, selectedCityFilter, selectedStoreFilter, viewDimension]);
 
-  // Generate Store Options based on selected City
   const storeOptions = useMemo(() => {
     if (!allRows.length) return [];
     let stores = allRows;
@@ -381,21 +432,20 @@ const CostStructureContainer = () => {
     return [...new Set(stores.map(r => r.store_name))].filter(Boolean).sort((a, b) => a.localeCompare(b));
   }, [allRows, selectedCityFilter]);
 
-  // Generate City Options
   const cityOptions = useMemo(() => {
      return [...new Set(allRows.map(r => r.city_name))].filter(Boolean).sort((a, b) => a.localeCompare(b));
   }, [allRows]);
 
-  // Group Headers Logic
   const headerGroups = useMemo(() => {
     const cols = processedData?.columns || [];
     const groups = [];
     const processed = new Set();
 
+    const getLabel = (key) => FIELD_LABELS[key] || key;
+
     cols.forEach(col => {
       if (processed.has(col)) return;
 
-      // Check for patterns: _budget, _actual, _variance
       let baseName = null;
       if (col.endsWith('_budget')) baseName = col.slice(0, -7);
       else if (col.endsWith('_actual')) baseName = col.slice(0, -7);
@@ -406,14 +456,9 @@ const CostStructureContainer = () => {
         const actualKey = `${baseName}_actual`;
         const diffKey = `${baseName}_variance`;
 
-        // Check if all three exist in columns
         if (cols.includes(budgetKey) && cols.includes(actualKey) && cols.includes(diffKey)) {
-          // Mapping baseName to Chinese labels for display if needed, 
-          // but for now let's just use the baseName as is or extract from comments if possible.
-          // Since the user wants to retain Chinese in comments, maybe we can't easily get it here.
-          // However, the original code used baseName as title.
           groups.push({
-            title: baseName,
+            title: getLabel(baseName),
             isGroup: true,
             subHeaders: [
               { label: '预算值', key: budgetKey },
@@ -425,11 +470,11 @@ const CostStructureContainer = () => {
           processed.add(actualKey);
           processed.add(diffKey);
         } else {
-          groups.push({ title: col, isGroup: false, key: col });
+          groups.push({ title: getLabel(col), isGroup: false, key: col });
           processed.add(col);
         }
       } else {
-        groups.push({ title: col, isGroup: false, key: col });
+        groups.push({ title: getLabel(col), isGroup: false, key: col });
         processed.add(col);
       }
     });
@@ -441,6 +486,8 @@ const CostStructureContainer = () => {
   if (!processedData) return <div className="p-6 text-center text-gray-500">暂无数据</div>;
 
   const { columns, data, firstColumnHeader } = processedData;
+
+  const firstColumnLabel = viewDimension === 'city' ? '城市名称' : '门店名称';
 
   const formatValue = (key, value) => {
     if (key.includes('率') || key.includes('占比')) {
@@ -459,7 +506,7 @@ const CostStructureContainer = () => {
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items员 gap-2">
               <span className="text-sm text-gray-600">起</span>
               <MonthDropdown
                 months={months}
@@ -490,7 +537,6 @@ const CostStructureContainer = () => {
           
           <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block"></div>
           
-          {/* Dimension Toggle and Conditional Store Filter */}
           <div className="flex items-center gap-2">
              <DimensionToggle dimension={viewDimension} onChange={setViewDimension} />
              
@@ -513,7 +559,7 @@ const CostStructureContainer = () => {
           <thead className="bg-gray-50 text-xs text-gray-700 uppercase sticky top-0 z-20 shadow-sm">
             <tr>
               <th rowSpan={2} className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                {firstColumnHeader}
+                {firstColumnLabel}
               </th>
               {headerGroups.map((group, idx) => (
                 <th 
@@ -587,3 +633,4 @@ const CostStructureContainer = () => {
 };
 
 export default CostStructureContainer;
+
