@@ -114,7 +114,7 @@ budget_final AS (
         round(b.revenue_budget * c.material_cost, 2) as material_cost_budget, -- 原字段：物资成本预算
         round(b.revenue_budget * c.asset_maintenance_fee, 2) as asset_maintenance_fee_budget, -- 原字段：资产维护费预算
         round(b.revenue_budget * c.utility_fee, 2) as utility_fee_budget, -- 原字段：水电费预算
-        round(b.revenue_budget * c.broadband_fee, 2) as broadband_fee_budget, -- 原字段：宽带费预算
+        c.broadband_fee as broadband_fee_budget, -- 原字段：宽带费预算
         round(b.revenue_budget * c.tax_and_surcharge, 2) as tax_and_surcharge_budget -- 原字段：税金及附加费预算
     from dws_store_revenue_estimate b
     left join (

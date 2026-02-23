@@ -347,7 +347,10 @@ const CostStructureContainer = () => {
     const sampleRow = filteredRows[0];
     const allKeys = Object.keys(sampleRow);
     const dimensionKeys = ['report_month', 'store_code', 'city_name', 'store_name', 'opening_date', 'store_operation_stage'];
-    const metricKeys = allKeys.filter(k => !dimensionKeys.includes(k));
+    const excludedMetricKeys = ['bean_exchange_diff', 'new_store_dinner_party_fee'];
+    const metricKeys = allKeys.filter(
+      (k) => !dimensionKeys.includes(k) && !excludedMetricKeys.includes(k)
+    );
 
     const groupByKey = viewDimension === 'city' ? 'city_name' : 'store_name';
     const aggregationMap = {};
@@ -489,11 +492,100 @@ const CostStructureContainer = () => {
 
   const firstColumnLabel = viewDimension === 'city' ? '城市名称' : '门店名称';
 
-  const formatValue = (key, value) => {
-    if (key.includes('率') || key.includes('占比')) {
-      return `${value.toFixed(2)}%`;
+  const formatNumber = (value) => {
+    return Number(value).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  const formatCellValue = (key, row) => {
+    const raw = row[key];
+    const num = Number(raw);
+    if (raw === undefined || raw === null || isNaN(num)) {
+      return '-';
     }
-    return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    if (key === 'profit_rate' || key === 'actual_profit_rate') {
+      return `${num.toFixed(2)}%`;
+    }
+
+    const revenueBudget = Number(row.revenue_budget) || 0;
+    const revenueActual = Number(row.revenue_actual) || 0;
+
+    const getBaseInfo = (k) => {
+      if (k.endsWith('_budget')) return { base: k.slice(0, -7), type: 'budget' };
+      if (k.endsWith('_actual')) return { base: k.slice(0, -7), type: 'actual' };
+      if (k.endsWith('_variance')) return { base: k.slice(0, -9), type: 'variance' };
+      return { base: null, type: 'single' };
+    };
+
+    const { base, type } = getBaseInfo(key);
+
+    if (base) {
+      if (base === 'revenue') {
+        return formatNumber(num);
+      }
+
+      const budgetKey = `${base}_budget`;
+      const actualKey = `${base}_actual`;
+      const metricBudget = Number(row[budgetKey]) || 0;
+      const metricActual = Number(row[actualKey]) || 0;
+
+      let percentText = '';
+
+      if (type === 'budget' && revenueBudget) {
+        const ratio = (metricBudget / revenueBudget) * 100;
+        percentText = `${ratio.toFixed(2)}%`;
+      } else if (type === 'actual' && revenueActual) {
+        const ratio = (metricActual / revenueActual) * 100;
+        percentText = `${ratio.toFixed(2)}%`;
+      } else if (
+        type === 'variance' &&
+        revenueBudget &&
+        revenueActual &&
+        metricBudget &&
+        metricActual
+      ) {
+        const budgetRatio = (metricBudget / revenueBudget) * 100;
+        const actualRatio = (metricActual / revenueActual) * 100;
+        const diffRatio = actualRatio - budgetRatio;
+        percentText = `${diffRatio.toFixed(2)}%`;
+      }
+
+      const amountText = formatNumber(num);
+
+      if (!percentText) {
+        return amountText;
+      }
+
+      return (
+        <div className="flex flex-col items-end leading-tight">
+          <span>{amountText}</span>
+          <span className="text-xs text-gray-500 mt-0.5">{percentText}</span>
+        </div>
+      );
+    }
+
+    if (
+      key !== 'revenue_actual' &&
+      key !== 'revenue_budget' &&
+      key !== 'revenue_variance' &&
+      revenueActual
+    ) {
+      const ratio = (num / revenueActual) * 100;
+      const amountText = formatNumber(num);
+      const percentText = `${ratio.toFixed(2)}%`;
+
+      return (
+        <div className="flex flex-col items-end leading-tight">
+          <span>{amountText}</span>
+          <span className="text-xs text-gray-500 mt-0.5">{percentText}</span>
+        </div>
+      );
+    }
+
+    return formatNumber(num);
   };
 
   return (
@@ -506,7 +598,7 @@ const CostStructureContainer = () => {
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex items员 gap-2">
+            <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">起</span>
               <MonthDropdown
                 months={months}
@@ -607,7 +699,7 @@ const CostStructureContainer = () => {
                           ${isDiff && val < 0 ? 'text-red-600' : ''}
                           ${isDiff && val > 0 ? 'text-green-600' : ''}
                         `}>
-                          {formatValue(sub.key, val)}
+                          {formatCellValue(sub.key, row)}
                         </td>
                       );
                     });
@@ -618,7 +710,7 @@ const CostStructureContainer = () => {
                         ${group.key.includes('_variance') && row[group.key] < 0 ? 'text-red-600' : ''}
                         ${group.key.includes('_variance') && row[group.key] > 0 ? 'text-green-600' : ''}
                       `}>
-                        {formatValue(group.key, row[group.key])}
+                        {formatCellValue(group.key, row)}
                       </td>
                     );
                   }
@@ -633,4 +725,3 @@ const CostStructureContainer = () => {
 };
 
 export default CostStructureContainer;
-
