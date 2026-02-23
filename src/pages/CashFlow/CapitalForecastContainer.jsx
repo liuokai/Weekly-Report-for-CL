@@ -3,7 +3,7 @@ import BusinessTargets from '../../config/businessTargets';
 import DataContainer from '../../components/Common/DataContainer';
 import FilterDropdown from '../../components/Common/FilterDropdown';
 import useFetchData from '../../hooks/useFetchData';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, LabelList } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, LabelList, ReferenceLine } from 'recharts';
 
 /**
  * 2026年公司总部及城市维度资金测算周报容器
@@ -322,6 +322,7 @@ const CapitalForecastContainer = () => {
   const openSpendOccurred = openingExpenditure.occurred || 0;
   const openSpendPending = Math.max((openSpendBudget || 0) - (openSpendOccurred || 0), 0);
   const finalBalance = (availableFunds || 0) - (openSpendBudget || 0);
+  const finalBalanceClass = finalBalance >= 0 ? 'text-[#a40035]' : 'text-[#16a34a]';
   const waterfallData = useMemo(() => {
     const step1 = balance2025;
     const step2 = step1 + operatingTotal;
@@ -349,6 +350,24 @@ const CapitalForecastContainer = () => {
     return null;
   };
 
+  const ZeroHighlightTick = (props) => {
+    const { x, y, payload } = props;
+    const isZero = Number(payload.value) === 0;
+    return (
+      <text
+        x={x}
+        y={y}
+        dy={4}
+        textAnchor="end"
+        fill={isZero ? '#a40035' : '#9ca3af'}
+        fontSize={12}
+        fontWeight={isZero ? 'bold' : 'normal'}
+      >
+        {formatWanAxis(payload.value)}
+      </text>
+    );
+  };
+
   const renderFilters = () => (
     <div className="flex flex-row relative z-40">
         <FilterDropdown 
@@ -369,33 +388,33 @@ const CapitalForecastContainer = () => {
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <div className="p-4 rounded-lg border border-gray-200 bg-white">
-            <div className="text-xs text-gray-500 mb-1">2025年末资金结余</div>
-            <div className="text-2xl font-bold text-gray-900">{formatWan(balance2025)}</div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white flex flex-col items-center">
+            <div className="text-xs text-gray-500 mb-1 text-center">2025年末资金结余</div>
+            <div className="text-2xl font-bold text-center text-[#a40035]">{formatWan(balance2025)}</div>
           </div>
-          <div className="p-4 rounded-lg border border-gray-200 bg-white">
-            <div className="text-xs text-gray-500 mb-1">预计2026年经营资金结余</div>
-            <div className="text-2xl font-bold text-green-600">{formatWan(operatingTotal)}</div>
-            <div className="text-xs text-gray-500 mt-1">已发生：{formatWan(operatingOccurred)}</div>
-            <div className="text-xs text-gray-500">待发生：{formatWan(operatingPending)}</div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white flex flex-col items-center">
+            <div className="text-xs text-gray-500 mb-1 text-center">预计2026年经营资金结余</div>
+            <div className="text-2xl font-bold text-center text-[#a40035]">{formatWan(operatingTotal)}</div>
+            <div className="text-xs text-gray-500 mt-1 text-center">已发生值：{formatWan(operatingOccurred)}</div>
+            <div className="text-xs text-gray-500 text-center">待发生值：{formatWan(operatingPending)}</div>
           </div>
-          <div className="p-4 rounded-lg border border-gray-200 bg-white">
-            <div className="text-xs text-gray-500 mb-1">预计2026年资金安全线</div>
-            <div className="text-2xl font-bold text-red-600">{formatWan(safetyLine)}</div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white flex flex-col items-center">
+            <div className="text-xs text-gray-500 mb-1 text-center">预计2026年资金安全线</div>
+            <div className="text-2xl font-bold text-center text-[#16a34a]">{formatWan(safetyLine)}</div>
           </div>
-          <div className="p-4 rounded-lg border border-[#a40035] bg-[#a40035]/5">
-            <div className="text-xs text-[#a40035] mb-1">预计2026年自有资金可用金额</div>
-            <div className="text-2xl font-bold text-[#a40035]">{formatWan(availableFunds)}</div>
+          <div className="p-4 rounded-lg border border-[#a40035] bg-[#a40035]/5 flex flex-col items-center">
+            <div className="text-xs text-[#a40035] mb-1 text-center">预计自有资金可用金额</div>
+            <div className="text-2xl font-bold text-center text-[#a40035]">{formatWan(availableFunds)}</div>
           </div>
-          <div className="p-4 rounded-lg border border-gray-200 bg-white">
-            <div className="text-xs text-gray-500 mb-1">预计2026年开店支出</div>
-            <div className="text-2xl font-bold text-red-600">{formatWan(openSpendBudget)}</div>
-            <div className="text-xs text-gray-500 mt-1">已发生：{formatWan(openSpendOccurred)}</div>
-            <div className="text-xs text-gray-500">待发生：{formatWan(openSpendPending)}</div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white flex flex-col items-center">
+            <div className="text-xs text-gray-500 mb-1 text-center">预计2026年开店支出</div>
+            <div className="text-2xl font-bold text-center text-[#16a34a]">{formatWan(openSpendBudget)}</div>
+            <div className="text-xs text-gray-500 mt-1 text-center">已发生值：{formatWan(openSpendOccurred)}</div>
+            <div className="text-xs text-gray-500 text-center">待发生值：{formatWan(openSpendPending)}</div>
           </div>
-          <div className="p-4 rounded-lg border border-gray-200 bg-white">
-            <div className="text-xs text-gray-500 mb-1">预计2026年实际结余资金</div>
-            <div className="text-2xl font-bold text-gray-900">{formatWan(finalBalance)}</div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white flex flex-col items-center">
+            <div className="text-xs text-gray-500 mb-1 text-center">预计2026年实际结余资金</div>
+            <div className={`text-2xl font-bold text-center ${finalBalanceClass}`}>{formatWan(finalBalance)}</div>
           </div>
         </div>
 
@@ -406,15 +425,21 @@ const CapitalForecastContainer = () => {
               <BarChart data={waterfallData} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6b7280' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
-                <YAxis tickFormatter={formatWanAxis} tick={{ fontSize: 12, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
+                <YAxis tick={<ZeroHighlightTick />} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
+                <ReferenceLine y={0} stroke="#a40035" strokeDasharray="4 4" />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="base" stackId="stack" fill="#e5e7eb" />
+                <Bar dataKey="base" stackId="stack" fill="transparent" />
                 <Bar dataKey="delta" stackId="stack">
                   {waterfallData.map((entry, index) => {
                     const type = entry.type;
                     let fill = '#a40035';
-                    if (type === 'increase') fill = '#16a34a';
-                    if (type === 'decrease') fill = '#ef4444';
+                    if (entry.name === '预计2026年实际结余资金') {
+                      fill = entry.delta >= 0 ? '#a40035' : '#16a34a';
+                    } else if (type === 'decrease') {
+                      fill = '#16a34a';
+                    } else {
+                      fill = '#a40035';
+                    }
                     return <Cell key={`cell-${index}`} fill={fill} />;
                   })}
                   <LabelList dataKey="delta" position="top" formatter={(v) => (Number(v) / 10000).toFixed(0) + '万'} className="text-xs fill-gray-700" />
