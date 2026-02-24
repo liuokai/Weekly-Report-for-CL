@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
 import useFetchData from '../../hooks/useFetchData';
 import DataTable from '../../components/Common/DataTable';
 import DataContainer from '../../components/Common/DataContainer';
@@ -59,6 +58,32 @@ const CashFlowTab = () => {
         });
     }
   }, [newStoreProcessData]);
+
+  const analysisView = useMemo(() => {
+    let title = '新店总结';
+    let content = analysisText || '';
+    const tryParse = (s) => {
+      try {
+        const trimmed = typeof s === 'string' ? s.trim() : s;
+        if (typeof trimmed === 'string' && (trimmed.startsWith('{') || trimmed.startsWith('['))) {
+          return JSON.parse(trimmed);
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    };
+    const obj = tryParse(content);
+    if (obj && !Array.isArray(obj)) {
+      const keys = Object.keys(obj);
+      if (keys.length > 0) {
+        title = keys[0];
+        content = obj[title] ?? '';
+      }
+    }
+    const paragraphs = String(content).split(/\n{2,}/).filter(Boolean).slice(0, 3);
+    return { summaryTitle: title, paragraphs };
+  }, [analysisText]);
 
   // 提取筛选选项
   const { uniqueMonths, uniqueCities } = useMemo(() => {
@@ -357,7 +382,7 @@ const CashFlowTab = () => {
                    </svg>
                 </div>
                 <div className="flex-1">
-                   <h3 className="text-sm font-bold text-gray-800 mb-1">分析总结</h3>
+                   <h3 className="text-sm font-bold text-gray-800 mb-1">{analysisView.summaryTitle}</h3>
                    <div className="text-sm text-gray-600 leading-relaxed">
                       {isAnalysisLoading ? (
                         <div className="flex items-center gap-2 py-1">
@@ -365,11 +390,15 @@ const CashFlowTab = () => {
                            <span>正在生成智能分析...</span>
                         </div>
                       ) : (
-                         <div className="prose prose-sm max-w-none text-gray-700 [&>p]:mb-0">
-                            <ReactMarkdown>
-                               {analysisText || '暂无分析内容'}
-                            </ReactMarkdown>
-                         </div>
+                        <div className="prose prose-sm max-w-none text-gray-700 space-y-3">
+                           {analysisView.paragraphs.length > 0 ? (
+                             analysisView.paragraphs.map((p, idx) => (
+                               <p key={idx} className="leading-relaxed whitespace-pre-line">{p}</p>
+                             ))
+                           ) : (
+                             <p>暂无分析内容</p>
+                           )}
+                        </div>
                        )}
                    </div>
                 </div>

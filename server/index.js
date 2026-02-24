@@ -364,27 +364,30 @@ app.post('/api/generate-city-budget-summary', async (req, res) => {
 
 // API Route: Dify Workflow Proxy
 app.post('/api/dify/run-workflow', async (req, res) => {
-  const { inputs, user } = req.body;
+  const { workflowId, inputs, user } = req.body;
+
+  const workflow = difyWorkflows.find(wf => wf.id === workflowId);
+  if (!workflow) {
+    return res.status(400).json({ status: 'error', message: 'Invalid workflow ID' });
+  }
 
   try {
-    // Construct full URL by appending endpoint if not present
     let baseUrl = process.env.DIFY_BASE_URL || 'https://api.dify.ai/v1';
     if (!baseUrl.endsWith('/')) baseUrl += '/';
-    // Remove /workflows/run if already present to avoid duplication, then append it fresh
-    // Or simpler: just ensure we append if it's a base URL.
-    // User requested: Env has base URL (e.g. .../v1), we append /workflows/run
     const fullUrl = baseUrl.endsWith('workflows/run') ? baseUrl : `${baseUrl}workflows/run`;
+
+    const defaultUser = workflow.user || process.env.DIFY_USER || 'changle-user';
 
     const response = await axios.post(
       fullUrl,
       {
         inputs: inputs || {},
         response_mode: 'blocking',
-        user: user || process.env.DIFY_USER || 'changle-user'
+        user: user || defaultUser
       },
       {
         headers: {
-          'Authorization': `Bearer ${process.env.DIFY_API_KEY}`,
+          Authorization: `Bearer ${workflow.apiKey}`,
           'Content-Type': 'application/json'
         }
       }
@@ -520,10 +523,12 @@ app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
       user_name: user || 'User'
     };
 
+    const defaultUser = workflow.user || process.env.DIFY_USER || 'changle-user';
+
     const requestBody = {
       inputs: difyInputs,
       response_mode: 'blocking',
-      user: user || process.env.DIFY_USER || 'changle-user'
+      user: user || defaultUser
     };
 
     console.log('Sending request to Dify:', JSON.stringify(requestBody, null, 2));

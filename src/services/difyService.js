@@ -200,6 +200,7 @@ class DifyService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          workflowId: workflowKey,
           inputs
         }),
       });

@@ -77,11 +77,13 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
       setVariables(vars);
       setWorkflows(wfs);
       
-      // Set defaults for UI
       const defaults = ['turnover_overview', 'static_budget', 'static_turnover_targets'];
 
       if (defaults.length > 0) setSelectedVariables(defaults);
-      if (wfs.length > 0) setSelectedWorkflow(wfs[0].id);
+
+      const turnoverWorkflow = wfs.find(w => w.id === 'turnover_overview');
+      const defaultWorkflowId = turnoverWorkflow ? turnoverWorkflow.id : (wfs[0] ? wfs[0].id : null);
+      if (defaultWorkflowId) setSelectedWorkflow(defaultWorkflowId);
       
     } catch (err) {
       console.error('Failed to load analysis config:', err);
@@ -98,16 +100,14 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
       setVariables(vars);
       setWorkflows(wfs);
 
-      // Determine defaults
       const defaults = ['turnover_overview', 'static_budget', 'static_turnover_targets'];
 
-      const defaultWorkflowId = wfs.length > 0 ? wfs[0].id : null;
+      const turnoverWorkflow = wfs.find(w => w.id === 'turnover_overview');
+      const defaultWorkflowId = turnoverWorkflow ? turnoverWorkflow.id : (wfs[0] ? wfs[0].id : null);
 
-      // Set State
       if (defaults.length > 0) setSelectedVariables(defaults);
       if (defaultWorkflowId) setSelectedWorkflow(defaultWorkflowId);
 
-      // Auto Analyze
       if (defaults.length > 0 && defaultWorkflowId) {
         setAutoAnalyzed(true);
         await executeAnalysis(defaults, defaultWorkflowId);

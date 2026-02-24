@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
 const NodeCache = require('node-cache');
 const crypto = require('crypto');
 const cacheConfig = require('../config/analysisCacheConfig');
+const axios = require('axios');
+const difyWorkflows = require('../config/difyWorkflows');
 
 // Initialize cache for new store analysis
 const analysisCache = new NodeCache({ 
@@ -11,8 +11,8 @@ const analysisCache = new NodeCache({
 });
 
 /**
- * Generate new store analysis summary using DeepSeek
- * @param {Object} deepseekClient - The initialized OpenAI/DeepSeek client
+ * Generate new store analysis summary using Dify Workflow
+ * @param {Object} deepseekClient - Deprecated, kept for backward compatibility
  * @param {Array} newStoreData - The raw data from cash_flow_new_store_process.sql
  * @param {Number} currentTotalStores - The total number of stores calculated by frontend
  * @returns {Promise<string>} - The generated analysis text
@@ -103,72 +103,94 @@ async function generateNewStoreAnalysis(deepseekClient, newStoreData, currentTot
     const activeNewStoreCities = cityStats.filter(c => c.newTarget > 0 || c.newActual > 0);
     const activeReinstallCities = cityStats.filter(c => c.reinstallTarget > 0 || c.reinstallActual > 0);
 
-    // Prepare context for prompt
-    const contextData = {
-        latestMonth,
-        totalStores,
-        newStore: {
-            target: totalNewTarget,
-            actual: totalNewActual
-        },
-        reinstall: {
-            target: totalReinstallTarget,
-            actual: totalReinstallActual
-        },
-        newStoreCities: activeNewStoreCities,
-        reinstallCities: activeReinstallCities
+    const payload = {
+      latest_month: latestMonth,
+      total_stores: totalStores,
+      new_store: {
+        target: totalNewTarget,
+        actual: totalNewActual
+      },
+      reinstall: {
+        target: totalReinstallTarget,
+        actual: totalReinstallActual
+      },
+      new_store_cities: activeNewStoreCities.map(c => ({
+        name: c.name,
+        new_target: c.newTarget,
+        new_actual: c.newActual,
+        reinstall_target: c.reinstallTarget,
+        reinstall_actual: c.reinstallActual
+      })),
+      reinstall_cities: activeReinstallCities.map(c => ({
+        name: c.name,
+        new_target: c.newTarget,
+        new_actual: c.newActual,
+        reinstall_target: c.reinstallTarget,
+        reinstall_actual: c.reinstallActual
+      }))
     };
 
-    const prompt = `
-你是一个智能运营助手。我已为你计算好所有关键指标，请根据提供的统计数据，直接填充并生成一段简练的分析总结。
+    const workflow = difyWorkflows.find(wf => wf.id === 'new_store_summary');
+    if (!workflow) {
+      throw new Error('Dify workflow config for new_store_summary not found');
+    }
 
-统计数据：
-- 最新月份：${contextData.latestMonth}
-- 截止当前经营中门店总数：${contextData.totalStores} 家
-- 截止最新月份（年初累计）- 新店预计开设：${contextData.newStore.target} 家
-- 截止最新月份（年初累计）- 新店实际开设：${contextData.newStore.actual} 家
-- 截止最新月份（年初累计）- 重装预计：${contextData.reinstall.target} 家
-- 截止最新月份（年初累计）- 重装实际：${contextData.reinstall.actual} 家
+    let baseUrl = process.env.DIFY_BASE_URL || 'https://api.dify.ai/v1';
+    if (!baseUrl.endsWith('/')) baseUrl += '/';
+    const fullUrl = baseUrl.endsWith('workflows/run') ? baseUrl : `${baseUrl}workflows/run`;
 
-各城市新店数据（年初累计）：
-${contextData.newStoreCities.length > 0 
-  ? contextData.newStoreCities.map(c => `  * ${c.name}: 预计 ${c.newTarget} 家，实际 ${c.newActual} 家`).join('\n')
-  : '  * 无'}
+    const currentDate = new Date();
+    const currentDateStr = currentDate.toISOString().slice(0, 10);
 
-各城市重装数据（年初累计）：
-${contextData.reinstallCities.length > 0 
-  ? contextData.reinstallCities.map(c => `  * ${c.name}: 预计 ${c.reinstallTarget} 家，实际 ${c.reinstallActual} 家`).join('\n')
-  : '  * 无'}
+    const defaultUser = workflow.user || process.env.DIFY_USER || 'changle-user-newstore-analysis';
 
-请严格按照以下三个段落的格式生成文本（不要包含 Markdown 标题或其他多余内容）：
+    const storeProcessCn = newStoreData.map(d => ({
+      month: d.month,
+      city_name: d.city_name,
+      '新店目标': d.new_store_target,
+      '新店数量': d.new_store_count,
+      '新店目标完成情况': d.new_store_target_status,
+      '重装目标': d.reinstall_target,
+      '重装数量': d.reinstall_count,
+      '重装目标完成情况': d.reinstall_target_status,
+      '门店数量': d.total_store_count
+    }));
 
-截止当前共有经营中门店 {A} 家
+    const requestBody = {
+      inputs: {
+        store_process: JSON.stringify(storeProcessCn),
+        current_date: currentDateStr
+      },
+      response_mode: 'blocking',
+      user: defaultUser
+    };
 
-截止上个月（{YYYY-MM}）预计开设新店数量为 {B} 家，实际开设新店数量为 {C} 家。其中，{列出所有有新店数据的城市及其数据}
+    console.log('Dify new_store_summary request body:', JSON.stringify(requestBody));
 
-截止上个月（{YYYY-MM}）预计重装门店数量为 {I} 家，实际重装门店数量为 {J} 家。其中，{列出所有有重装数据的城市及其数据}
+    const response = await axios.post(
+      fullUrl,
+      requestBody,
+      {
+        headers: {
+          Authorization: `Bearer ${workflow.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 120000
+      }
+    );
 
-要求：
-1. 直接使用我提供的统计数据填充占位符。
-2. {YYYY-MM} 替换为 "${contextData.latestMonth}"。
-3. **非常重要**：在“其中...”部分，必须**完整列出**上方提供的“各城市数据”中所有城市及其对应的预计/实际数值，**不要遗漏任何一个城市**。
-4. 城市数据的描述格式可参考：“X市预计开设Y家，实际开设Z家”。如果城市较多，请使用顿号或逗号自然连接。
-5. 如果某项（新店或重装）下没有城市数据，则不显示“其中...”这句话。
-6. 保持段落间空行。
-7. 数字使用阿拉伯数字。
-`;
+    const wfData = response.data;
 
-    // Call DeepSeek API
-    const completion = await deepseekClient.chat.completions.create({
-      messages: [
-        { role: "system", content: "你是一个智能运营助手，请严格遵守用户的格式要求进行输出。" },
-        { role: "user", content: prompt }
-      ],
-      model: "deepseek-reasoner", // Using reasoner as per current project setup
-      temperature: 0.1, // Low temperature for deterministic output
-    });
+    if (!wfData || !wfData.data || wfData.data.status !== 'succeeded') {
+      throw new Error('Dify workflow did not succeed');
+    }
 
-    const result = completion.choices[0].message.content;
+    const outputs = wfData.data.outputs || {};
+    let result = outputs.text || outputs.answer || outputs.content || outputs.result;
+
+    if (!result) {
+      result = JSON.stringify(outputs);
+    }
 
     // Save to cache
     if (cacheConfig.ENABLED) {
