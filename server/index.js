@@ -350,6 +350,16 @@ app.post('/api/generate-city-budget-summary', async (req, res) => {
 
     const analysis = await generateCityBudgetSummary(deepseek, analysisData);
     
+    const difyRequestBody = {
+        inputs: {
+            analysis_data: analysisData,
+            current_date: new Date().toISOString().slice(0, 10)
+        },
+        response_mode: 'blocking',
+        user: 'changle-user-city-budget-summary'
+    };
+    console.log('Dify city_budget_summary request body:', JSON.stringify(difyRequestBody));
+
     res.json({
         status: 'success',
         data: analysisData,

@@ -6,6 +6,7 @@ import FilterDropdown from '../../components/Common/FilterDropdown';
 import useFetchData from '../../hooks/useFetchData';
 import useTableSorting from '../../components/Common/useTableSorting';
 import { BusinessTargets } from '../../config/businessTargets';
+import { AI_CONFIG } from '../../config/aiConfig';
 
 /**
  * 2026年城市新店投资与现金流预算执行情况
@@ -21,6 +22,11 @@ const CityBudgetExecutionContainer = () => {
 
   // 获取分析总结
   useEffect(() => {
+    if (!AI_CONFIG.CITY_BUDGET_ANALYSIS_ENABLED) {
+      setAnalysisResult(null);
+      setAnalysisLoading(false);
+      return;
+    }
     const fetchAnalysis = async () => {
       setAnalysisLoading(true);
       try {
@@ -195,33 +201,34 @@ const CityBudgetExecutionContainer = () => {
       renderFilters={renderFilters}
       maxHeight="none"
     >
-      {/* 智能分析总结模块 - 样式对齐新店总结 */}
-      <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-lg shadow-sm">
-         <div className="flex items-start gap-3">
-            <div className="p-1.5 bg-[#a40035]/10 rounded mt-0.5 shrink-0">
-               <svg className="w-4 h-4 text-[#a40035]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-               </svg>
-            </div>
-            <div className="flex-1">
-               <h3 className="text-sm font-bold text-gray-800 mb-1">分析总结</h3>
-               <div className="text-sm text-gray-600 leading-relaxed">
-                  {analysisLoading ? (
-                    <div className="flex items-center gap-2 py-1">
-                       <div className="animate-spin h-4 w-4 border-2 border-[#a40035] border-t-transparent rounded-full"></div>
-                       <span>正在生成智能分析...</span>
-                    </div>
-                  ) : analysisResult ? (
-                     <div className="whitespace-pre-wrap text-gray-700">
-                        {analysisResult}
-                     </div>
-                  ) : (
-                     <div className="text-gray-400 italic">暂无分析数据</div>
-                  )}
-               </div>
-            </div>
-         </div>
-      </div>
+      {AI_CONFIG.CITY_BUDGET_ANALYSIS_ENABLED && (
+        <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-lg shadow-sm">
+           <div className="flex items-start gap-3">
+              <div className="p-1.5 bg-[#a40035]/10 rounded mt-0.5 shrink-0">
+                 <svg className="w-4 h-4 text-[#a40035]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                 </svg>
+              </div>
+              <div className="flex-1">
+                 <h3 className="text-sm font-bold text-gray-800 mb-1">分析总结</h3>
+                 <div className="text-sm text-gray-600 leading-relaxed">
+                    {analysisLoading ? (
+                      <div className="flex items-center gap-2 py-1">
+                         <div className="animate-spin h-4 w-4 border-2 border-[#a40035] border-t-transparent rounded-full"></div>
+                         <span>正在生成智能分析...</span>
+                      </div>
+                    ) : analysisResult ? (
+                       <div className="whitespace-pre-wrap text-gray-700">
+                          {analysisResult}
+                       </div>
+                    ) : (
+                       <div className="text-gray-400 italic">暂无分析数据</div>
+                    )}
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-8 text-gray-500">加载中...</div>

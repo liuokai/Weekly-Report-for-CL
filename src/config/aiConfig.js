@@ -12,6 +12,10 @@ export const AI_CONFIG = {
   // false: Disable API calls and hide components
   ENABLE_AI: true, //true 则调用 Dify API，false 则不调用
   
+  // Module switches
+  // 2026年城市新店投资与现金流预算执行情况 - 深度分析（DeepSeek）
+  CITY_BUDGET_ANALYSIS_ENABLED: false,
+  
   // Cache Configuration
   CACHE: {
     ENABLED: true, // Enable caching to prevent repetitive API calls
