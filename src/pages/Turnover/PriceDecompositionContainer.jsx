@@ -9,6 +9,7 @@ import useFetchData from '../../hooks/useFetchData';
 import { generatePositionReminder } from '../../services/reminderService';
 import { getTimeProgress } from '../../components/Common/TimeProgressUtils';
 import BusinessTargets from '../../config/businessTargets';
+import { AI_CONFIG } from '../../config/aiConfig';
 import useTableSorting from '../../components/Common/useTableSorting';
 
 const PriceDecompositionContainer = () => {
@@ -1403,22 +1404,23 @@ const PriceDecompositionContainer = () => {
 
   const renderContent = () => (
     <div className="space-y-6 relative">
-      <div className="flex justify-end relative z-30">
-        <button
-          onClick={() => setShowReminder(!showReminder)}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#a40035] to-[#c81e50] text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          {showReminder ? '收起提醒' : '岗位提醒'}
-        </button>
+      {AI_CONFIG.POSITION_REMINDER_BUTTON_ENABLED && (
+        <div className="flex justify-end relative z-30">
+          <button
+            onClick={() => setShowReminder(!showReminder)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#a40035] to-[#c81e50] text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            {showReminder ? '收起提醒' : '岗位提醒'}
+          </button>
 
-        <div 
-           className={`absolute top-12 right-0 flex flex-col bg-white/95 backdrop-blur shadow-xl border border-gray-100 rounded-lg overflow-hidden transition-all duration-300 ease-out origin-top-right z-20 ${showReminder ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
-           style={{ maxHeight: '600px', minWidth: '400px', maxWidth: '600px', width: 'max-content' }}
-        >
-           <div className="p-6 text-gray-700 font-medium text-sm overflow-y-auto leading-relaxed">
+          <div 
+            className={`absolute top-12 right-0 flex flex-col bg-white/95 backdrop-blur shadow-xl border border-gray-100 rounded-lg overflow-hidden transition-all duration-300 ease-out origin-top-right z-20 ${showReminder ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
+            style={{ maxHeight: '600px', minWidth: '400px', maxWidth: '600px', width: 'max-content' }}
+          >
+            <div className="p-6 text-gray-700 font-medium text-sm overflow-y-auto leading-relaxed">
               {isReminderLoading ? (
                 <div className="flex items-center gap-2 text-gray-500 py-4 px-2">
                   <div className="animate-spin h-5 w-5 border-2 border-[#a40035] border-t-transparent rounded-full"></div>
@@ -1426,14 +1428,14 @@ const PriceDecompositionContainer = () => {
                 </div>
               ) : (
                 <div className="prose prose-sm max-w-none prose-p:my-2 prose-li:my-1 [&_strong]:text-[#a40035] [&_strong]:font-bold">
-                   <ReactMarkdown>{reminderText || '暂无提醒内容'}</ReactMarkdown>
+                  <ReactMarkdown>{reminderText || '暂无提醒内容'}</ReactMarkdown>
                 </div>
               )}
-           </div>
-           {/* Decorative corner accent */}
-           <div className="absolute top-0 right-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-[#a40035] border-r-[#a40035] rounded-bl-lg"></div>
+            </div>
+            <div className="absolute top-0 right-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-[#a40035] border-r-[#a40035] rounded-bl-lg"></div>
+          </div>
         </div>
-      </div>
+      )}
 
       {renderHQOverview()}
       <HQMetricsTrendChart />

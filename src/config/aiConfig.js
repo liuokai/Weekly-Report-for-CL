@@ -12,6 +12,9 @@ export const AI_CONFIG = {
   // false: Disable API calls and hide components
   ENABLE_AI: true, //true 则调用 Dify API，false 则不调用
   
+  // 控制 “营业额”tab 中“客单价拆解”数据容器中“岗位提醒”按钮的展示/隐藏
+  POSITION_REMINDER_BUTTON_ENABLED: false,
+  
   // Module switches
   // 2026年城市新店投资与现金流预算执行情况 - 深度分析（DeepSeek）
   CITY_BUDGET_ANALYSIS_ENABLED: false,
