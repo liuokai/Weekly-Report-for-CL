@@ -228,6 +228,7 @@ app.post('/api/generate-reminder', async (req, res) => {
   }
 
   try {
+    console.log('DeepSeek generate-reminder payload:', JSON.stringify(metricsData));
     const reminder = await generateReminder(deepseek, metricsData);
     res.json({ status: 'success', data: reminder });
   } catch (error) {

@@ -1240,11 +1240,17 @@ const PriceDecompositionContainer = () => {
   useEffect(() => {
     if (showReminder && !reminderText && !isReminderLoading && tableData) {
       setIsReminderLoading(true);
+      const tp = parseFloat(getTimeProgress());
       const metricsData = {
-        hqMetrics: hqData,
-        cityMetrics: tableData,
+        getAnnualAvgPrice: annualPriceData || [],
+        getCityAnnualAvgPrice: cityAnnualPriceData || [],
+        time_progress: {
+          percent: Number.isFinite(tp) ? tp : getTimeProgress(),
+          as_of_date: new Date().toISOString().slice(0, 10)
+        }
       };
 
+      console.log('DeepSeek metricsData:', metricsData);
       generatePositionReminder(metricsData)
         .then(text => {
           setReminderText(text);
