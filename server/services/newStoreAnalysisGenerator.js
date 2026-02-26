@@ -10,14 +10,7 @@ const analysisCache = new NodeCache({
   checkperiod: cacheConfig.CHECK_PERIOD 
 });
 
-/**
- * Generate new store analysis summary using Dify Workflow
- * @param {Object} deepseekClient - Deprecated, kept for backward compatibility
- * @param {Array} newStoreData - The raw data from cash_flow_new_store_process.sql
- * @param {Number} currentTotalStores - The total number of stores calculated by frontend
- * @returns {Promise<string>} - The generated analysis text
- */
-async function generateNewStoreAnalysis(deepseekClient, newStoreData, currentTotalStores) {
+async function generateNewStoreAnalysis(newStoreData, currentTotalStores) {
   if (!newStoreData || newStoreData.length === 0) {
     return '暂无数据可供分析。';
   }
@@ -78,8 +71,8 @@ async function generateNewStoreAnalysis(deepseekClient, newStoreData, currentTot
     const totalReinstallActual = monthlyTotals.reduce((sum, d) => sum + (Number(d['reinstall_count']) || 0), 0);
 
     // City Details
-    // Filter detail rows (exclude '月度合计')
-    const detailRows = ytdData.filter(d => d.city_name !== '月度合计');
+    // Filter detail rows (exclude summary rows: '月度合计' and '月度累计汇总')
+    const detailRows = ytdData.filter(d => d.city_name !== '月度合计' && d.city_name !== '月度累计汇总');
     const uniqueCities = [...new Set(detailRows.map(d => d.city_name))];
     
     const cityStats = uniqueCities.map(city => {

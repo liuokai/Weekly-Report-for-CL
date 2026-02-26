@@ -244,7 +244,7 @@ app.post('/api/generate-new-store-analysis', async (req, res) => {
     return res.status(400).json({ status: 'error', message: 'Data is required' });
   }
   try {
-    const analysis = await generateNewStoreAnalysis(deepseek, newStoreData, currentTotalStores);
+    const analysis = await generateNewStoreAnalysis(newStoreData, currentTotalStores);
     res.json({ status: 'success', data: analysis });
   } catch (error) {
     console.error('Generate Analysis API Error:', error);
@@ -264,7 +264,7 @@ app.post('/api/generate-city-budget-summary', async (req, res) => {
     ] = await Promise.all([
       variableService.executeVariableQuery('cash_flow_new_store_and_cashflow_operation', pool),
       variableService.executeVariableQuery('cash_flow_budget', pool),
-      variableService.executeVariableQuery('cash_flow_new_store_process', pool)
+      variableService.executeVariableQuery('cash_flow_new_store_process_cum', pool)
     ]);
 
     // 2. Process Data

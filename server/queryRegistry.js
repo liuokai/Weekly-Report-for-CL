@@ -244,6 +244,10 @@ const queryRegistry = {
     sql: loadSql('cash_flow_new_store_process.sql'),
     description: '新店目标完成情况'
   },
+  getCashFlowNewStoreProcessCum: {
+    sql: loadSql('cash_flow_new_store_process_cum.sql'),
+    description: '新店目标完成情况（含月度累计汇总）'
+  },
   getCashFlowBudgetMonthly: {
     sql: loadSql('cash_flow_budget.sql'),
     description: '按月输出预算、实际、剩余与滚动的现金流等汇总'

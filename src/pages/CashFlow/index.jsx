@@ -14,6 +14,7 @@ import { generateNewStoreAnalysis } from '../../services/analysisService';
 
 const CashFlowTab = () => {
   const { data: newStoreProcessData } = useFetchData('getCashFlowNewStoreProcess');
+  const { data: newStoreProcessCumData } = useFetchData('getCashFlowNewStoreProcessCum');
   const [analysisText, setAnalysisText] = useState('');
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
   
@@ -27,11 +28,11 @@ const CashFlowTab = () => {
   const [selectedCity, setSelectedCity] = useState(null);
 
   useEffect(() => {
-    if (newStoreProcessData && newStoreProcessData.length > 0 && !analysisText && !isAnalysisLoading) {
+    if (newStoreProcessCumData && newStoreProcessCumData.length > 0 && !analysisText && !isAnalysisLoading) {
       
       // Calculate Global Total Stores (Frontend Logic)
       // 1. Filter out summary rows and get detail rows
-      const detailRows = newStoreProcessData.filter(r => r.city_name !== '月度合计');
+      const detailRows = newStoreProcessCumData.filter(r => r.city_name !== '月度合计' && r.city_name !== '月度累计汇总');
       
       // 2. Find rows with store count > 0
       const validStoreRows = detailRows.filter(r => (Number(r['total_store_count']) || 0) > 0);
@@ -49,7 +50,7 @@ const CashFlowTab = () => {
       }
 
       setIsAnalysisLoading(true);
-      generateNewStoreAnalysis(newStoreProcessData, currentTotalStores)
+      generateNewStoreAnalysis(newStoreProcessCumData, currentTotalStores)
         .then(text => {
           setAnalysisText(text);
         })
@@ -57,7 +58,7 @@ const CashFlowTab = () => {
           setIsAnalysisLoading(false);
         });
     }
-  }, [newStoreProcessData]);
+  }, [newStoreProcessCumData]);
 
   const analysisView = useMemo(() => {
     let title = '新店总结';
@@ -94,7 +95,9 @@ const CashFlowTab = () => {
     
     newStoreProcessData.forEach(item => {
       if (item.month) months.add(item.month);
-      if (item.city_name && item.city_name !== '月度合计') cities.add(item.city_name);
+      if (item.city_name && item.city_name !== '月度合计' && item.city_name !== '月度累计汇总') {
+        cities.add(item.city_name);
+      }
     });
     
     return {
@@ -108,7 +111,7 @@ const CashFlowTab = () => {
     
     // 1. 识别并分离合计行与数据行
     // SQL 中合计行的 city_name 为 '月度合计'
-    const allDataRows = newStoreProcessData.filter(item => item.city_name !== '月度合计');
+    const allDataRows = newStoreProcessData.filter(item => item.city_name !== '月度合计' && item.city_name !== '月度累计汇总');
     
     // 2. 过滤数据行
     const filteredRows = allDataRows.filter(item => {

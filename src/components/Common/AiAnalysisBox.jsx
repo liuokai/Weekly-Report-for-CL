@@ -390,7 +390,7 @@ const AiAnalysisBox = ({ analysisText, isLoading: parentLoading, error: parentEr
               components={{
                 h3: ({node, children, ...props}) => <h3 className="text-base font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-100 pb-1" {...props}>{children}</h3>,
                 h4: ({node, children, ...props}) => <h4 className="text-sm font-bold text-purple-700 mb-2 mt-3" {...props}>{children}</h4>,
-                p: ({node, ...props}) => <p className="mb-2 last:mb-0 text-gray-700 text-sm leading-relaxed" {...props} />,
+                p: ({node, ...props}) => <p className="mb-2 last:mb-0 text-gray-700 text-sm leading-relaxed whitespace-pre-line" {...props} />,
                 ul: ({node, ...props}) => <ul className="space-y-1 mb-3 ml-4 list-disc list-outside" {...props} />,
                 ol: ({node, ...props}) => <ol className="space-y-1 mb-3 ml-4 list-decimal list-outside" {...props} />,
                 li: ({node, ...props}) => <li className="text-gray-600 text-sm pl-1" {...props} />,
