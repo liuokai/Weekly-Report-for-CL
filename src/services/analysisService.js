@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // The base URL should match your backend server
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = '/api';
 
 /**
  * Generate new store analysis based on data
