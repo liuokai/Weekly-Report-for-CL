@@ -13,6 +13,7 @@ WITH monthly_review_stats AS (
     WHERE ord.off_clock_time IS NOT NULL
       AND ord.off_clock_time >= '2024-01-01'
       AND ord.order_no IS NOT NULL
+      AND ord.service_duration >= 40
     GROUP BY 1, 2, 3, 4
 ),
 rate_calc AS (
