@@ -8,8 +8,8 @@ WITH monthly_review_stats AS (
            SUM(IF(ord.is_customer_active_review = '是', 1, 0)) AS active_review_orders
     FROM data_warehouse.dwd_sales_order_detail AS ord
              LEFT JOIN data_warehouse.dm_city AS city ON ord.city_code = city.city_code
-    WHERE ord.off_clock_time IS NOT NULL and ord.off_clock_time >= '2024-01-01'
-      AND ord.order_no IS NOT NULL
+    WHERE ord.off_clock_time IS NOT NULL  AND ord.off_clock_time >= '2024-01-01' AND ord.order_no IS NOT NULL
+    AND ord.service_duration >= 40
     GROUP BY 1, 2),
 rate_calc AS (
     -- 第二步：计算各城市每月评价率
