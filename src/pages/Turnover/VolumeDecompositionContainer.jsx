@@ -29,8 +29,8 @@ const VolumeDecompositionContainer = () => {
       case 'duration': return { title: '推拿师天均服务时长', unit: '分钟', isGood: v => v < 300 };
       case 'compliance': return { title: '推拿师天均服务时长不达标占比', unit: '%', isGood: v => v <= 25 };
       case 'active_members': return { title: '活跃会员数', unit: '人', isGood: () => false };
-      case 'churn_rate': return { title: '会员流失率', unit: '%', isGood: v => v <= 5 };
-      case 'review_rate': return { title: '主动评价率', unit: '%', isGood: v => v >= 70 };
+      case 'churn_rate': return { title: '会员流失率', unit: '%', isGood: v => v > 30 };
+      case 'review_rate': return { title: '主动评价率', unit: '%', isGood: v => v < 70 };
       default: return { title: '', unit: '', isGood: () => false };
     }
   };
