@@ -36,7 +36,7 @@ WITH weekly_city_sales AS (
     LEFT JOIN dm_city AS b
         ON a.city_code = b.city_code
     WHERE a.off_clock_time IS NOT NULL
-      AND a.off_clock_time >= '2024-01-01'
+      AND a.off_clock_time >= '2024-01-01' and (order_type in ('01','03') or project_name='修脚')
     GROUP BY
         b.statistics_city_name,
         year_week_key,
@@ -72,7 +72,7 @@ LEFT JOIN weekly_city_sales prev
    AND curr.sales_year = prev.sales_year + 1
    AND curr.sales_week = prev.sales_week
 WHERE curr.sales_year >= 2025
-AND curr.statistics_city_name = ?
+ AND curr.statistics_city_name = ?
 ORDER BY
     curr.statistics_city_name,
     curr.sales_year,

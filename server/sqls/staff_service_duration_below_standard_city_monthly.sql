@@ -25,17 +25,18 @@ WITH daily_job_city_stats AS (
 monthly_staff_performance AS (
     -- 第二步：计算技师当月个人天均服务时长
     SELECT
-        city_name,
-        stat_year,
-        stat_month,
-        job_number,
-        SUM(daily_duration) / COUNT(DISTINCT order_date) AS staff_daily_avg
-    FROM daily_job_city_stats
+        a.city_name,
+        a.stat_year,
+        a.stat_month,
+        a.job_number,
+        SUM(a.daily_duration) / sum(b.attendance_day) AS staff_daily_avg
+    FROM daily_job_city_stats a
+    left join dws_technician_attendance_summary b on a.order_date=b.date and a.job_number=b.job_number -- 计算实际出勤天数
     GROUP BY
-        city_name,
-        stat_year,
-        stat_month,
-        job_number
+        a.city_name,
+        a.stat_year,
+        a.stat_month,
+        a.job_number
 ),
 
 city_monthly_agg AS (

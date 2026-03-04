@@ -22,7 +22,7 @@ WITH weekly_city_base AS (
     LEFT JOIN data_warehouse.dm_city AS b
         ON a.city_code = b.city_code
     WHERE a.off_clock_time IS NOT NULL
-      AND a.off_clock_time >= '2024-01-01'
+      AND a.off_clock_time >= '2024-01-01' and (order_type in ('01','03') or project_name='修脚')
       AND b.statistics_city_name = ?
     GROUP BY
         week_start_date,

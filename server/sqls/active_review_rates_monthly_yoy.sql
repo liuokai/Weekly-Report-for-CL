@@ -3,7 +3,7 @@
 WITH monthly_review_stats AS (
     -- Step 1: Aggregate total orders and active reviews by month
     SELECT DATE_FORMAT(ord.off_clock_time, '%Y-%m')            AS s_month,
-           COUNT(ord.order_no)                                 AS total_orders,
+           COUNT(ord.order_uid)                                 AS total_orders,
            SUM(IF(ord.is_customer_active_review = '是', 1, 0)) AS active_review_orders
     FROM data_warehouse.dwd_sales_order_detail AS ord
     WHERE ord.off_clock_time IS NOT NULL 
@@ -11,6 +11,7 @@ WITH monthly_review_stats AS (
       AND ord.order_no IS NOT NULL
       AND ord.service_duration >= 40
     GROUP BY 1
+    order by 1
 ),
 rate_calc AS (
     -- Step 2: Calculate monthly active review rate

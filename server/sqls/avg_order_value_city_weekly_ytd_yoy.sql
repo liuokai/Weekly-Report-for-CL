@@ -18,13 +18,13 @@ WITH city_weekly_stats AS (
         )                                                                                    AS week_end,
         -- 核心业务指标
         SUM(a.order_actual_payment)                                                          AS weekly_revenue,
-        COUNT(DISTINCT a.order_uid)                                                          AS weekly_order_count
+        COUNT(if(service_duration >= 40, order_uid, null))                                                         AS weekly_order_count
     FROM dwd_sales_order_detail AS a
     LEFT JOIN dm_city AS b
            ON a.city_code = b.city_code
     WHERE off_clock_time IS NOT NULL
       and off_clock_time >= '2024-01-01'
-      AND service_duration >= 40
+      AND (order_type in ('01', '03') or project_name = '修脚')
     GROUP BY
         b.statistics_city_name,
         year_week_key,

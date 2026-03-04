@@ -17,11 +17,11 @@ WITH weekly_metrics AS (
         )                                                                                                 AS week_end,
         -- 核心业务指标（此处 COUNT(order_no) 建议替换为 SUM(实付金额字段)）
         SUM(order_actual_payment)                                                                         AS weekly_revenue,
-        COUNT(DISTINCT order_uid)                                                                         AS weekly_order_count
+        COUNT(if(service_duration >= 40, order_uid, null))                                                                          AS weekly_order_count
     FROM data_warehouse.dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
       AND off_clock_time >= '2024-01-01' -- Optimization: Limit to recent 2 years
-      AND service_duration >= 40
+      AND (order_type in ('01', '03') or project_name = '修脚')
     GROUP BY 1, 2, 3, 4
 ),
 weekly_aov_base AS (

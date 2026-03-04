@@ -16,6 +16,7 @@ WITH yearly_store_metrics AS (
     LEFT JOIN data_warehouse.dm_city AS b
         ON a.city_code = b.city_code
     WHERE a.company_tenure IN (1, 2, 3) -- 仅限司龄 1,2,3 的新员工
+    and return_rate_standard>0
     GROUP BY 1, 2, 3, 4
 ),
 rate_calc AS (

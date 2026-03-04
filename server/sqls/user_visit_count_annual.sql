@@ -8,8 +8,7 @@ WITH daily_user_visits AS (
         user_id
     FROM dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
-      AND user_id IS NOT NULL
-    GROUP BY 1, 2, 3
+      AND user_id IS NOT NULL and service_duration>=40
 ),
 year_latest_date AS (
     -- 第二步：获取每个年度当前已产生数据的最大日期

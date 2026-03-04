@@ -7,6 +7,7 @@ WITH yearly_metrics AS (
         COUNT(DISTINCT IF(is_return_rate_standard = '是', job_number, NULL))     AS standard_staff_count
     FROM data_warehouse.dws_indicator_detail_massagist
     WHERE company_tenure IN (1, 2, 3)
+    and return_rate_standard>0
     GROUP BY 1
 ),
 rate_calc AS (

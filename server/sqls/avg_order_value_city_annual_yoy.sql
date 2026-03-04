@@ -7,13 +7,13 @@ WITH city_annual_stats AS (
         YEAR(off_clock_time)      AS s_year,
         -- 核心指标：营业额
         SUM(order_actual_payment) AS total_revenue,
-        COUNT(DISTINCT order_uid) AS total_orders
+        COUNT(if(service_duration >= 40, order_uid, null))  AS total_orders
     FROM dwd_sales_order_detail AS a
     LEFT JOIN dm_city AS b
            ON a.city_code = b.city_code
     WHERE off_clock_time IS NOT NULL
       and off_clock_time >= '2023-01-01'
-      AND service_duration >= 40
+      AND (order_type in ('01', '03') or project_name = '修脚')
     GROUP BY b.statistics_city_name, s_year
 ),
 city_annual_aov AS (

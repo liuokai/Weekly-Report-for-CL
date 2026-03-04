@@ -32,7 +32,7 @@ WITH weekly_base AS (
         COUNT(DISTINCT DATE(off_clock_time)) AS active_days
     FROM data_warehouse.dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
-      AND off_clock_time >= '2024-01-01'
+      AND off_clock_time >= '2024-01-01' and (order_type in ('01','03') or project_name='修脚')
     GROUP BY 1, 2, 3, 4, 5
 ),
 

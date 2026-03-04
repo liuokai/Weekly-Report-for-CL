@@ -10,11 +10,12 @@ WITH weekly_city_metrics AS (
                  INTERVAL 6 DAY)                                                            AS week_end_date,
         t2.statistics_city_name,
         COUNT(DISTINCT t1.order_uid)                            AS total_orders,
-        SUM(IF(t1.is_project_repurchase_customer = '是', 1, 0)) AS repurchase_orders
+        SUM(IF(t1.is_massager_project_return_customer = '是', 1, 0)) AS repurchase_orders
     FROM dwd_sales_order_detail t1
     LEFT JOIN dm_city t2 ON t1.city_code = t2.city_code
     WHERE t1.off_clock_time IS NOT NULL
       AND t1.off_clock_time >= '2024-01-01'
+      and service_duration >= 40
     GROUP BY 1, 2, 3, 4, 5
 ),
 rate_calculation AS (

@@ -2,14 +2,14 @@
 
 WITH weekly_metrics AS (
     -- 第一步：按年、周维度汇总数据
-    SELECT 
-        YEAR(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'))    AS s_year,
-        WEEK(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'), 1) AS s_week,
-        COUNT(DISTINCT order_uid)                            AS total_orders,
-        SUM(IF(is_project_repurchase_customer = '是', 1, 0)) AS repurchase_orders
+    SELECT YEAR(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'))    AS s_year,
+           WEEK(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'), 1) AS s_week,
+           COUNT(DISTINCT order_uid)                                                       AS total_orders,
+           SUM(IF(is_massager_project_return_customer = '是', 1, 0))                       AS repurchase_orders
     FROM dwd_sales_order_detail
-    WHERE off_clock_time IS NOT NULL 
+    WHERE off_clock_time IS NOT NULL
       AND off_clock_time >= '2024-01-01'
+      and service_duration >= 40
     GROUP BY 1, 2
 ),
 rate_calculation AS (

@@ -33,10 +33,11 @@ ytd_base_metrics AS (
         YEAR(STR_TO_DATE(CONCAT(YEARWEEK(t1.off_clock_time, 1), ' Monday'), '%x%v %W')) AS s_year,
         t1.store_code,
         COUNT(DISTINCT t1.order_uid)                            AS total_orders_ytd,
-        SUM(IF(t1.is_project_repurchase_customer = '是', 1, 0)) AS repurchase_orders_ytd
+        SUM(IF(t1.is_massager_project_return_customer = '是', 1, 0)) AS repurchase_orders_ytd
     FROM dwd_sales_order_detail t1
     CROSS JOIN latest_config lc
     WHERE t1.off_clock_time IS NOT NULL
+      and t1.service_duration >= 40
       AND WEEK(STR_TO_DATE(CONCAT(YEARWEEK(t1.off_clock_time, 1), ' Monday'), '%x%v %W'), 1) <= lc.target_week
       AND YEAR(STR_TO_DATE(CONCAT(YEARWEEK(t1.off_clock_time, 1), ' Monday'), '%x%v %W')) IN (lc.target_year, lc.target_year - 1)
     GROUP BY 1, 2

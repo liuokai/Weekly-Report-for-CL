@@ -2,13 +2,13 @@
 
 WITH yearly_metrics AS (
     -- 第一步：按年维度汇总数据
-    SELECT
-        YEAR(off_clock_time)                                 AS s_year,
-        COUNT(DISTINCT order_uid)                            AS total_orders,
-        SUM(IF(is_project_repurchase_customer = '是', 1, 0)) AS repurchase_orders
+    SELECT YEAR(off_clock_time)                                      AS s_year,
+           COUNT(DISTINCT order_uid)                                 AS total_orders,
+           SUM(IF(is_massager_project_return_customer = '是', 1, 0)) AS repurchase_orders
     FROM dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
       AND off_clock_time >= '2024-01-01'
+      and service_duration >= 40
     GROUP BY 1
 ),
 rate_calculation AS (

@@ -2,21 +2,19 @@
 
 WITH monthly_city_store_output_metrics AS (
     -- 第一步：按月、城市、门店汇总新员工产值达标人数和总人数
-    SELECT
-        statistics_city_name,
-        store_code,
-        store_name,
-        month,
-        COUNT(DISTINCT job_number)                     AS total_massagists,
-        SUM(IF(is_output_value_standard = '是', 1, 0)) AS standard_count
-    FROM data_warehouse.dws_indicator_detail_massagist
+
+    SELECT b.statistics_city_name                            as statistics_city_name,
+           a.month,
+           a.store_code,
+           a.store_name,
+           sum(massager_on_duty_count_no_include_this_month) AS total_massagists,
+           SUM(output_value_qualify_num)                     AS standard_count
+    FROM data_warehouse.dws_indicator_detail_store_monthly a
+             left join data_warehouse.dm_city b on a.city_code = b.city_code
     WHERE month IS NOT NULL
-    GROUP BY
-        statistics_city_name,
-        store_code,
-        store_name,
-        month
-),
+    GROUP BY b.statistics_city_name,
+             a.store_code,
+             a.store_name, month),
 
 rate_calculation AS (
     -- 第二步：计算月度、城市、门店维度的新员工产值达标率

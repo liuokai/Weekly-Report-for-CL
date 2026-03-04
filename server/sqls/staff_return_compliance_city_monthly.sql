@@ -12,6 +12,7 @@ WITH monthly_city_metrics AS (
     LEFT JOIN data_warehouse.dm_city AS b
         ON a.city_code = b.city_code
     WHERE a.company_tenure IN (1, 2, 3)
+    and return_rate_standard>0
     GROUP BY b.statistics_city_name, a.month
 )
 SELECT

@@ -2,15 +2,15 @@
 
 WITH annual_stats AS (
     -- 第一步：计算每年基础指标
-    SELECT YEAR(off_clock_time)                                            AS s_year,
-           COUNT(DISTINCT order_uid)                                       AS total_orders,
-           SUM(order_actual_payment)                                       AS total_revenue,
+    SELECT YEAR(off_clock_time)                                                                     AS s_year,
+           COUNT(if(service_duration >= 40, order_uid, null))                                       AS total_orders,
+           SUM(order_actual_payment)                                                                AS total_revenue,
            -- 年度平均客单价
-           ROUND(SUM(order_actual_payment) / COUNT(DISTINCT order_uid), 2) AS avg_order_value
+           ROUND(SUM(order_actual_payment) / COUNT(if(service_duration >= 40, order_uid, null)), 2) AS avg_order_value
     FROM data_warehouse.dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
       AND off_clock_time >= '2023-01-01'
-      AND service_duration >= 40
+      AND (order_type in ('01', '03') or project_name = '修脚')
     GROUP BY 1
 )
 -- 第二步：自连接计算同比

@@ -4,9 +4,9 @@ WITH monthly_output_metrics AS (
     -- 第一步：按月汇总产值达标人数和总推拿师人数
     SELECT
         month,
-        COUNT(DISTINCT job_number)                     AS total_massagists,
-        SUM(IF(is_output_value_standard = '是', 1, 0)) AS standard_count
-    FROM data_warehouse.dws_indicator_detail_massagist
+        sum(massager_on_duty_count_no_include_this_month)                     AS total_massagists,
+        SUM(output_value_qualify_num) AS standard_count
+    FROM data_warehouse.dws_indicator_detail_store_monthly
     WHERE month IS NOT NULL
     GROUP BY month
 ),

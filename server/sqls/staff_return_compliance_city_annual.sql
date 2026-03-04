@@ -12,6 +12,7 @@ WITH yearly_city_metrics AS (
     FROM data_warehouse.dws_indicator_detail_massagist AS a
     LEFT JOIN data_warehouse.dm_city AS b ON a.city_code = b.city_code
     WHERE a.company_tenure in (1,2,3)  -- 仅限新员工
+    and return_rate_standard>0 -- 有回头率标准才参与计算
     GROUP BY 1, 2),  
      rate_calc AS (
          -- 第二步：计算每年各城市的达标率

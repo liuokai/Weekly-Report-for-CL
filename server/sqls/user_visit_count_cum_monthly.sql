@@ -9,8 +9,7 @@ WITH daily_user_visits AS (
            user_id
     FROM dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
-      AND user_id IS NOT NULL
-    GROUP BY 1, 2, 3, 4, 5
+      AND user_id IS NOT NULL and service_duration>=40
 ),
 monthly_visit_stats AS (
     -- 第二步：汇总每个月的总客次
