@@ -5,7 +5,7 @@ WITH monthly_city_output_metrics AS (
     SELECT b.statistics_city_name                            as statistics_city_name,
            a.month,
            sum(massager_on_duty_count_no_include_this_month) AS total_massagists,
-           SUM(output_value_qualify_num)                     AS standard_count
+           SUM(daily_output_value_qualify_num)                     AS standard_count
     FROM data_warehouse.dws_indicator_detail_store_monthly a
              left join data_warehouse.dm_city b on a.city_code = b.city_code
     WHERE month IS NOT NULL

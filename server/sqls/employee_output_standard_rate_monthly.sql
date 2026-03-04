@@ -5,7 +5,7 @@ WITH monthly_output_metrics AS (
     SELECT
         month,
         sum(massager_on_duty_count_no_include_this_month)                     AS total_massagists,
-        SUM(output_value_qualify_num) AS standard_count
+        SUM(daily_output_value_qualify_num) AS standard_count
     FROM data_warehouse.dws_indicator_detail_store_monthly
     WHERE month IS NOT NULL
     GROUP BY month
