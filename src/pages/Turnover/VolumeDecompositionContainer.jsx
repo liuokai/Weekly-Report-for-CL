@@ -24,6 +24,17 @@ const VolumeDecompositionContainer = () => {
   // City Modal State
   const [selectedCity, setSelectedCity] = useState(null);
 
+  const getMetricConfig = () => {
+    switch(influenceMetric) {
+      case 'duration': return { title: '推拿师天均服务时长', unit: '分钟', isGood: v => v < 300 };
+      case 'compliance': return { title: '推拿师天均服务时长不达标占比', unit: '%', isGood: v => v <= 25 };
+      case 'active_members': return { title: '活跃会员数', unit: '人', isGood: () => false };
+      case 'churn_rate': return { title: '会员流失率', unit: '%', isGood: v => v <= 5 };
+      case 'review_rate': return { title: '主动评价率', unit: '%', isGood: v => v >= 70 };
+      default: return { title: '', unit: '', isGood: () => false };
+    }
+  };
+
   // Fetch Data
   const { data: annualVisitData } = useFetchData('getUserVisitCountAnnual', []);
   const { data: dailyAvgVisitMonthlyData } = useFetchData('getUserVisitCountDailyAvgMonthly', [], null, { manual: trendMetric !== 'daily' });
@@ -549,16 +560,6 @@ const VolumeDecompositionContainer = () => {
       storeData = Object.values(storeMap);
     }
 
-    const getMetricConfig = () => {
-       switch(influenceMetric) {
-         case 'duration': return { title: '推拿师天均服务时长', unit: '分钟', isGood: v => v >= 300 };
-         case 'compliance': return { title: '推拿师天均服务时长不达标占比', unit: '%', isGood: v => v <= 25 };
-         case 'active_members': return { title: '活跃会员数', unit: '人', isGood: () => false };
-         case 'churn_rate': return { title: '会员流失率', unit: '%', isGood: v => v <= 5 };
-         case 'review_rate': return { title: '主动评价率', unit: '%', isGood: v => v >= 70 };
-         default: return { title: '', unit: '', isGood: () => false };
-       }
-    };
     const config = getMetricConfig();
 
     const storeColumns = [
@@ -582,7 +583,7 @@ const VolumeDecompositionContainer = () => {
 
            let colorClass = 'text-gray-700';
            if (influenceMetric !== 'active_members') {
-               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-red-600 font-bold' : 'text-gray-700';
+               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-green-600' : 'text-gray-700';
            }
  
            return <span className={colorClass}>{displayVal}</span>;
@@ -776,17 +777,6 @@ const VolumeDecompositionContainer = () => {
       }
     }
 
-    const getMetricConfig = () => {
-       switch(influenceMetric) {
-         case 'duration': return { title: '推拿师天均服务时长', unit: '分钟', isGood: v => v >= 300 };
-         case 'compliance': return { title: '推拿师天均服务时长不达标占比', unit: '%', isGood: v => v <= 25 };
-         case 'active_members': return { title: '活跃会员数', unit: '人', isGood: () => false };
-         case 'churn_rate': return { title: '会员流失率', unit: '%', isGood: v => v <= 5 };
-         case 'review_rate': return { title: '主动评价率', unit: '%', isGood: v => v >= 70 };
-         default: return { title: '', unit: '', isGood: () => false };
-       }
-    };
-
     const config = getMetricConfig();
 
     const columns = [
@@ -823,9 +813,9 @@ const VolumeDecompositionContainer = () => {
            }
 
            let colorClass = 'text-gray-700';
-            if (influenceMetric !== 'active_members') {
-               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-red-600 font-bold' : 'text-gray-700';
-            }
+           if (influenceMetric !== 'active_members') {
+               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-green-600' : 'text-gray-700';
+           }
  
            return <span className={colorClass}>{displayVal}</span>;
         }

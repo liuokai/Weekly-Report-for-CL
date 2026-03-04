@@ -195,19 +195,51 @@ const PriceDecompositionContainer = () => {
         target: config.therapistOutput.target,
         actual: (() => {
           if (empOutputMonthly && empOutputMonthly.length > 0) {
-            const sorted = [...empOutputMonthly].sort((a, b) => (a.stat_month > b.stat_month ? 1 : -1));
-            const latest = sorted[sorted.length - 1];
-            const val = latest?.output_standard_rate_pct;
-            return val != null ? Number(val) : null;
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const year = yesterday.getFullYear();
+            const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+            const targetMonth = `${year}-${month}`;
+
+            const targetData = empOutputMonthly.find(d => d.stat_month === targetMonth);
+            if (targetData) {
+              const val = targetData.output_standard_rate_pct;
+              return val != null ? Number(val) : null;
+            }
+          }
+          return null;
+        })(),
+        previousMonthActual: (() => {
+          if (empOutputMonthly && empOutputMonthly.length > 0) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            // Go back one more month
+            yesterday.setMonth(yesterday.getMonth() - 1);
+            const year = yesterday.getFullYear();
+            const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+            const targetMonth = `${year}-${month}`;
+
+            const targetData = empOutputMonthly.find(d => d.stat_month === targetMonth);
+            if (targetData) {
+              const val = targetData.output_standard_rate_pct;
+              return val != null ? Number(val) : null;
+            }
           }
           return null;
         })(),
         last: (() => {
           if (empOutputMonthly && empOutputMonthly.length > 0) {
-            const sorted = [...empOutputMonthly].sort((a, b) => (a.stat_month > b.stat_month ? 1 : -1));
-            const latest = sorted[sorted.length - 1];
-            const val = latest?.prev_year_output_standard_rate_pct;
-            return val != null ? Number(val) : null;
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const year = yesterday.getFullYear();
+            const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+            const targetMonth = `${year}-${month}`;
+
+            const targetData = empOutputMonthly.find(d => d.stat_month === targetMonth);
+            if (targetData) {
+              const val = targetData.prev_year_output_standard_rate_pct;
+              return val != null ? Number(val) : null;
+            }
           }
           return null;
         })(),
@@ -1524,7 +1556,7 @@ const PriceDecompositionContainer = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-xs text-gray-500 mb-1">当前值</div>
+              <div className="text-xs text-gray-500 mb-1">当前值（按日将月产值进行折算结果）</div>
                 <div className="text-xl font-bold text-[#a40035]">
                   {(() => {
                     const actual = impactInfos[procMetric]?.actual;
@@ -1533,9 +1565,9 @@ const PriceDecompositionContainer = () => {
                     return unit === '%' ? `${Number(actual).toFixed(2)}%` : `${actual}`;
                   })()}
                 </div>
-              <div className="mt-2 text-xs text-gray-500">
-                <div className="mb-1">
-                  目标：
+              <div className="mt-2 text-xs text-gray-500 space-y-1">
+                <div>
+                  目标值：
                   <span className="font-semibold text-gray-700">
                     {impactInfos[procMetric]?.target !== null && impactInfos[procMetric]?.target !== undefined
                       ? (impactInfos[procMetric]?.unit === '%' ? `${impactInfos[procMetric]?.target}%` : `${impactInfos[procMetric]?.target}`)
@@ -1543,27 +1575,24 @@ const PriceDecompositionContainer = () => {
                   </span>
                 </div>
                 <div>
-                  {(procMetric === 'therapistYield' || procMetric === 'newEmpOutput') ? '上月：' : '去年：'}
+                  上月数值：
                   <span className="font-semibold text-gray-700">
                     {(() => {
-                      const a = Number(impactInfos[procMetric]?.actual);
-                      const l = Number(impactInfos[procMetric]?.last);
-                      const hasLast = impactInfos[procMetric]?.last !== null && impactInfos[procMetric]?.last !== undefined;
-                      if (hasLast) {
-                      const base = impactInfos[procMetric]?.unit === '%' 
-                          ? `${Number(impactInfos[procMetric]?.last).toFixed(2)}%` 
-                          : `${impactInfos[procMetric]?.last}`;
-                        const yoy = l ? ((a - l) / l) * 100 : 0;
-                        const sign = yoy > 0 ? '+' : '';
-                        const cls = yoy > 0 ? 'text-red-600' : yoy < 0 ? 'text-green-600' : 'text-gray-600';
-                        return (
-                          <>
-                            {base}
-                            <span className="ml-1">
-                              （同比 <span className={cls}>{`${sign}${yoy.toFixed(2)}%`}</span>）
-                            </span>
-                          </>
-                        );
+                      const val = impactInfos[procMetric]?.previousMonthActual;
+                      if (val !== null && val !== undefined) {
+                        return `${Number(val).toFixed(2)}%`;
+                      }
+                      return '—';
+                    })()}
+                  </span>
+                </div>
+                <div>
+                  去年同期：
+                  <span className="font-semibold text-gray-700">
+                    {(() => {
+                      const lastVal = impactInfos[procMetric]?.last;
+                      if (lastVal !== null && lastVal !== undefined) {
+                        return `${Number(lastVal).toFixed(2)}%`;
                       }
                       return '—';
                     })()}
@@ -1586,7 +1615,7 @@ const PriceDecompositionContainer = () => {
                 {impactInfos[procMetric]?.target
                   ? (Number(impactInfos[procMetric]?.actual) >= Number(impactInfos[procMetric]?.target)
                       ? <span className="text-sm font-semibold text-red-600">达标</span>
-                      : <span className="text-xs text-gray-600">未达标</span>)
+                      : <span className="text-xs text-green-600">未达标</span>)
                   : <span className="text-gray-400">无目标值</span>}
               </div>
             </div>
