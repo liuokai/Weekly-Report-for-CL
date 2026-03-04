@@ -83,8 +83,9 @@ const ClosingWarningContainer = () => {
              加载数据失败，请检查网络或稍后重试
           </div>
         ) : isEmpty ? (
-          <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-             本季度暂无触发预警的门店
+          <div className="flex flex-col items-center justify-center py-12">
+             <IconEmpty />
+             <p className="mt-3 text-sm text-gray-400">暂无触发预警的门店</p>
           </div>
         ) : (
           <div className="space-y-8">

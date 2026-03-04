@@ -530,7 +530,9 @@ const RevenueDecompositionContainer = () => {
                     <p className="text-sm text-gray-600">门店维度统计</p>
                   </div>
                   <div className="border border-gray-200 rounded">
-                    {storeRows.length === 0 ? (
+                    {storeWeeklyLoading ? (
+                      <div className="p-3 text-sm text-gray-500">数据正在加载，请等待</div>
+                    ) : storeRows.length === 0 ? (
                       <div className="p-3 text-sm text-gray-500">该城市当前无在营门店数据</div>
                     ) : (
                       <DataTable data={sortedStoreRows} columns={columnsForStore} stickyHeader={false} onSort={handleStoreSort} sortConfig={storeSortConfig} />

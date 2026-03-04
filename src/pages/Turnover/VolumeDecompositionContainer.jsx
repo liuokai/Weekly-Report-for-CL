@@ -49,6 +49,7 @@ const VolumeDecompositionContainer = () => {
   const { data: activeReviewRateCityMonthlyYoy } = useFetchData('getActiveReviewRateCityMonthlyYoy', [], null, { manual: influenceMetric !== 'review_rate' });
   const { data: activeReviewRateStoreMonthlyYoy } = useFetchData('getActiveReviewRateStoreMonthlyYoy', { city: selectedCity }, null, { manual: !(selectedCity && influenceMetric === 'review_rate') });
 
+
   const { data: cityBreakdownData } = useFetchData('getVolumeCityBreakdown');
 
   const tableData = useMemo(() => {
@@ -537,7 +538,9 @@ const VolumeDecompositionContainer = () => {
         if (!storeMap[key]) {
           storeMap[key] = { key, store: d.store_name };
         }
-        const idx = monthKeysDesc.indexOf(d.month);
+        // Correctly format the month from YYYY-MM to YY年M月 for matching
+        const formattedMonth = formatMonthLabel(d.month);
+        const idx = monthsDesc.indexOf(formattedMonth);
         if (idx !== -1) {
           const num = Number(d.avg_staff_daily_duration);
           storeMap[key][`m${idx + 1}`] = Number.isFinite(num) ? Number(num.toFixed(2)) : null;
@@ -654,7 +657,7 @@ const VolumeDecompositionContainer = () => {
             {/* Bottom: Store Table */}
             <div>
               <h4 className="text-sm font-bold text-gray-600 mb-4 border-l-4 border-[#a40035] pl-2">门店数据明细</h4>
-              <DataTable data={storeData} columns={storeColumns} />
+                <DataTable data={storeData} columns={storeColumns} />
             </div>
           </div>
         </div>

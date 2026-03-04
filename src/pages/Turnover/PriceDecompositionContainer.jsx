@@ -46,21 +46,21 @@ const PriceDecompositionContainer = () => {
   // Fetch annual average price data
   const { data: annualPriceData } = useFetchData('getAnnualAvgPrice');
   // Fetch city weekly average price data
-  const { data: cityWeeklyData } = useFetchData('getCityWeeklyAvgPriceYTD', [], null, { manual: true });
+  const { data: cityWeeklyData } = useFetchData('getCityWeeklyAvgPriceYTD', { city: selectedCity }, null, { manual: !(isModalOpen && isPriceDecompositionModal && selectedCity) });
   // Fetch store weekly average price data
-  const { data: storeWeeklyData } = useFetchData('getStoreWeeklyAvgPriceYTD', [], null, { manual: true });
+  const { data: storeWeeklyData, loading: storeWeeklyLoading } = useFetchData('getStoreWeeklyAvgPriceYTD', { city: selectedCity }, null, { manual: !(isModalOpen && isPriceDecompositionModal && selectedCity) });
 
   // New hooks for Repurchase Rate
   const { data: repurchaseAnnual } = useFetchData('getRepurchaseRateAnnual', [], null, { manual: procMetric !== 'returnRate' });
   const { data: repurchaseWeekly } = useFetchData('getRepurchaseRateWeekly', [], null, { manual: procMetric !== 'returnRate' });
   const { data: repurchaseCityWeekly } = useFetchData('getRepurchaseRateCityWeekly', [], null, { manual: procMetric !== 'returnRate' });
-  const { data: repurchaseStoreWeekly } = useFetchData('getRepurchaseRateStoreWeekly', [], null, { manual: !(isModalOpen && procMetric === 'returnRate') });
+  const { data: repurchaseStoreWeekly, loading: repurchaseStoreLoading } = useFetchData('getRepurchaseRateStoreWeekly', [], null, { manual: !(isModalOpen && procMetric === 'returnRate') });
   // 新增：新员工回头率达标率数据源
   const { data: newEmpAnnual } = useFetchData('getNewEmpReturnComplianceAnnual', [], null, { manual: procMetric !== 'newEmpReturn' });
   const { data: newEmpMonthly } = useFetchData('getNewEmpReturnComplianceMonthly', [], null, { manual: procMetric !== 'newEmpReturn' });
   const { data: newEmpCityAnnual } = useFetchData('getNewEmpReturnComplianceCityAnnual', [], null, { manual: procMetric !== 'newEmpReturn' });
   const { data: newEmpCityMonthly } = useFetchData('getNewEmpReturnComplianceCityMonthly', [], null, { manual: procMetric !== 'newEmpReturn' });
-  const { data: newEmpStoreAnnual } = useFetchData('getNewEmpReturnComplianceStoreAnnual', [], null, { manual: !(isModalOpen && procMetric === 'newEmpReturn') });
+  const { data: newEmpStoreAnnual, loading: newEmpStoreLoading } = useFetchData('getNewEmpReturnComplianceStoreAnnual', [], null, { manual: !(isModalOpen && procMetric === 'newEmpReturn') });
 
   
   // Bed Staff Ratio Data (Added for configRatio metric)
@@ -68,11 +68,19 @@ const PriceDecompositionContainer = () => {
   const { data: bedStaffRatioWeekly } = useFetchData('getBedStaffRatioWeekly', [], null, { manual: procMetric !== 'configRatio' });
   const { data: bedStaffRatioCityAnnual } = useFetchData('getBedStaffRatioCityAnnual', [], null, { manual: procMetric !== 'configRatio' });
   const { data: bedStaffRatioCityWeekly } = useFetchData('getBedStaffRatioCityWeekly', [], null, { manual: procMetric !== 'configRatio' });
-  const { data: bedStaffRatioStoreAnnual } = useFetchData('getBedStaffRatioStoreAnnual', [], null, { manual: !(isModalOpen && procMetric === 'configRatio') });
+  const { data: bedStaffRatioStoreAnnual, loading: bedStaffRatioStoreLoading } = useFetchData('getBedStaffRatioStoreAnnual', [], null, { manual: !(isModalOpen && procMetric === 'configRatio') });
   // 推拿师产值达标率（月度/城市月度/门店月度）
   const { data: empOutputMonthly } = useFetchData('getEmployeeOutputStandardRateMonthly', [], null, { manual: procMetric !== 'therapistYield' });
   const { data: empOutputCityMonthly } = useFetchData('getEmployeeOutputStandardRateCityMonthly', [], null, { manual: procMetric !== 'therapistYield' });
-  const { data: empOutputStoreMonthly } = useFetchData('getEmployeeOutputStandardRateStoreMonthly', [], null, { manual: !(isModalOpen && procMetric === 'therapistYield') });
+  const { data: empOutputStoreMonthly, loading: empOutputStoreLoading } = useFetchData('getEmployeeOutputStandardRateStoreMonthly', [], null, { manual: !(isModalOpen && procMetric === 'therapistYield') });
+
+  const isModalTableLoading =
+    (isPriceDecompositionModal && storeWeeklyLoading) ||
+    (!isPriceDecompositionModal && procMetric === 'returnRate' && repurchaseStoreLoading) ||
+    (!isPriceDecompositionModal && procMetric === 'configRatio' && bedStaffRatioStoreLoading) ||
+    (!isPriceDecompositionModal && procMetric === 'newEmpReturn' && newEmpStoreLoading) ||
+    (!isPriceDecompositionModal && procMetric === 'therapistYield' && empOutputStoreLoading);
+
 
   const [modalContextCity, setModalContextCity] = useState(null);
   
@@ -516,6 +524,80 @@ const PriceDecompositionContainer = () => {
     return ranges;
   };
 
+  const processChartData = (data, dateField, valueField, valueFieldLY) => {
+    if (!data || data.length === 0) return { values: [], valuesLY: [], weeks: [] };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const sortedData = [...data].sort((a, b) => (a[dateField] > b[dateField] ? -1 : 1));
+
+    let firstCompleteIndex = -1;
+    const isWeekly = sortedData[0] && (sortedData[0].week_date_range || (sortedData[0].s_year && sortedData[0].s_week) || (sortedData[0].stat_year && sortedData[0].stat_week));
+
+    if (isWeekly) {
+      for (let i = 0; i < sortedData.length; i++) {
+        const item = sortedData[i];
+        let endDate;
+
+        if (item.week_date_range) {
+          const endDateStr = (item.week_date_range || '').split('~')[1];
+          if (endDateStr) {
+            endDate = new Date(endDateStr.trim());
+          }
+        } else if (item.s_year && item.s_week || item.stat_year && item.stat_week) {
+          // Fallback for data without week_date_range
+          const year = item.s_year || item.stat_year;
+          const week = item.s_week || item.stat_week;
+          // Calculate the end date of the week
+          const firstDayOfYear = new Date(year, 0, 1);
+          const days = (week - 1) * 7;
+          const date = new Date(firstDayOfYear.getTime() + days * 24 * 60 * 60 * 1000);
+          const dayOfWeek = date.getDay();
+          const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) + 6; // End of week (Sunday)
+          endDate = new Date(date.setDate(diff));
+        }
+
+        if (endDate) {
+          endDate.setHours(0, 0, 0, 0);
+          if (endDate < today) {
+            firstCompleteIndex = i;
+            break;
+          }
+        }
+      }
+    } else { // Monthly data logic
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth() + 1;
+      const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+
+      for (let i = 0; i < sortedData.length; i++) {
+        const item = sortedData[i];
+        const itemMonthStr = item[dateField];
+        if (itemMonthStr < currentMonthStr) {
+          firstCompleteIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (firstCompleteIndex === -1) return { values: [], valuesLY: [], weeks: [] };
+
+    const slicedData = sortedData.slice(firstCompleteIndex, firstCompleteIndex + 12).reverse();
+
+    const values = slicedData.map(d => Number(d[valueField] || 0));
+    const valuesLY = slicedData.map(d => (d[valueFieldLY] != null ? Number(d[valueFieldLY]) : null));
+    const weeks = slicedData.map(d => ({
+      label: d[dateField],
+      weekNo: d.s_week || d.stat_week || Number(String(d[dateField]).slice(5)),
+      year: d.s_year || d.stat_year || Number(String(d[dateField]).slice(0, 4)),
+      rangeRaw: d.week_date_range || ''
+    }));
+
+    return { values, valuesLY, weeks };
+  };
+
+
   useEffect(() => {
     const w = buildLast12Weeks();
     setProcWeeks(w);
@@ -528,78 +610,40 @@ const PriceDecompositionContainer = () => {
     // 1. Handle Trend Data
     if (procMetric === 'returnRate') {
       if (repurchaseWeekly && repurchaseWeekly.length > 0) {
-        // Sort by year and week
-        const sorted = [...repurchaseWeekly].sort((a, b) => {
-          if (a.s_year !== b.s_year) return a.s_year - b.s_year;
-          return a.s_week - b.s_week;
-        });
-        // Take last 12
-        const last12 = sorted.slice(-12);
-        setProcValues(last12.map(d => Number(d.repurchase_rate)));
-        setProcValuesLY(last12.map(d => Number(d.prev_year_rate)));
-        
-        // Update weeks labels based on actual data
-        const dynamicWeeks = last12.map(d => ({
-          label: `第${String(d.s_week).padStart(2, '0')}周`,
-          weekNo: d.s_week,
-          year: d.s_year
-        }));
-        setProcWeeks(dynamicWeeks);
+        const { values, valuesLY, weeks } = processChartData(repurchaseWeekly, 'week_date_range', 'repurchase_rate', 'prev_year_rate');
+        setProcValues(values);
+        setProcValuesLY(valuesLY);
+        setProcWeeks(weeks);
       } else {
-        // Data loading or empty - show empty state, DO NOT fall back to mock
         setProcValues([]);
         setProcValuesLY([]);
       }
     } else if (procMetric === 'configRatio') {
       if (bedStaffRatioWeekly && bedStaffRatioWeekly.length > 0) {
-        // Sort by year and week
-        const sorted = [...bedStaffRatioWeekly].sort((a, b) => {
-          if (a.stat_year !== b.stat_year) return a.stat_year - b.stat_year;
-          return a.stat_week - b.stat_week;
-        });
-        // Take last 12
-        const last12 = sorted.slice(-12);
-        setProcValues(last12.map(d => Number(d.current_week_ratio)));
-        setProcValuesLY(last12.map(d => Number(d.last_year_same_week_ratio)));
-        
-        const dynamicWeeks = last12.map(d => ({
-          label: `第${String(d.stat_week).padStart(2, '0')}周`,
-          weekNo: d.stat_week,
-          year: d.stat_year
-        }));
-        setProcWeeks(dynamicWeeks);
+        const { values, valuesLY, weeks } = processChartData(bedStaffRatioWeekly, 'week_date_range', 'current_week_ratio', 'last_year_same_week_ratio');
+        setProcValues(values);
+        setProcValuesLY(valuesLY);
+        setProcWeeks(weeks);
       } else {
         setProcValues([]);
         setProcValuesLY([]);
       }
     } else if (procMetric === 'newEmpReturn') {
       if (newEmpMonthly && newEmpMonthly.length > 0) {
-        const sorted = [...newEmpMonthly].sort((a, b) => (a.report_month > b.report_month ? 1 : -1));
-        const last12 = sorted.slice(-12);
-        setProcValues(last12.map(d => Number(d.compliance_rate)));
-        setProcValuesLY(last12.map(d => (d.compliance_rate_ly != null ? Number(d.compliance_rate_ly) : null)));
-        const dynamicMonths = last12.map(d => ({
-          label: d.report_month,
-          weekNo: Number(String(d.report_month).slice(5)), // use month as weekNo for label consistency
-          year: Number(String(d.report_month).slice(0, 4))
-        }));
-        setProcWeeks(dynamicMonths);
+        const { values, valuesLY, weeks } = processChartData(newEmpMonthly, 'report_month', 'compliance_rate', 'compliance_rate_ly');
+        setProcValues(values);
+        setProcValuesLY(valuesLY);
+        setProcWeeks(weeks);
       } else {
         setProcValues([]);
         setProcValuesLY([]);
       }
     } else if (procMetric === 'therapistYield') {
       if (empOutputMonthly && empOutputMonthly.length > 0) {
-        const sorted = [...empOutputMonthly].sort((a, b) => (a.stat_month > b.stat_month ? 1 : -1));
-        const last12 = sorted.slice(-12);
-        setProcValues(last12.map(d => Number(d.output_standard_rate_pct)));
-        setProcValuesLY(last12.map(d => Number(d.prev_year_output_standard_rate_pct)));
-        const dynamicMonths = last12.map(d => ({
-          label: d.stat_month,
-          weekNo: Number(String(d.stat_month).slice(5)),
-          year: Number(String(d.stat_month).slice(0, 4))
-        }));
-        setProcWeeks(dynamicMonths);
+        const { values, valuesLY, weeks } = processChartData(empOutputMonthly, 'stat_month', 'output_standard_rate_pct', 'prev_year_output_standard_rate_pct');
+        setProcValues(values);
+        setProcValuesLY(valuesLY);
+        setProcWeeks(weeks);
       } else {
         setProcValues([]);
         setProcValuesLY([]);
@@ -1708,7 +1752,7 @@ const PriceDecompositionContainer = () => {
           <LineTrendChart
             values={procValues}
             valuesYoY={procValuesLY}
-            xLabels={procMetric === 'newEmpReturn' ? procWeeks.map(w => w.label) : procWeeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)}
+            xLabels={procWeeks.map(w => `第${w.weekNo}周`)}
             showYoY={procShowYoY}
             showTrend={procShowTrend}
             showExtremes={procShowExtremes}
@@ -1723,8 +1767,8 @@ const PriceDecompositionContainer = () => {
             colorYoY={LineTrendStyle.COLORS.yoy}
             width={LineTrendStyle.DIMENSIONS.width}
             height={LineTrendStyle.DIMENSIONS.height}
-            getHoverTitle={(idx) => procWeeks[idx]?.label || ''}
-            getHoverSubtitle={() => ''}
+            getHoverTitle={(idx) => procWeeks[idx] ? `${procWeeks[idx].year}年第${procWeeks[idx].weekNo}周` : ''}
+            getHoverSubtitle={(idx) => procWeeks[idx]?.rangeRaw ? `日期范围：${procWeeks[idx].rangeRaw}` : ''}
           />
         ) : (
           <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">暂无数据</div>
@@ -1812,7 +1856,11 @@ const PriceDecompositionContainer = () => {
                 <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">
                   {procMetric === 'newEmpReturn' ? '技术副总负责门店新员工回头率统计' : procMetric === 'therapistYield' ? '门店产值达标率统计' : '门店维度统计'}
                 </h4>
-                <DataTable data={sortedStoreRows} columns={modalColumnsComputed} onSort={handleStoreSort} sortConfig={storeSortConfig} />
+                {isModalTableLoading ? (
+                  <div className="text-center py-4">数据正在加载，请等待...</div>
+                ) : (
+                  <DataTable data={sortedStoreRows} columns={modalColumnsComputed} onSort={handleStoreSort} sortConfig={storeSortConfig} />
+                )}
               </div>
             </div>
           </div>

@@ -8,13 +8,15 @@ const METRICS = {
     label: '年度累计平均客单价',
     unit: '元',
     data: [],
-    dataYoY: []
+    dataYoY: [],
+    rawData: []
   },
   weeklyAvgPrice: {
     label: '周度平均客单价',
     unit: '元',
     data: [],
-    dataYoY: []
+    dataYoY: [],
+    rawData: []
   },
   projectReturnRate: {
     label: '项目回头率',
@@ -56,33 +58,55 @@ const HQMetricsTrendChart = () => {
   const { data: annualYtdData } = useFetchData('getWeeklyAvgPriceYTD');
   const { data: weeklyData } = useFetchData('getWeeklyAvgPrice');
 
+  const processData = (data) => {
+    if (!data || data.length === 0) return [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Find the index of the first complete week
+    let firstCompleteWeekIndex = -1;
+    for (let i = 0; i < data.length; i++) {
+      const item = data[i];
+      const endDateStr = (item.week_date_range || '').split('~')[1];
+      if (endDateStr) {
+        const endDate = new Date(endDateStr.trim());
+        endDate.setHours(0, 0, 0, 0);
+        if (endDate < today) {
+          firstCompleteWeekIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (firstCompleteWeekIndex === -1) return []; // No complete week found
+
+    // Take 12 weeks from the first complete week
+    const slicedData = data.slice(firstCompleteWeekIndex, firstCompleteWeekIndex + 12);
+    return slicedData.reverse(); // Reverse to show oldest first
+  };
+
+
   useEffect(() => {
     // Always start from the initial METRICS template to ensure clean state
     const newMetrics = JSON.parse(JSON.stringify(METRICS));
     
     // Process Annual Cumulative AOV Data
     if (annualYtdData && annualYtdData.length > 0) {
-        // Take last 12 weeks (data is DESC, so take first 12 then reverse)
-        const sorted = [...annualYtdData].slice(0, 12).reverse();
-        // Use raw Number (float) - do not round
-        newMetrics.annualAvgPrice.data = sorted.map(item => Number(item.current_year_cumulative_aov) || 0);
-        // dataYoY should be last year's absolute value
-        newMetrics.annualAvgPrice.dataYoY = sorted.map(item => Number(item.last_year_cumulative_aov) || 0);
-        // Store pct separately for tooltip display
-        newMetrics.annualAvgPrice.dataPct = sorted.map(item => Number(item.cumulative_aov_yoy_pct) || 0);
+        const processed = processData(annualYtdData);
+        newMetrics.annualAvgPrice.rawData = processed;
+        newMetrics.annualAvgPrice.data = processed.map(item => Number(item.current_year_cumulative_aov) || 0);
+        newMetrics.annualAvgPrice.dataYoY = processed.map(item => Number(item.last_year_cumulative_aov) || 0);
+        newMetrics.annualAvgPrice.dataPct = processed.map(item => Number(item.cumulative_aov_yoy_pct) || 0);
     }
 
     // Process Weekly AOV Data
     if (weeklyData && weeklyData.length > 0) {
-        const sorted = [...weeklyData].slice(0, 12).reverse();
-        // Use raw Number (float)
-        newMetrics.weeklyAvgPrice.data = sorted.map(item => Number(item.current_week_aov) || 0);
-        // dataYoY should be last year's absolute value (note: check sql field name, usually last_year_week_aov or similar. 
-        // Based on typical query structure, let's assume last_year_week_aov exists in the result if joined properly.
-        // Wait, I need to check if the SQL returns last_year_week_aov.
-        // Let's assume it does based on user request "数值取自last_year_week_aov".
-        newMetrics.weeklyAvgPrice.dataYoY = sorted.map(item => Number(item.last_year_week_aov) || 0);
-        newMetrics.weeklyAvgPrice.dataPct = sorted.map(item => Number(item.aov_yoy_pct) || 0);
+        const processed = processData(weeklyData);
+        newMetrics.weeklyAvgPrice.rawData = processed;
+        newMetrics.weeklyAvgPrice.data = processed.map(item => Number(item.current_week_aov) || 0);
+        newMetrics.weeklyAvgPrice.dataYoY = processed.map(item => Number(item.last_year_week_aov) || 0);
+        newMetrics.weeklyAvgPrice.dataPct = processed.map(item => Number(item.aov_yoy_pct) || 0);
     }
 
     setMetricsData(newMetrics);
@@ -92,20 +116,16 @@ const HQMetricsTrendChart = () => {
     setControls(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const currentMetricConfig = metricsData[activeMetric];
+
   const weeksMeta = useMemo(() => {
-    const src = activeMetric === 'annualAvgPrice' ? annualYtdData : weeklyData;
-    if (!src || src.length === 0) return [];
-    const sorted = [...src].slice(-12);
-    return sorted.map(item => ({
+    if (!currentMetricConfig || !currentMetricConfig.rawData || currentMetricConfig.rawData.length === 0) return [];
+    return currentMetricConfig.rawData.map(item => ({
       year: Number(item.sales_year) || 0,
       week: Number(item.sales_week) || 0,
-      startStr: String((item.week_date_range || '').split('~')[0] || '').trim().replace(/-/g, '/').slice(2).replace(/\//g, '').replace(/^(\d{2})(\d{2})(\d{2}).*$/, '$1$2$3'),
-      endStr: String((item.week_date_range || '').split('~')[1] || '').trim().replace(/-/g, '/').slice(2).replace(/\//g, '').replace(/^(\d{2})(\d{2})(\d{2}).*$/, '$1$2$3'),
       rangeRaw: String(item.week_date_range || '')
     }));
-  }, [activeMetric, annualYtdData, weeklyData]);
-
-  const currentMetricConfig = metricsData[activeMetric];
+  }, [currentMetricConfig]);
 
   // Safety check to prevent blank page crash if config is missing
   if (!currentMetricConfig) {
@@ -140,7 +160,7 @@ const HQMetricsTrendChart = () => {
         values={currentMetricConfig.data}
         valuesYoY={currentMetricConfig.dataYoY}
         valuesPct={currentMetricConfig.dataPct}
-        xLabels={weeksMeta.map(w => `第${String(w.week).padStart(2, '0')}周`)}
+        xLabels={weeksMeta.map(w => `第${w.week}周`)}
         showYoY={controls.showYoY}
         showTrend={controls.showTrend}
         showExtremes={controls.showExtremes}
@@ -166,12 +186,12 @@ const HQMetricsTrendChart = () => {
         )}
         getHoverTitle={(idx) => {
           const wm = weeksMeta[idx] || {};
-          return `周数： ${wm.year || ''} 年第 ${wm.week || ''} 周`;
+          return `${wm.year}年第${wm.week}周`;
         }}
         getHoverSubtitle={(idx) => {
           const wm = weeksMeta[idx] || {};
-          if (!wm.startStr || !wm.endStr) return '';
-          return `日期范围：${wm.startStr} - ${wm.endStr}`;
+          if (!wm.rangeRaw) return null;
+          return `日期范围：${wm.rangeRaw}`;
         }}
       />
     </div>
