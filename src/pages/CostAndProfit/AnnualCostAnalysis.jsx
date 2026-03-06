@@ -69,10 +69,12 @@ const AnnualCostAnalysis = ({ data }) => {
 
   // Data preparation for Stacked Bar Chart
   const barChartData = useMemo(() => {
+    let chartData;
+    
     if (activeCategory) {
       // If a category is selected, show its details as X-axis items
       // If details have sub-details, stack them. Otherwise, just one bar.
-      return activeCategory.details.map(detail => {
+      chartData = activeCategory.details.map(detail => {
         const item = { name: detail.name };
         if (detail.subDetails) {
            detail.subDetails.forEach(sub => {
@@ -86,7 +88,7 @@ const AnnualCostAnalysis = ({ data }) => {
     } else {
       // If no category selected, X-axis are the Categories (e.g., Labor, Rent)
       // Stack key are the details (e.g., Masseur Commission, Rent Fee)
-      return costData.map(cat => {
+      chartData = costData.map(cat => {
         const item = { name: cat.name };
         cat.details.forEach(detail => {
           item[detail.name] = detail.value;
@@ -94,6 +96,13 @@ const AnnualCostAnalysis = ({ data }) => {
         return item;
       });
     }
+    
+    // 按每个柱子的总金额从大到小排序
+    return chartData.sort((a, b) => {
+      const sumA = Object.keys(a).reduce((sum, key) => key !== 'name' ? sum + (a[key] || 0) : sum, 0);
+      const sumB = Object.keys(b).reduce((sum, key) => key !== 'name' ? sum + (b[key] || 0) : sum, 0);
+      return sumB - sumA;
+    });
   }, [costData, activeCategory]);
 
   // Extract all possible keys for stacking to generate <Bar> components
@@ -117,18 +126,16 @@ const AnnualCostAnalysis = ({ data }) => {
     
     const totalRevenue = Number(data.total_revenue) || 1; // Avoid division by zero
 
-    // Helper to sum by category name
-    const getSumByCategory = (catName) => {
-      const cat = costData.find(c => c.name === catName);
-      return cat ? cat.value : 0;
-    };
+    // 直接从 SQL 字段获取数据
+    const serviceFee = Number(data.service_fee) || 0;
+    const laborCost = Number(data.labor_cost) || 0;
+    const fixedCost = Number(data.fixed_cost) || 0;
+    const variableCost = Number(data.variable_cost) || 0;
+    const incomeTax = Number(data.income_tax) || 0;
+    
+    const annualCost = serviceFee + laborCost + fixedCost + variableCost + incomeTax;
 
-    const serviceFee = getSumByCategory('服务费');
-    const laborCost = getSumByCategory('人工成本');
-    const variableCost = getSumByCategory('变动成本') || getSumByCategory('可变成本'); // Handle potential naming variations
-    const annualCost = serviceFee + laborCost + variableCost;
-
-    const calcPercent = (val, base) => ((val / base) * 100).toFixed(1) + '%';
+    const calcPercent = (val, base) => ((val / base) * 100).toFixed(2) + '%';
 
     return [
       { 
@@ -148,12 +155,22 @@ const AnnualCostAnalysis = ({ data }) => {
         percentage: annualCost ? calcPercent(laborCost, annualCost) : '0.0%'
       },
       { 
+        label: '固定成本', 
+        value: fixedCost,
+        percentage: annualCost ? calcPercent(fixedCost, annualCost) : '0.0%'
+      },
+      { 
         label: '变动成本', 
         value: variableCost,
         percentage: annualCost ? calcPercent(variableCost, annualCost) : '0.0%'
       },
+      { 
+        label: '所得税金额', 
+        value: incomeTax,
+        percentage: annualCost ? calcPercent(incomeTax, annualCost) : '0.0%'
+      },
     ];
-  }, [data, costData]);
+  }, [data]);
 
   // Custom Tooltip for Pie Chart
   const CustomPieTooltip = ({ active, payload }) => {
@@ -233,7 +250,7 @@ const AnnualCostAnalysis = ({ data }) => {
       <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">年度成本结构分析</h3>
       
       {/* Header Metrics Section */}
-      <div className="grid grid-cols-4 gap-4 mb-8 bg-gray-50 rounded-lg p-4 border border-gray-100">
+      <div className="grid grid-cols-6 gap-4 mb-8 bg-gray-50 rounded-lg p-4 border border-gray-100">
         {headerMetrics.map((metric, index) => (
           <div key={index} className={`flex flex-col items-center justify-center ${index !== headerMetrics.length - 1 ? 'border-r border-gray-200' : ''}`}>
              <span className="text-sm text-gray-500 mb-1">{metric.label}</span>
