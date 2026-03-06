@@ -425,11 +425,13 @@ const CostAndProfitTab = () => {
         />
       </div>
 
-      {/* Headquarters Cost Budget */}
-      <HeadquartersCostBudget />
+      
 
       {/* Cost Structure Analysis */}
       <CostStructureContainer />
+
+      {/* Headquarters Cost Budget */}
+      <HeadquartersCostBudget />
 
       {renderCityModal()}
     </div>

@@ -248,9 +248,9 @@ export const BusinessTargets = {
       }
     },
     // 新店投资预算值
-    newStoreInvestmentBudget: 710000,
+    newStoreInvestmentBudget: 0,
     // 老店重装预算值
-    oldStoreRenovationBudget: 650000
+    oldStoreRenovationBudget: 0
   }
 };
 

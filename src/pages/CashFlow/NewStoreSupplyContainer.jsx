@@ -27,8 +27,25 @@ const NewStoreSupplyContainer = () => {
 
   const { sortedData, sortConfig, handleSort } = useTableSorting(columns, tableData);
 
+  // 计算昨天的日期
+  const yesterday = useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    return date.toISOString().split('T')[0];
+  }, []);
+
+  // 构建带日期范围的标题
+  const titleWithDateRange = useMemo(() => (
+    <>
+      新店供应总结
+      <span className="ml-3 text-sm font-normal text-[#a40035]">
+        数据区间: 2026-01-01 ~ {yesterday}
+      </span>
+    </>
+  ), [yesterday]);
+
   return (
-    <DataContainer title="新店供应总结">
+    <DataContainer title={titleWithDateRange}>
       <DataTable
         data={sortedData}
         columns={columns}

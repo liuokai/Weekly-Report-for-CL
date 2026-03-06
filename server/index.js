@@ -6,6 +6,11 @@ const mysql = require('mysql2/promise');
 const axios = require('axios');
 const queryRegistry = require('./queryRegistry');
 const fs = require('fs');
+
+// Node.js v16 兼容性：添加 fetch polyfill
+if (typeof fetch === 'undefined') {
+  global.fetch = require('node-fetch');
+}
 const OpenAI = require('openai');
 const { generateReminder } = require('./services/reminderGenerator');
 const { generateNewStoreAnalysis } = require('./services/newStoreAnalysisGenerator');
@@ -64,6 +69,11 @@ app.post('/api/fetch-data', async (req, res) => {
   const cachedData = cacheService.get(queryKey, params);
   if (cachedData) {
     console.log(`[Cache Hit] ${queryKey}`);
+    // 临时日志：检查 marketing_usage_diff 字段
+    if (queryKey === 'getNewStoreOperationStatus' && cachedData.length > 0) {
+      console.log('[Debug] First row keys:', Object.keys(cachedData[0]));
+      console.log('[Debug] marketing_usage_diff value:', cachedData[0].marketing_usage_diff);
+    }
     return res.json({
       status: 'success',
       data: cachedData,

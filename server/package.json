@@ -15,6 +15,7 @@
     "express": "^4.19.2",
     "mysql2": "^3.9.7",
     "node-cache": "^5.1.2",
+    "node-fetch": "^2.7.0",
     "openai": "^6.15.0"
   }
 }

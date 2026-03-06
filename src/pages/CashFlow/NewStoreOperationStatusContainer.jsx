@@ -5,6 +5,13 @@ import useTableSorting from '../../components/Common/useTableSorting';
 const NewStoreOperationStatusContainer = () => {
   const { data, loading, error, fetchData } = useFetchData('getNewStoreOperationStatus', []);
 
+  // 计算昨天的日期
+  const yesterday = React.useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    return date.toISOString().split('T')[0];
+  }, []);
+
   const columns = [
     { key: 'city_name', label: '城市', dataIndex: 'city_name' },
     { key: 'store_name', label: '门店名称', dataIndex: 'store_name' },
@@ -19,7 +26,7 @@ const NewStoreOperationStatusContainer = () => {
     { key: 'cash_flow_variance', label: '现金流差异', dataIndex: 'cash_flow_variance' },
     { key: 'marketing_budget_total', label: '营销费预算', dataIndex: 'marketing_budget_total' },
     { key: 'marketing_actual_total', label: '营销费合计', dataIndex: 'marketing_actual_total' },
-    { key: 'marketing_usage_ratio_display', label: '营销费使用率', dataIndex: 'marketing_usage_ratio_display' },
+    { key: 'marketing_usage_diff', label: '营销费差异', dataIndex: 'marketing_usage_diff' },
     { key: 'ad_fee_actual', label: '广告费', dataIndex: 'ad_fee_actual' },
     { key: 'group_buy_discount_actual', label: '团购优惠', dataIndex: 'group_buy_discount_actual' },
     { key: 'offline_ad_fee_actual', label: '线下广告', dataIndex: 'offline_ad_fee_actual' },
@@ -51,6 +58,9 @@ const NewStoreOperationStatusContainer = () => {
            新店经营情况总结
            <span className="ml-2 text-sm font-normal bg-[#a40035]/10 text-[#a40035] px-2 py-0.5 rounded-full">
              {loading ? '...' : `${data?.length || 0} 家`}
+           </span>
+           <span className="ml-3 text-sm font-normal text-[#a40035]">
+             数据区间: 2026-01-01 ~ {yesterday}
            </span>
          </h2>
          {error && (
@@ -96,8 +106,8 @@ const NewStoreOperationStatusContainer = () => {
                 ) : (
                     sortedData.map((item, index) => (
                         <tr key={index} className="bg-white border-b hover:bg-gray-50/50">
-                            <td className="px-6 py-4 font-medium text-gray-900">{item['city_name']}</td>
-                            <td className="px-6 py-4 text-gray-900">{item['store_name']}</td>
+                            <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item['city_name']}</td>
+                            <td className="px-6 py-4 text-gray-900 whitespace-nowrap">{item['store_name']}</td>
                             <td className="px-6 py-4 text-gray-500 text-xs">{item['store_code']}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{formatDate(item['opening_date'])}</td>
                             <td className="px-6 py-4">{item['city_manager_name'] || '-'}</td>
@@ -111,7 +121,9 @@ const NewStoreOperationStatusContainer = () => {
                             </td>
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['marketing_budget_total'])}</td>
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['marketing_actual_total'])}</td>
-                            <td className="px-6 py-4 text-right font-mono text-gray-500">{item['marketing_usage_ratio_display'] || '-'}</td>
+                            <td className={`px-6 py-4 text-right font-mono ${item['marketing_usage_diff'] < 0 ? 'text-red-600' : ''}`}>
+                                {formatCurrency(item['marketing_usage_diff'])}
+                            </td>
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['ad_fee_actual'])}</td>
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['group_buy_discount_actual'])}</td>
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['offline_ad_fee_actual'])}</td>

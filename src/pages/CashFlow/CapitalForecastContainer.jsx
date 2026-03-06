@@ -87,19 +87,18 @@ const CapitalForecastContainer = () => {
   }, [safetyLineData, selectedCity]);
 
   // 计算预计2026年开店支出
-  // 包含：预算值（全年目标）、已发生值（至今实际）、滚动值（暂定=预算）、待发生值（滚动-已发生）
+  // 直接使用 SQL 返回的 sum_new_funds(已开店支出) 和 sum_expected_funds(待开店支出)
   const openingExpenditure = useMemo(() => {
     if (!Array.isArray(newStoreProcessData) || newStoreProcessData.length === 0) {
-      return { budget: 0, occurred: 0 };
+      return { budget: 0, occurred: 0, pending: 0 };
     }
 
-    let totalNewStoresBudget = 0;
-    let totalReinstallsBudget = 0;
-    let totalNewStoresActual = 0;
-    let totalReinstallsActual = 0;
+    let totalOccurred = 0;  // 已发生值（已开店支出）
+    let totalPending = 0;   // 待发生值（待开店支出）
 
-    const newStoreBudgetUnit = Number(BusinessTargets.capitalBalance?.newStoreInvestmentBudget || 0);
-    const oldStoreBudgetUnit = Number(BusinessTargets.capitalBalance?.oldStoreRenovationBudget || 0);
+    // 动态获取当前年份
+    const now = new Date();
+    const currentYear = String(now.getFullYear());
 
     for (const row of newStoreProcessData) {
       // 排除 SQL 返回的汇总行，防止重复计算
@@ -108,38 +107,23 @@ const CapitalForecastContainer = () => {
       }
 
       // 过滤城市：如果是总部则统计所有，否则只统计选中城市
-      // 注意：SQL返回的字段名为中文别名
       if (selectedCity !== '总部' && row.city_name !== selectedCity) {
         continue;
       }
 
-      // 过滤年份：动态获取当前年份，只统计当年的数据
-      // 例如：当前是 2026 年，则统计 2026-01 至今；当前是 2027 年，则统计 2027-01 至今
-      const now = new Date();
-      const currentYear = String(now.getFullYear());
-
-      // 假设 row.month 格式为 'YYYY-MM'
+      // 过滤年份：只统计当年的数据
       if (!row.month || !row.month.startsWith(currentYear)) {
         continue;
       }
 
-      // 预算值：累加当前年份的全年目标
-      totalNewStoresBudget += Number(row['new_store_target'] || 0);
-      totalReinstallsBudget += Number(row['reinstall_target'] || 0);
-
-      // 已发生值：只统计当年 1 月至今（<=当前月份）的实际数量
-      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (row.month <= currentMonth) {
-        totalNewStoresActual += Number(row['new_store_count'] || 0);
-        totalReinstallsActual += Number(row['reinstall_count'] || 0);
-      }
+      // 累加已开店支出和待开店支出
+      totalOccurred += Number(row.sum_new_funds || 0);
+      totalPending += Number(row.sum_expected_funds || 0);
     }
 
-    const budget = (totalNewStoresBudget * newStoreBudgetUnit) + (totalReinstallsBudget * oldStoreBudgetUnit);
-    const occurred = (totalNewStoresActual * newStoreBudgetUnit) + (totalReinstallsActual * oldStoreBudgetUnit);
+    const budget = totalOccurred + totalPending;
 
-    return { budget, occurred };
+    return { budget, occurred: totalOccurred, pending: totalPending };
   }, [newStoreProcessData, selectedCity]);
 
   // 获取配置数据 (2025 年末资金结余)
@@ -256,8 +240,7 @@ const CapitalForecastContainer = () => {
       subject: '预计2026年开店支出',
       col_2025_end: null,
       col_2026_occurred: openingExpenditure.occurred,
-      col_2026_pending: openingExpenditure.budget - openingExpenditure.occurred,
-      // 确认：2026年滚动全年值逻辑当前为空，暂定等于2026年初预算值
+      col_2026_pending: openingExpenditure.pending,
       col_2026_rolling: openingExpenditure.budget,
       col_2026_budget: openingExpenditure.budget,
       isBold: false
@@ -320,7 +303,7 @@ const CapitalForecastContainer = () => {
   const availableFunds = (balance2025 || 0) + (operatingTotal || 0) - (safetyLine || 0);
   const openSpendBudget = openingExpenditure.budget || 0;
   const openSpendOccurred = openingExpenditure.occurred || 0;
-  const openSpendPending = Math.max((openSpendBudget || 0) - (openSpendOccurred || 0), 0);
+  const openSpendPending = openingExpenditure.pending || 0;
   const finalBalance = (availableFunds || 0) - (openSpendBudget || 0);
   const finalBalanceClass = finalBalance >= 0 ? 'text-[#a40035]' : 'text-[#16a34a]';
   const waterfallData = useMemo(() => {

@@ -26,7 +26,9 @@ SELECT
         WHEN sum_reinstall_num < sum_reinstall_target THEN '尚未完成'
     END AS reinstall_target_status, -- 原字段：重装目标完成情况
 
-    sum_total_store AS total_store_count -- 原字段：门店数量
+    sum_total_store AS total_store_count, -- 原字段：门店数量
+    sum_new_funds AS sum_new_funds, -- 原字段：已开店支出
+    sum_expected_funds AS sum_expected_funds -- 原字段：待开店支出
 
 FROM (
     SELECT
@@ -38,8 +40,10 @@ FROM (
         SUM(new_store_opening_num)    AS sum_new_num,
         SUM(reinstall_store_target)   AS sum_reinstall_target,
         SUM(reinstall_store_num)      AS sum_reinstall_num,
-        SUM(total_store_num)          AS sum_total_store
-    FROM dws_store_open_progress_monthly
+        SUM(total_store_num)          AS sum_total_store,
+        SUM(nvl(settled_amount_opened_stores,0)+nvl(shop_deposit,0))          AS sum_new_funds,
+        SUM(nvl(pre_opening_budget,0)+nvl(pre_open_deposit_budget,0))          AS sum_expected_funds
+    FROM dws_store_open_progress_monthly a
     GROUP BY month, city_name WITH ROLLUP
 ) t
 -- 过滤掉 month 为空的行（ROLLUP 会额外产生一行全表总合计，如果不需要可以滤掉）

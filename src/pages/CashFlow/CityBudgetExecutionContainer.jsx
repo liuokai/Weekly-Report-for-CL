@@ -132,7 +132,7 @@ const CityBudgetExecutionContainer = () => {
     },
     {
       key: 'investment',
-      title: '截止当月累计新店投资',
+      title: '截止当月年度新店投资',
       dataIndex: 'cumulative_new_store_investment',
       align: 'right',
       width: '180px',
@@ -140,7 +140,7 @@ const CityBudgetExecutionContainer = () => {
     },
     {
       key: 'cashflow_budget',
-      title: '截止当月累计现金流预算值',
+      title: '截止当月年度现金流预算值',
       dataIndex: 'cumulative_cash_flow_budget',
       align: 'right',
       width: '180px',
@@ -148,12 +148,12 @@ const CityBudgetExecutionContainer = () => {
     },
     {
       key: 'cashflow_actual',
-      title: '截止当月累计经营现金流',
+      title: '截止当月年度经营现金流',
       dataIndex: 'cumulative_cash_flow_actual',
       align: 'right',
       width: '180px',
       render: (val) => (
-        <span className={`${val >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+        <span className={`${val >= 0 ? 'text-gray-700' : 'text-red-600'}`}>
           {formatMoney(val)}
         </span>
       )
@@ -168,12 +168,12 @@ const CityBudgetExecutionContainer = () => {
     },
     {
       key: 'balance',
-      title: '截止当月累计资金结余',
+      title: '截止当月年度资金结余',
       dataIndex: 'cumulative_capital_balance',
       align: 'right',
       width: '180px',
       render: (val) => (
-        <span className={`font-bold ${val >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+        <span className={`font-bold ${val >= 0 ? 'text-gray-700' : 'text-red-700'}`}>
           {formatMoney(val)}
         </span>
       )

@@ -104,6 +104,15 @@ SELECT
             / c.total_marketing_est * 100
         , 1), '%')
     END                                               AS marketing_usage_ratio_display, -- 原字段：营销费使用率
+    -- 营销费差异值
+    ROUND(
+        CASE
+            WHEN c.total_marketing_est IS NULL OR c.total_marketing_est = 0 THEN NULL
+            ELSE c.total_marketing_est -
+                (COALESCE(c.total_ad_fee, 0) + COALESCE(c.total_group_buy_discount, 0) + COALESCE(c.total_offline_ad_fee, 0) +
+                 COALESCE(c.total_new_guest_discount, 0) + COALESCE(c.total_exhibition_fee, 0) + COALESCE(c.total_masseur_commission, 0))
+        END
+    , 2)                                              AS marketing_usage_diff, -- 原字段：营销费差异
 
     ROUND(COALESCE(c.total_ad_fee, 0), 2)             AS ad_fee_actual, -- 原字段：广告费
     ROUND(COALESCE(c.total_group_buy_discount, 0), 2) AS group_buy_discount_actual, -- 原字段：团购优惠
