@@ -285,6 +285,8 @@ const RevenueDecompositionContainer = () => {
       const labels = [];
       const series = { [selectedMetricKey]: [] };
       const seriesLY = { [selectedMetricKey]: [] };
+      
+      // 按年份和周数排序
       const sortedAll = [...currentData].sort((a, b) => {
         const ya = Number(a.stat_year || a.year || a.s_year || 0);
         const yb = Number(b.stat_year || b.year || b.s_year || 0);
@@ -293,7 +295,29 @@ const RevenueDecompositionContainer = () => {
         const wb = Number(b.stat_week || b.week || b.s_week || 0);
         return wa - wb;
       });
-      const recent12 = sortedAll.slice(-12);
+      
+      // 过滤出已经完整结束的周（使用周结束日期判断，不包含当周）
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const filteredData = sortedAll.filter(row => {
+        // 优先使用 week_date_range，兜底使用 date_range
+        const dateRange = row.week_date_range || row.date_range;
+        if (dateRange) {
+          const endDateStr = (dateRange || '').split('~')[1];
+          if (endDateStr) {
+            const endDate = new Date(endDateStr.trim());
+            endDate.setHours(0, 0, 0, 0);
+            // 只包含结束日期在今天之前的周（不包含当周）
+            return endDate < today;
+          }
+        }
+        // 如果没有日期范围字段，默认包含（兜底逻辑）
+        return true;
+      });
+      
+      // 取最近12周
+      const recent12 = filteredData.slice(-12);
       
       recent12.forEach(row => {
         const weekNum = String(row.stat_week || row.week || row.s_week).padStart(2, '0');

@@ -556,7 +556,7 @@ const PriceDecompositionContainer = () => {
     return ranges;
   };
 
-  const processChartData = (data, dateField, valueField, valueFieldLY) => {
+  const processChartData = (data, dateField, valueField, valueFieldLY, isMonthly = false) => {
     if (!data || data.length === 0) return { values: [], valuesLY: [], weeks: [] };
 
     const today = new Date();
@@ -567,7 +567,8 @@ const PriceDecompositionContainer = () => {
     let firstCompleteIndex = -1;
     const isWeekly = sortedData[0] && (sortedData[0].week_date_range || (sortedData[0].s_year && sortedData[0].s_week) || (sortedData[0].stat_year && sortedData[0].stat_week));
 
-    if (isWeekly) {
+    if (isWeekly && !isMonthly) {
+      // 周度数据：使用周的结束日期判断，只包含已完成的周（不包含当前周）
       for (let i = 0; i < sortedData.length; i++) {
         const item = sortedData[i];
         let endDate;
@@ -581,17 +582,20 @@ const PriceDecompositionContainer = () => {
           // Fallback for data without week_date_range
           const year = item.s_year || item.stat_year;
           const week = item.s_week || item.stat_week;
-          // Calculate the end date of the week
+          // Calculate the end date of the week (Sunday)
           const firstDayOfYear = new Date(year, 0, 1);
           const days = (week - 1) * 7;
           const date = new Date(firstDayOfYear.getTime() + days * 24 * 60 * 60 * 1000);
           const dayOfWeek = date.getDay();
-          const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) + 6; // End of week (Sunday)
-          endDate = new Date(date.setDate(diff));
+          const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+          const monday = new Date(date.setDate(diff));
+          endDate = new Date(monday);
+          endDate.setDate(monday.getDate() + 6); // Sunday
         }
 
         if (endDate) {
           endDate.setHours(0, 0, 0, 0);
+          // 只包含结束日期在今天之前的周（不包含当前周）
           if (endDate < today) {
             firstCompleteIndex = i;
             break;
@@ -603,10 +607,11 @@ const PriceDecompositionContainer = () => {
       const currentMonth = today.getMonth() + 1;
       const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
+      // 月度数据：包含当月，取近12个月
       for (let i = 0; i < sortedData.length; i++) {
         const item = sortedData[i];
         const itemMonthStr = item[dateField];
-        if (itemMonthStr < currentMonthStr) {
+        if (itemMonthStr <= currentMonthStr) {
           firstCompleteIndex = i;
           break;
         }
@@ -620,17 +625,19 @@ const PriceDecompositionContainer = () => {
     const values = slicedData.map(d => Number(d[valueField] || 0));
     const valuesLY = slicedData.map(d => (d[valueFieldLY] != null ? Number(d[valueFieldLY]) : null));
     const weeks = slicedData.map(d => {
+      // 优先使用 SQL 返回的 week_date_range
       let rangeRaw = d.week_date_range || '';
       
-      // 如果没有 week_date_range，尝试从年份和周数字段生成
-      if (!rangeRaw && ((d.s_year && d.s_week) || (d.stat_year && d.stat_week))) {
-        const year = d.s_year || d.stat_year;
-        const week = d.s_week || d.stat_week;
-        
+      // 优先使用 SQL 返回的 stat_week 或 s_week
+      let weekNo = d.stat_week || d.s_week;
+      let year = d.stat_year || d.s_year;
+      
+      // 如果没有 week_date_range，尝试从年份和周数字段生成（仅作为后备方案）
+      if (!rangeRaw && year && weekNo) {
         // 计算该年第一天
         const firstDayOfYear = new Date(year, 0, 1);
         // 计算该周的周一
-        const daysToAdd = (week - 1) * 7;
+        const daysToAdd = (weekNo - 1) * 7;
         const monday = new Date(firstDayOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
         
         // 调整到实际的周一
@@ -651,23 +658,20 @@ const PriceDecompositionContainer = () => {
         };
         
         rangeRaw = `${formatDate(monday)} ~ ${formatDate(sunday)}`;
-        
-        // 调试信息
-        if (valueField === 'current_week_ratio') {
-          console.log(`床位人员配置比 - 年:${year}, 周:${week}, 范围:${rangeRaw}`);
-        }
       }
       
       // 如果是月度数据，从 report_month 或 stat_month 生成月份范围
       if (!rangeRaw && (d.report_month || d.stat_month)) {
         const monthStr = d.report_month || d.stat_month; // 格式如 "2025-01"
         if (monthStr && monthStr.includes('-')) {
-          const [year, month] = monthStr.split('-');
+          const [yearStr, month] = monthStr.split('-');
           const monthNum = parseInt(month);
+          year = parseInt(yearStr);
+          weekNo = monthNum; // 对于月度数据，weekNo 存储月份
           
           // 计算该月的第一天和最后一天
-          const firstDay = new Date(parseInt(year), monthNum - 1, 1);
-          const lastDay = new Date(parseInt(year), monthNum, 0); // 下个月的第0天就是当月最后一天
+          const firstDay = new Date(year, monthNum - 1, 1);
+          const lastDay = new Date(year, monthNum, 0); // 下个月的第0天就是当月最后一天
           
           const formatDate = (date) => {
             const year = date.getFullYear();
@@ -680,10 +684,16 @@ const PriceDecompositionContainer = () => {
         }
       }
       
+      // 如果还是没有 weekNo 和 year，从 dateField 提取
+      if (!weekNo || !year) {
+        weekNo = weekNo || Number(String(d[dateField]).slice(5));
+        year = year || Number(String(d[dateField]).slice(0, 4));
+      }
+      
       return {
         label: d[dateField],
-        weekNo: d.s_week || d.stat_week || Number(String(d[dateField]).slice(5)),
-        year: d.s_year || d.stat_year || Number(String(d[dateField]).slice(0, 4)),
+        weekNo: weekNo,
+        year: year,
         rangeRaw: rangeRaw
       };
     });
@@ -724,7 +734,7 @@ const PriceDecompositionContainer = () => {
       }
     } else if (procMetric === 'newEmpReturn') {
       if (newEmpMonthly && newEmpMonthly.length > 0) {
-        const { values, valuesLY, weeks } = processChartData(newEmpMonthly, 'report_month', 'compliance_rate', 'compliance_rate_ly');
+        const { values, valuesLY, weeks } = processChartData(newEmpMonthly, 'report_month', 'compliance_rate', 'compliance_rate_ly', true);
         setProcValues(values);
         setProcValuesLY(valuesLY);
         setProcWeeks(weeks);
@@ -734,7 +744,7 @@ const PriceDecompositionContainer = () => {
       }
     } else if (procMetric === 'therapistYield') {
       if (empOutputMonthly && empOutputMonthly.length > 0) {
-        const { values, valuesLY, weeks } = processChartData(empOutputMonthly, 'stat_month', 'output_standard_rate_pct', 'prev_year_output_standard_rate_pct');
+        const { values, valuesLY, weeks } = processChartData(empOutputMonthly, 'stat_month', 'output_standard_rate_pct', 'prev_year_output_standard_rate_pct', true);
         setProcValues(values);
         setProcValuesLY(valuesLY);
         setProcWeeks(weeks);
@@ -1019,7 +1029,38 @@ const PriceDecompositionContainer = () => {
             if (a.stat_year !== b.stat_year) return a.stat_year - b.stat_year;
             return a.stat_week - b.stat_week;
          });
-         const last12 = sorted.slice(-12);
+         
+         // 过滤出已经完整结束的周（不包含当周）
+         const today = new Date();
+         today.setHours(0, 0, 0, 0);
+         
+         const completedWeeks = sorted.filter(d => {
+            if (d.date_range) {
+               const parts = (d.date_range || '').split('~');
+               if (parts.length >= 2) {
+                  const endDateStr = parts[1].trim();
+                  try {
+                     // 使用本地时区解析日期，避免UTC偏移问题
+                     const dateParts = endDateStr.split('-');
+                     if (dateParts.length === 3) {
+                        const year = parseInt(dateParts[0]);
+                        const month = parseInt(dateParts[1]);
+                        const day = parseInt(dateParts[2]);
+                        const endDate = new Date(year, month - 1, day);
+                        endDate.setHours(0, 0, 0, 0);
+                        // 只包含结束日期在今天之前的周
+                        return endDate < today;
+                     }
+                  } catch (e) {
+                     console.error('日期解析错误:', endDateStr, e);
+                     return true; // 解析失败时包含该数据
+                  }
+               }
+            }
+            return true; // 如果没有日期范围，默认包含
+         });
+         
+         const last12 = completedWeeks.slice(-12);
          
          setWeeklyPrice(last12.map(d => Number(d.current_week_ratio)));
          setWeeklyPriceLY(last12.map(d => Number(d.last_year_same_week_ratio)));
@@ -1027,7 +1068,8 @@ const PriceDecompositionContainer = () => {
          const dynamicWeeks = last12.map(d => ({
             label: `第${String(d.stat_week).padStart(2, '0')}周`,
             weekNo: d.stat_week,
-            year: d.stat_year
+            year: d.stat_year,
+            fullLabel: d.date_range
          }));
          setWeeks(dynamicWeeks);
       } else {
@@ -1213,8 +1255,46 @@ const PriceDecompositionContainer = () => {
                return a.s_week - b.s_week;
              });
              
-             // Take last 12 weeks
-             const sliced = sorted.slice(-12);
+             // 过滤出已经完整结束的周（不包含当周）
+             const today = new Date();
+             today.setHours(0, 0, 0, 0);
+             
+             console.log('项目回头率 - 今天日期:', today.toISOString().split('T')[0]);
+             console.log('项目回头率 - 排序后数据总数:', sorted.length);
+             
+             const completedWeeks = sorted.filter(d => {
+                if (d.week_date_range) {
+                   const parts = (d.week_date_range || '').split('~');
+                   if (parts.length >= 2) {
+                      const endDateStr = parts[1].trim();
+                      try {
+                         // 支持两种日期格式：YYYY-MM-DD 和 YYYY/MM/DD
+                         const dateParts = endDateStr.split(/[-\/]/);
+                         if (dateParts.length === 3) {
+                            const year = parseInt(dateParts[0]);
+                            const month = parseInt(dateParts[1]);
+                            const day = parseInt(dateParts[2]);
+                            const endDate = new Date(year, month - 1, day);
+                            endDate.setHours(0, 0, 0, 0);
+                            const isCompleted = endDate < today;
+                            console.log(`第${d.s_week}周: 结束日期=${endDateStr}, 是否完成=${isCompleted}`);
+                            // 只包含结束日期在今天之前的周
+                            return isCompleted;
+                         }
+                      } catch (e) {
+                         console.error('日期解析错误:', endDateStr, e);
+                         return true; // 解析失败时包含该数据
+                      }
+                   }
+                }
+                console.log(`第${d.s_week}周: 没有日期范围，默认包含`);
+                return true; // 如果没有日期范围，默认包含
+             });
+             
+             console.log('项目回头率 - 过滤后数据总数:', completedWeeks.length);
+             
+             // Take last 12 weeks from completed weeks
+             const sliced = completedWeeks.slice(-12);
              
          const processedWeeks = sliced.map(d => ({
             label: `第${String(d.s_week).padStart(2, '0')}周`,
@@ -1306,8 +1386,26 @@ const PriceDecompositionContainer = () => {
             if (a.sales_year !== b.sales_year) return a.sales_year - b.sales_year;
             return a.sales_week - b.sales_week;
          });
-         // Take last 12 weeks from SQL result
-         const filtered = sorted.slice(-12);
+         
+         // 过滤出已经完整结束的周（不包含当周）
+         const today = new Date();
+         today.setHours(0, 0, 0, 0);
+         
+         const completedWeeks = sorted.filter(d => {
+            if (d.week_date_range) {
+               const endDateStr = (d.week_date_range || '').split('~')[1];
+               if (endDateStr) {
+                  const endDate = new Date(endDateStr.trim());
+                  endDate.setHours(0, 0, 0, 0);
+                  // 只包含结束日期在今天之前的周
+                  return endDate < today;
+               }
+            }
+            return true; // 如果没有日期范围，默认包含
+         });
+         
+         // Take last 12 weeks from filtered result
+         const filtered = completedWeeks.slice(-12);
          
          const processedWeeks = filtered.map(d => ({
             label: `第${d.sales_week}周`,

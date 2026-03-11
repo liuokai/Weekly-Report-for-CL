@@ -3,7 +3,16 @@
 WITH weekly_last_day_data AS (
     -- 第一步：通过窗口函数找出每周日期最大（最后一天）的那行数据
     SELECT YEAR(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W'))    AS s_year,
-           WEEK(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W'), 1) AS s_week,
+           WEEK(STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'), '%x%v %W'), 1) AS s_week,    -- 该周的起始日期（周一，保持原逻辑）
+        STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'),
+                    '%x%v %W') AS week_start,
+
+        -- 该周的结束日期（周日，保持原逻辑）
+        DATE_ADD(
+            STR_TO_DATE(CONCAT(YEARWEEK(date, 1), ' Monday'),
+                        '%x%v %W'),
+            INTERVAL 6 DAY
+        ) AS week_end,
            store_code,
            store_name,
            massager_on_duty_count,
@@ -27,12 +36,11 @@ WITH weekly_last_day_data AS (
 -- 第三步：自连接计算 2025 年对比 2024 年同周的数据
 SELECT curr.s_year                                                                 AS stat_year,
        curr.s_week                                                                 AS stat_week,
-       -- 添加周的日期范围
-       CONCAT(
-           DATE_FORMAT(STR_TO_DATE(CONCAT(curr.s_year, '-01-01'), '%Y-%m-%d') + INTERVAL (curr.s_week - 1) * 7 DAY, '%Y-%m-%d'),
-           ' ~ ',
-           DATE_FORMAT(STR_TO_DATE(CONCAT(curr.s_year, '-01-01'), '%Y-%m-%d') + INTERVAL (curr.s_week - 1) * 7 + 6 DAY, '%Y-%m-%d')
-       ) AS week_date_range,
+    CONCAT(
+        DATE_FORMAT(curr.week_start, '%Y-%m-%d'),
+        ' ~ ',
+        DATE_FORMAT(curr.week_end, '%Y-%m-%d')
+    ) AS `week_date_range`,
        curr.last_date_of_week                                                      AS snapshot_date,
        curr.massager_on_duty_count                                                 AS massager_on_duty_count,
        curr.bed_count                                                              AS bed_count,

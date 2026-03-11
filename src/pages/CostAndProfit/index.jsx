@@ -604,6 +604,7 @@ const CostAndProfitTab = () => {
           showExtremes={showExtremes}
           valueFormatter={trendConfig.formatter}
           yAxisFormatter={trendConfig.formatter}
+          currentLabel="利润"
           height={LineTrendStyle.DIMENSIONS.height}
           width={LineTrendStyle.DIMENSIONS.width}
           colorPrimary={LineTrendStyle.COLORS.primary}
@@ -613,10 +614,13 @@ const CostAndProfitTab = () => {
       </div>
 
       
+{/* 城市维度门店成本结构分析 */}
 
       {/* Cost Structure Analysis */}
       <CostStructureContainer />
 
+
+{/* 总部成本预算 */}
       {/* Headquarters Cost Budget */}
       <HeadquartersCostBudget />
 

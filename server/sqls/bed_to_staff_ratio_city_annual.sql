@@ -14,12 +14,13 @@ yearly_city_aggregated_metrics AS (
     SELECT
         y.s_year,
         y.last_date_of_year,
-        d.statistics_city_name AS city_name,
+        dc.statistics_city_name AS city_name,
         SUM(d.massager_on_duty_count) AS total_massager_count,
         SUM(d.bed_count) AS total_bed_count
     FROM yearly_snapshot_date y
-    JOIN dws_indicator_bed_staffing_table_daily d ON DATE_SUB(y.last_date_of_year, INTERVAL 1 DAY) = d.date
-    GROUP BY y.s_year, y.last_date_of_year, d.statistics_city_name
+    left JOIN dws_store_store_topic_table_monthly d ON left(y.last_date_of_year,7) = d.store_feature_record_time and d.bed_count>0
+    left join data_warehouse.dm_city dc on d.city_code=dc.city_code
+    GROUP BY y.s_year, y.last_date_of_year, dc.statistics_city_name
 ),
 yearly_city_ratios AS (
     -- 第三步：计算每个城市在该年的配置比

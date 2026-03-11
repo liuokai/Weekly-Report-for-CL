@@ -16,11 +16,12 @@ yearly_store_metrics AS (
         y.last_date_of_year,
         d.store_code,
         d.store_name,
-        d.statistics_city_name AS city_name,
+        dc.statistics_city_name AS city_name,
         d.massager_on_duty_count,
         d.bed_count
     FROM yearly_snapshot_date y
-    JOIN dws_indicator_bed_staffing_table_daily d ON y.last_date_of_year = d.date
+    left JOIN dws_store_store_topic_table_monthly d ON left(y.last_date_of_year,7) = d.store_feature_record_time and d.bed_count>0
+    left join data_warehouse.dm_city dc on d.city_code=dc.city_code
 ),
 yearly_store_ratios AS (
     -- 第三步：计算各门店配置比指标 (计算逻辑：人员 / 床位)

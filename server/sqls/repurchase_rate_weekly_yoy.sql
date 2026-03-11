@@ -3,33 +3,40 @@
 WITH weekly_metrics AS (
     -- 第一步：按年、周维度汇总数据
     SELECT YEAR(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'))    AS s_year,
-           WEEK(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'), 1) AS s_week,
+           WEEK(STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'), '%x%v %W'), 1) AS s_week,        -- 该周的起始日期（周一，保持原逻辑）
+        STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'),
+                    '%x%v %W') AS week_start,
+
+        -- 该周的结束日期（周日，保持原逻辑）
+        DATE_ADD(
+            STR_TO_DATE(CONCAT(YEARWEEK(off_clock_time, 1), ' Monday'),
+                        '%x%v %W'),
+            INTERVAL 6 DAY
+        ) AS week_end,
            COUNT(DISTINCT order_uid)                                                       AS total_orders,
            SUM(IF(is_massager_project_return_customer = '是', 1, 0))                       AS repurchase_orders
     FROM dwd_sales_order_detail
     WHERE off_clock_time IS NOT NULL
       AND off_clock_time >= '2024-01-01'
       and service_duration >= 40
-    GROUP BY 1, 2
+    GROUP BY 1, 2,3,4
 ),
 rate_calculation AS (
-    -- 第二步：计算回头率和日期范围
-    SELECT 
+    -- 第二步：计算回头率
+    SELECT
         *,
-        ROUND(repurchase_orders / NULLIF(total_orders, 0) * 100, 2) AS repurchase_rate,
-        -- 添加周的日期范围
-        CONCAT(
-            DATE_FORMAT(STR_TO_DATE(CONCAT(s_year, '-01-01'), '%Y-%m-%d') + INTERVAL (s_week - 1) * 7 DAY, '%Y-%m-%d'),
-            ' ~ ',
-            DATE_FORMAT(STR_TO_DATE(CONCAT(s_year, '-01-01'), '%Y-%m-%d') + INTERVAL (s_week - 1) * 7 + 6 DAY, '%Y-%m-%d')
-        ) AS week_date_range
+        ROUND(repurchase_orders / NULLIF(total_orders, 0) * 100, 2) AS repurchase_rate
     FROM weekly_metrics
 )
 -- 第三步：自连接计算去年同周的同比
-SELECT 
+SELECT
     curr.s_year,
     curr.s_week,
-    curr.week_date_range,
+    CONCAT(
+        DATE_FORMAT(curr.week_start, '%Y-%m-%d'),
+        ' ~ ',
+        DATE_FORMAT(curr.week_end, '%Y-%m-%d')
+    ) AS `week_date_range`,
     curr.total_orders,
     curr.repurchase_orders,
     curr.repurchase_rate,
@@ -37,7 +44,7 @@ SELECT
     -- 计算同比增减百分点
     ROUND(curr.repurchase_rate - prev.repurchase_rate, 2) AS yoy_change_pct
 FROM rate_calculation curr
-LEFT JOIN rate_calculation prev 
-    ON curr.s_year = prev.s_year + 1 
+LEFT JOIN rate_calculation prev
+    ON curr.s_year = prev.s_year + 1
     AND curr.s_week = prev.s_week
 ORDER BY curr.s_year DESC, curr.s_week DESC;

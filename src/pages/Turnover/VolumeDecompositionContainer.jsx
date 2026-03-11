@@ -260,6 +260,7 @@ const VolumeDecompositionContainer = () => {
 
   const renderTrendChart = () => {
     let values = [], valuesYoY = [], months = [], title, unit, yAxisFormatter;
+    let yearByIndex = []; // 存储每个数据点对应的年份
 
     if (trendMetric === 'daily') {
       title = "天均客次量趋势";
@@ -273,6 +274,11 @@ const VolumeDecompositionContainer = () => {
         });
         values = sorted.map(d => Number(d.daily_avg_visits));
         valuesYoY = sorted.map(d => Number(d.last_year_daily_avg_visits));
+        // 提取每个数据点的年份
+        yearByIndex = sorted.map(d => {
+          const [y] = String(d.month).split('-');
+          return Number(y);
+        });
       }
     } else {
       title = "年度累计客次量趋势";
@@ -286,6 +292,11 @@ const VolumeDecompositionContainer = () => {
         });
         values = sorted.map(d => Number(d.ytd_cumulative_visits));
         valuesYoY = sorted.map(d => Number(d.last_year_ytd_cumulative_visits));
+        // 提取每个数据点的年份
+        yearByIndex = sorted.map(d => {
+          const [y] = String(d.month).split('-');
+          return Number(y);
+        });
       }
     }
 
@@ -316,8 +327,8 @@ const VolumeDecompositionContainer = () => {
           showYoY={showYoY}
           showTrend={showAvg}
           showExtremes={showExtremes}
-          currentLabel="2025年"
-          lastLabel="2024年"
+          currentLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx]}年` : '当前年'}
+          lastLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx] - 1}年` : '去年'}
           height={LineTrendStyle.DIMENSIONS.height}
           width={LineTrendStyle.DIMENSIONS.width}
           colorPrimary={LineTrendStyle.COLORS.primary}
@@ -361,6 +372,11 @@ const VolumeDecompositionContainer = () => {
     const monthsAsc = monthKeysAsc.map(formatMonthLabel);
     const monthKeysDesc = [...monthKeysAsc].reverse();
     const monthsDesc = monthKeysDesc.map(formatMonthLabel);
+    // 提取每个月份对应的年份，用于动态显示标签
+    const yearByIndex = monthKeysAsc.map(ym => {
+      const [y] = ym.split('-');
+      return Number(y);
+    });
 
     // 上半部分趋势：选定城市近12月的指标趋势
     let trendValues = [];
@@ -652,6 +668,8 @@ const VolumeDecompositionContainer = () => {
                 showYoY={showInfYoY}
                 showTrend={showInfAvg}
                 showExtremes={showInfExtremes}
+                currentLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx]}年` : '当前年'}
+                lastLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx] - 1}年` : '去年'}
               />
             </div>
 
@@ -847,6 +865,11 @@ const VolumeDecompositionContainer = () => {
     const months = monthKeys.map(ym => {
       const [y, m] = ym.split('-');
       return `${String(y).slice(-2)}年${Number(m)}月`;
+    });
+    // 提取每个月份对应的年份，用于动态显示标签
+    const yearByIndex = monthKeys.map(ym => {
+      const [y] = ym.split('-');
+      return Number(y);
     });
     let values = [], valuesYoY = [], valuesPct = [], title, unit, yAxisFormatter, valueFormatter;
 
@@ -1059,8 +1082,8 @@ const VolumeDecompositionContainer = () => {
           showYoY={showInfYoY}
           showTrend={showInfAvg}
           showExtremes={showInfExtremes}
-          currentLabel="2025年"
-          lastLabel="2024年"
+          currentLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx]}年` : '当前年'}
+          lastLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx] - 1}年` : '去年'}
           height={LineTrendStyle.DIMENSIONS.height}
           width={LineTrendStyle.DIMENSIONS.width}
           colorPrimary={LineTrendStyle.COLORS.primary}

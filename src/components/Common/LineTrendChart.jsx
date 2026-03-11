@@ -357,6 +357,9 @@ const LineTrendChart = ({
                   const titleText = getHoverTitle ? getHoverTitle(idx) : (xLabels && xLabels[idx] ? `${xLabels[idx]}` : `第 ${idx + 1}`);
                   const subText = getHoverSubtitle ? getHoverSubtitle(idx) : "";
                   const curText = `${valueFormatter(val)}`;
+                  // 支持动态标签：如果是函数则调用，否则直接使用字符串
+                  const currentLabelText = typeof currentLabel === 'function' ? currentLabel(idx) : currentLabel;
+                  const lastLabelText = typeof lastLabel === 'function' ? lastLabel(idx) : lastLabel;
                   const lastText = showYoY && valLY !== undefined ? `${valueFormatter(valLY)}` : "";
                   const secondaryText = valSecondary !== undefined ? `${valueFormatter(valSecondary)}` : "";
 
@@ -401,7 +404,7 @@ const LineTrendChart = ({
                           </text>
                         ) : null}
                         <text y={subText ? "48" : "24"} fill="#6b7280" fontSize="12">
-                          {currentLabel}：<tspan fill={colorPrimary} fontWeight="bold">{curText}</tspan>
+                          {currentLabelText}：<tspan fill={colorPrimary} fontWeight="bold">{curText}</tspan>
                         </text>
                         {hasSecondary ? (
                           <text y={subText ? "72" : "48"} fill="#6b7280" fontSize="12">
@@ -411,7 +414,7 @@ const LineTrendChart = ({
                         {showYoY && valLY !== undefined ? (
                           <>
                             <text y={subText ? (hasSecondary ? "96" : "72") : (hasSecondary ? "72" : "48")} fill="#6b7280" fontSize="12">
-                              {lastLabel}：<tspan fill={colorYoY} fontWeight="bold">{lastText}</tspan>
+                              {lastLabelText}：<tspan fill={colorYoY} fontWeight="bold">{lastText}</tspan>
                             </text>
                             <text y={subText ? (hasSecondary ? "120" : "96") : (hasSecondary ? "96" : "72")} fill="#6b7280" fontSize="12">
                               {yoyLabel}：<tspan fill={yoyColor} fontWeight="bold">{yoyStr}</tspan>

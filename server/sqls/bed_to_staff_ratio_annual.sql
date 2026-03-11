@@ -17,7 +17,7 @@ yearly_aggregated_metrics AS (
         SUM(d.massager_on_duty_count) AS total_massager_count,
         SUM(d.bed_count) AS total_bed_count
     FROM yearly_snapshot_date y
-    JOIN dws_indicator_bed_staffing_table_daily d ON y.last_date_of_year = d.date
+    JOIN dws_store_store_topic_table_monthly d ON left(y.last_date_of_year,7) = d.store_feature_record_time
     GROUP BY y.s_year, y.last_date_of_year
 ),
 yearly_ratios AS (
