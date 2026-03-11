@@ -13,16 +13,23 @@ WITH weekly_metrics AS (
     GROUP BY 1, 2
 ),
 rate_calculation AS (
-    -- 第二步：计算回头率
+    -- 第二步：计算回头率和日期范围
     SELECT 
         *,
-        ROUND(repurchase_orders / NULLIF(total_orders, 0) * 100, 2) AS repurchase_rate
+        ROUND(repurchase_orders / NULLIF(total_orders, 0) * 100, 2) AS repurchase_rate,
+        -- 添加周的日期范围
+        CONCAT(
+            DATE_FORMAT(STR_TO_DATE(CONCAT(s_year, '-01-01'), '%Y-%m-%d') + INTERVAL (s_week - 1) * 7 DAY, '%Y-%m-%d'),
+            ' ~ ',
+            DATE_FORMAT(STR_TO_DATE(CONCAT(s_year, '-01-01'), '%Y-%m-%d') + INTERVAL (s_week - 1) * 7 + 6 DAY, '%Y-%m-%d')
+        ) AS week_date_range
     FROM weekly_metrics
 )
 -- 第三步：自连接计算去年同周的同比
 SELECT 
     curr.s_year,
     curr.s_week,
+    curr.week_date_range,
     curr.total_orders,
     curr.repurchase_orders,
     curr.repurchase_rate,

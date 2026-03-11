@@ -22,60 +22,70 @@ const FIELD_LABELS = {
   labor_cost: '人工成本',
   fixed_cost: '固定成本',
   variable_cost: '变动成本',
+  
+  // 推拿师成本相关
   project_commission: '项目提成',
   over_production_bonus: '超产值奖金',
   promotion_subsidy: '促销补贴',
-  incentive_fee: '激励费用',
+  cost_variance: '推拿师成本差异',
   repeat_customer_incentive: '回头客激励',
-  masseur_reception_commission: '推拿师接待提成',
+  masseur_commission: '推拿师接待提成',
   recruitment_fee: '招聘费',
-  pre_job_training: '岗前培训',
-  masseur_housing_subsidy: '推拿师住房补贴',
-  masseur_social_security: '推拿师社保费用',
+  other_subsidy_money: '其他补贴',
+  tech_housing_subsidy: '推拿师住房补贴',
+  tech_social_security: '推拿师社保费用',
+  replace_schedule_subsidy: '顶班补贴',
+  refund_subsidy: '退单补贴',
+  pre_job_training_reward: '岗前培训奖励',
   uniform_fee: '工作服',
-  manager_shift_commission: '客户经理班次提成',
-  manager_new_customer_commission: '客户经理新客提成',
+  dormitory_rental_cost: '宿舍租金成本',
+  travel_expenses_supported: '外部支援差旅费',
+  store_dinner_expenses: '新店聚餐费用',
+  partner_gains_beans: '三级合伙人获豆',
+  tech_minimum_beans: '保底获豆',
+  
+  // 客户经理成本相关
+  cleaning_income: '保洁工资收入',
+  shift_commission: '客户经理班次提成',
+  new_customer_commission: '客户经理新客提成',
   manager_reception_commission: '客户经理接待提成',
-  manager_rating_commission: '客户经理评价提成',
-  manager_supplies_commission: '客户经理物资提成',
+  rating_commission: '客户经理评价提成',
+  supplies_commission: '客户经理物资提成',
   manager_housing_subsidy: '客户经理住房补贴',
   manager_social_security: '客户经理社保费用',
   hygiene_maintenance: '卫生维护',
   clean_toilet: '打扫厕所',
   clean_room: '打扫房间',
   overtime_subsidy: '加班补贴',
+  manager_other_subsidy_money: '客户经理其他补贴',
+  
+  // 固定成本相关
   fixed_rent: '固定租金',
   percentage_rent: '提成租金',
   promotion_fee: '推广费',
   property_fee: '物管费',
   depreciation_fee: '折旧费',
+  
+  // 变动成本相关
   linen_purchase_fee: '布草采购费',
-  offline_ad_fee: '线下广告费',
-  online_ad_fee: '线上广告费',
-  other_expenses_remark: '其他费用',
-  after_sales_cost: '售后费用',
-  profit_before_tax: '税前利润',
-  income_tax_amount: '所得税金额',
   washing_fee: '布草洗涤费',
   consumables_purchase_fee: '消耗品采购费',
+  offline_ad_fee: '线下广告费',
+  online_ad_fee: '线上广告费',
   utilities_fee: '水电费',
-  asset_maintenance_fee: '资产维护费',
-  linen_washing_fee: '布草洗涤费',
-  store_profit: '门店利润',
-  other_subsidy: '其他补贴',
-  shift_substitution_subsidy: '顶班补贴',
-  refund_subsidy: '退单补贴',
-  pre_job_training_reward: '岗前培训奖励',
-  cleaning_wage_income: '保洁工资收入',
-  manager_other_subsidy: '客户经理其他补贴',
-  dormitory_rent_cost: '宿舍租金成本',
-  external_support_travel_expense: '外部支援差旅费',
-  level3_partner_bean_gain: '三级合伙人获豆',
+  other_costs: '其他费用',
+  after_sales_cost: '售后费用',
+  travel_expenses: '差旅费',
+  team_building_expenses: '团建费',
   monitoring_fee: '监控费',
-  team_building_fee: '团建费',
-  travel_expense: '差旅费',
-  masseur_guaranteed_subsidy_bean: '调理师保底补贴豆',
-  original_masseur_variance: '推拿师成本差异'
+  
+  // 总计相关
+  profit_before_tax: '税前利润',
+  income_tax: '所得税金额',
+  store_profit: '门店利润',
+  store_operation_status: '门店经营阶段',
+  bean_exchange_difference: '常乐豆兑换差异',
+  incentive_fee: '激励费用'
 };
 
 const MonthDropdown = ({ months, selectedMonth, onSelect }) => {
@@ -446,6 +456,13 @@ const CostStructureContainer = () => {
 
     const getLabel = (key) => FIELD_LABELS[key] || key;
 
+    // 判断字段是否需要显示占比（排除营业额相关字段）
+    const shouldShowPercentage = (key) => {
+      if (key.includes('revenue')) return false; // 营业额不显示占比
+      if (key === 'profit_rate' || key === 'actual_profit_rate') return false; // 利润率本身就是百分比
+      return true;
+    };
+
     cols.forEach(col => {
       if (processed.has(col)) return;
 
@@ -460,15 +477,36 @@ const CostStructureContainer = () => {
         const diffKey = `${baseName}_variance`;
 
         if (cols.includes(budgetKey) && cols.includes(actualKey) && cols.includes(diffKey)) {
-          groups.push({
-            title: getLabel(baseName),
-            isGroup: true,
-            subHeaders: [
-              { label: '预算值', key: budgetKey },
-              { label: '实际值', key: actualKey },
-              { label: '差异值', key: diffKey }
-            ]
-          });
+          // 检查是否需要显示占比
+          const needPercentage = shouldShowPercentage(baseName);
+          
+          if (needPercentage) {
+            // 需要占比的字段，拆分为6列：预算值、预算占比、实际值、实际占比、差异值、差异占比
+            groups.push({
+              title: getLabel(baseName),
+              isGroup: true,
+              subHeaders: [
+                { label: '预算值', key: budgetKey, type: 'amount' },
+                { label: '预算占比', key: budgetKey, type: 'percentage' },
+                { label: '实际值', key: actualKey, type: 'amount' },
+                { label: '实际占比', key: actualKey, type: 'percentage' },
+                { label: '差异值', key: diffKey, type: 'amount' },
+                { label: '差异占比', key: diffKey, type: 'percentage' }
+              ]
+            });
+          } else {
+            // 不需要占比的字段，保持原来的3列
+            groups.push({
+              title: getLabel(baseName),
+              isGroup: true,
+              subHeaders: [
+                { label: '预算值', key: budgetKey, type: 'amount' },
+                { label: '实际值', key: actualKey, type: 'amount' },
+                { label: '差异值', key: diffKey, type: 'amount' }
+              ]
+            });
+          }
+          
           processed.add(budgetKey);
           processed.add(actualKey);
           processed.add(diffKey);
@@ -477,7 +515,19 @@ const CostStructureContainer = () => {
           processed.add(col);
         }
       } else {
-        groups.push({ title: getLabel(col), isGroup: false, key: col });
+        // 单独的字段，检查是否需要拆分为金额和占比
+        if (shouldShowPercentage(col) && col !== 'profit_rate' && col !== 'actual_profit_rate') {
+          groups.push({
+            title: getLabel(col),
+            isGroup: true,
+            subHeaders: [
+              { label: '金额', key: col, type: 'amount' },
+              { label: '占比', key: col, type: 'percentage' }
+            ]
+          });
+        } else {
+          groups.push({ title: getLabel(col), isGroup: false, key: col });
+        }
         processed.add(col);
       }
     });
@@ -499,13 +549,14 @@ const CostStructureContainer = () => {
     });
   };
 
-  const formatCellValue = (key, row) => {
+  const formatCellValue = (key, row, displayType = 'combined') => {
     const raw = row[key];
     const num = Number(raw);
     if (raw === undefined || raw === null || isNaN(num)) {
       return '-';
     }
 
+    // 如果是利润率字段，直接返回百分比
     if (key === 'profit_rate' || key === 'actual_profit_rate') {
       return `${num.toFixed(2)}%`;
     }
@@ -522,70 +573,63 @@ const CostStructureContainer = () => {
 
     const { base, type } = getBaseInfo(key);
 
-    if (base) {
-      if (base === 'revenue') {
-        return formatNumber(num);
+    // 计算占比的函数
+    const calculatePercentage = () => {
+      if (base) {
+        if (base === 'revenue') return null; // 营业额不显示占比
+
+        const budgetKey = `${base}_budget`;
+        const actualKey = `${base}_actual`;
+        const metricBudget = Number(row[budgetKey]) || 0;
+        const metricActual = Number(row[actualKey]) || 0;
+
+        if (type === 'budget' && revenueBudget) {
+          return (metricBudget / revenueBudget) * 100;
+        } else if (type === 'actual' && revenueActual) {
+          return (metricActual / revenueActual) * 100;
+        } else if (
+          type === 'variance' &&
+          revenueBudget &&
+          revenueActual &&
+          metricBudget &&
+          metricActual
+        ) {
+          const budgetRatio = (metricBudget / revenueBudget) * 100;
+          const actualRatio = (metricActual / revenueActual) * 100;
+          return actualRatio - budgetRatio;
+        }
+      } else {
+        // 单独字段的占比计算
+        if (key.includes('revenue')) return null; // 营业额不显示占比
+        if (revenueActual) {
+          return (num / revenueActual) * 100;
+        }
       }
+      return null;
+    };
 
-      const budgetKey = `${base}_budget`;
-      const actualKey = `${base}_actual`;
-      const metricBudget = Number(row[budgetKey]) || 0;
-      const metricActual = Number(row[actualKey]) || 0;
-
-      let percentText = '';
-
-      if (type === 'budget' && revenueBudget) {
-        const ratio = (metricBudget / revenueBudget) * 100;
-        percentText = `${ratio.toFixed(2)}%`;
-      } else if (type === 'actual' && revenueActual) {
-        const ratio = (metricActual / revenueActual) * 100;
-        percentText = `${ratio.toFixed(2)}%`;
-      } else if (
-        type === 'variance' &&
-        revenueBudget &&
-        revenueActual &&
-        metricBudget &&
-        metricActual
-      ) {
-        const budgetRatio = (metricBudget / revenueBudget) * 100;
-        const actualRatio = (metricActual / revenueActual) * 100;
-        const diffRatio = actualRatio - budgetRatio;
-        percentText = `${diffRatio.toFixed(2)}%`;
-      }
-
+    // 根据显示类型返回相应的值
+    if (displayType === 'amount') {
+      return formatNumber(num);
+    } else if (displayType === 'percentage') {
+      const percentage = calculatePercentage();
+      return percentage !== null ? `${percentage.toFixed(2)}%` : '-';
+    } else {
+      // 原来的合并显示逻辑（向后兼容）
+      const percentage = calculatePercentage();
       const amountText = formatNumber(num);
 
-      if (!percentText) {
+      if (percentage === null) {
         return amountText;
       }
 
       return (
         <div className="flex flex-col items-end leading-tight">
           <span>{amountText}</span>
-          <span className="text-xs text-gray-500 mt-0.5">{percentText}</span>
+          <span className="text-xs text-gray-500 mt-0.5">{percentage.toFixed(2)}%</span>
         </div>
       );
     }
-
-    if (
-      key !== 'revenue_actual' &&
-      key !== 'revenue_budget' &&
-      key !== 'revenue_variance' &&
-      revenueActual
-    ) {
-      const ratio = (num / revenueActual) * 100;
-      const amountText = formatNumber(num);
-      const percentText = `${ratio.toFixed(2)}%`;
-
-      return (
-        <div className="flex flex-col items-end leading-tight">
-          <span>{amountText}</span>
-          <span className="text-xs text-gray-500 mt-0.5">{percentText}</span>
-        </div>
-      );
-    }
-
-    return formatNumber(num);
   };
 
   return (
@@ -593,7 +637,7 @@ const CostStructureContainer = () => {
       <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
         <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
-          {viewDimension === 'city' ? '城市维度' : '门店维度'}成本结构分析
+          {viewDimension === 'city' ? '城市维度门店' : '门店维度'}成本结构分析
         </h3>
         
         <div className="flex flex-wrap items-center gap-3">
@@ -656,7 +700,7 @@ const CostStructureContainer = () => {
               {headerGroups.map((group, idx) => (
                 <th 
                   key={idx} 
-                  colSpan={group.isGroup ? 3 : 1} 
+                  colSpan={group.isGroup ? group.subHeaders.length : 1} 
                   rowSpan={group.isGroup ? 1 : 2}
                   className={`px-6 py-4 font-semibold whitespace-nowrap min-w-[140px] text-center border-b border-r border-gray-300 ${group.isGroup ? 'bg-gray-100' : ''}`}
                 >
@@ -667,7 +711,7 @@ const CostStructureContainer = () => {
             <tr>
               {headerGroups.map((group, idx) => (
                 group.isGroup && group.subHeaders.map((sub, subIdx) => (
-                  <th key={`${idx}-${subIdx}`} className="px-6 py-2 font-medium whitespace-nowrap min-w-[100px] text-right bg-gray-50 border-b border-r border-gray-300 text-gray-500">
+                  <th key={`${idx}-${subIdx}`} className="px-6 py-2 font-medium whitespace-nowrap min-w-[100px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-500">
                     {sub.label}
                   </th>
                 ))
@@ -693,13 +737,16 @@ const CostStructureContainer = () => {
                     return group.subHeaders.map((sub, sIdx) => {
                       const val = row[sub.key];
                       const isDiff = sub.key.includes('_variance');
+                      const isPercentageColumn = sub.type === 'percentage';
+                      
                       return (
                         <td key={`${gIdx}-${sIdx}`} className={`px-6 py-4 text-right whitespace-nowrap border-r border-gray-300
                           ${row.isSummary ? 'text-[#a40035]' : ''}
                           ${isDiff && val < 0 ? 'text-red-600' : ''}
                           ${isDiff && val > 0 ? 'text-green-600' : ''}
+                          ${isPercentageColumn ? 'bg-gray-50/50' : ''}
                         `}>
-                          {formatCellValue(sub.key, row)}
+                          {formatCellValue(sub.key, row, sub.type || 'combined')}
                         </td>
                       );
                     });

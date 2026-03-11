@@ -52,7 +52,7 @@ const PriceDecompositionContainer = () => {
 
   // New hooks for Repurchase Rate
   const { data: repurchaseAnnual } = useFetchData('getRepurchaseRateAnnual', [], null, { manual: procMetric !== 'returnRate' });
-  const { data: repurchaseWeekly } = useFetchData('getRepurchaseRateWeekly', [], null, { manual: procMetric !== 'returnRate' });
+  const { data: repurchaseWeekly } = useFetchData('getRepurchaseRateWeekly', [], null, { manual: procMetric !== 'returnRate', forceRefresh: true });
   const { data: repurchaseCityWeekly } = useFetchData('getRepurchaseRateCityWeekly', [], null, { manual: procMetric !== 'returnRate' });
   const { data: repurchaseStoreWeekly, loading: repurchaseStoreLoading } = useFetchData('getRepurchaseRateStoreWeekly', [], null, { manual: !(isModalOpen && procMetric === 'returnRate') });
   // 新增：新员工回头率达标率数据源
@@ -619,12 +619,74 @@ const PriceDecompositionContainer = () => {
 
     const values = slicedData.map(d => Number(d[valueField] || 0));
     const valuesLY = slicedData.map(d => (d[valueFieldLY] != null ? Number(d[valueFieldLY]) : null));
-    const weeks = slicedData.map(d => ({
-      label: d[dateField],
-      weekNo: d.s_week || d.stat_week || Number(String(d[dateField]).slice(5)),
-      year: d.s_year || d.stat_year || Number(String(d[dateField]).slice(0, 4)),
-      rangeRaw: d.week_date_range || ''
-    }));
+    const weeks = slicedData.map(d => {
+      let rangeRaw = d.week_date_range || '';
+      
+      // 如果没有 week_date_range，尝试从年份和周数字段生成
+      if (!rangeRaw && ((d.s_year && d.s_week) || (d.stat_year && d.stat_week))) {
+        const year = d.s_year || d.stat_year;
+        const week = d.s_week || d.stat_week;
+        
+        // 计算该年第一天
+        const firstDayOfYear = new Date(year, 0, 1);
+        // 计算该周的周一
+        const daysToAdd = (week - 1) * 7;
+        const monday = new Date(firstDayOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+        
+        // 调整到实际的周一
+        const dayOfWeek = monday.getDay();
+        const diff = monday.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        monday.setDate(diff);
+        
+        // 计算周日
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        
+        // 格式化日期范围
+        const formatDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        rangeRaw = `${formatDate(monday)} ~ ${formatDate(sunday)}`;
+        
+        // 调试信息
+        if (valueField === 'current_week_ratio') {
+          console.log(`床位人员配置比 - 年:${year}, 周:${week}, 范围:${rangeRaw}`);
+        }
+      }
+      
+      // 如果是月度数据，从 report_month 或 stat_month 生成月份范围
+      if (!rangeRaw && (d.report_month || d.stat_month)) {
+        const monthStr = d.report_month || d.stat_month; // 格式如 "2025-01"
+        if (monthStr && monthStr.includes('-')) {
+          const [year, month] = monthStr.split('-');
+          const monthNum = parseInt(month);
+          
+          // 计算该月的第一天和最后一天
+          const firstDay = new Date(parseInt(year), monthNum - 1, 1);
+          const lastDay = new Date(parseInt(year), monthNum, 0); // 下个月的第0天就是当月最后一天
+          
+          const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          };
+          
+          rangeRaw = `${formatDate(firstDay)} ~ ${formatDate(lastDay)}`;
+        }
+      }
+      
+      return {
+        label: d[dateField],
+        weekNo: d.s_week || d.stat_week || Number(String(d[dateField]).slice(5)),
+        year: d.s_year || d.stat_year || Number(String(d[dateField]).slice(0, 4)),
+        rangeRaw: rangeRaw
+      };
+    });
 
     return { values, valuesLY, weeks };
   };
@@ -1781,7 +1843,14 @@ const PriceDecompositionContainer = () => {
           <LineTrendChart
             values={procValues}
             valuesYoY={procValuesLY}
-            xLabels={procWeeks.map(w => `第${w.weekNo}周`)}
+            xLabels={procWeeks.map(w => {
+              // 对于月度数据（新员工回头率和推拿师产值），显示月份格式
+              if (procMetric === 'newEmpReturn' || procMetric === 'therapistYield') {
+                return w.label || `${w.year}-${String(w.weekNo).padStart(2, '0')}`;
+              }
+              // 对于周度数据，显示周格式
+              return `第${w.weekNo}周`;
+            })}
             showYoY={procShowYoY}
             showTrend={procShowTrend}
             showExtremes={procShowExtremes}

@@ -143,6 +143,53 @@ class CacheManager {
       localStorage.setItem(fullKey, JSON.stringify(cacheItem));
     } catch (e) {
       console.warn(`Failed to write cache for ${key}`, e);
+      
+      // 如果是存储空间不足，尝试清理旧缓存后重试
+      if (e.name === 'QuotaExceededError') {
+        console.log('Storage quota exceeded, cleaning old cache...');
+        this.cleanOldCache();
+        try {
+          localStorage.setItem(fullKey, JSON.stringify(cacheItem));
+          console.log('Cache saved after cleanup');
+        } catch (retryError) {
+          console.warn(`Still failed to write cache after cleanup for ${key}`, retryError);
+        }
+      }
+    }
+  }
+
+  /**
+   * Clean old cache entries to free up space
+   */
+  cleanOldCache() {
+    try {
+      const keysToRemove = [];
+      const periodStart = this.getCurrentPeriodStart();
+      
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(this.storageKeyPrefix)) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const { timestamp } = JSON.parse(raw);
+              if (timestamp < periodStart) {
+                keysToRemove.push(key);
+              }
+            }
+          } catch (e) {
+            // 如果解析失败，也删除这个键
+            keysToRemove.push(key);
+          }
+        }
+      });
+      
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+      
+      console.log(`CacheManager: Cleaned ${keysToRemove.length} old cache entries`);
+    } catch (e) {
+      console.warn('Failed to clean old cache', e);
     }
   }
 

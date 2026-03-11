@@ -6,6 +6,8 @@ const LineTrendChart = ({
   values = [],
   valuesYoY = [],
   valuesPct = [],
+  valuesSecondary = [], // 第二条数据线（如成本）
+  secondaryLabel = "第二条线",
   xLabels = [],
   showYoY = false,
   showTrend = false,
@@ -25,6 +27,7 @@ const LineTrendChart = ({
   padding = { top: 40, right: 40, bottom: 60, left: 45 },
   colorPrimary = "#a40035",
   colorYoY = "#2563eb",
+  colorSecondary = "#10b981", // 第二条线颜色
   includeLastPointInTrend = true,
   getHoverTitle,
   getHoverSubtitle
@@ -45,9 +48,16 @@ const LineTrendChart = ({
   const safeValues = values.map((v) => (isNaN(Number(v)) ? 0 : Number(v)));
   const safeValuesYoY = valuesYoY.map((v) => (isNaN(Number(v)) ? 0 : Number(v)));
   const safeValuesPct = valuesPct ? valuesPct.map((v) => (isNaN(Number(v)) ? 0 : Number(v))) : null;
+  const safeValuesSecondary = (valuesSecondary || []).map((v) => (isNaN(Number(v)) ? 0 : Number(v)));
 
   // Calculate Min/Max for Y-Axis Scaling
   const allValues = [...safeValues];
+  if (showYoY) {
+    allValues.push(...safeValuesYoY);
+  }
+  if (safeValuesSecondary.length > 0) {
+    allValues.push(...safeValuesSecondary);
+  }
   if (showYoY) {
     allValues.push(...safeValuesYoY);
   }
@@ -153,6 +163,10 @@ const LineTrendChart = ({
   const pointsLY = (safeValuesYoY || []).map((v, i) => ({ x: getX(i), y: getY(v) }));
   const pathDLY = getSmoothPath(pointsLY);
 
+  // 第二条线的路径
+  const pointsSecondary = safeValuesSecondary.map((v, i) => ({ x: getX(i), y: getY(v) }));
+  const pathDSecondary = getSmoothPath(pointsSecondary);
+
   const [hoverIndex, setHoverIndex] = useState(null);
 
   return (
@@ -225,8 +239,18 @@ const LineTrendChart = ({
 
             <path d={pathD} fill="none" stroke={colorPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />
 
+            {/* 第二条数据线 */}
+            {safeValuesSecondary.length > 0 && (
+              <path d={pathDSecondary} fill="none" stroke={colorSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />
+            )}
+
             {values.map((v, i) => (
               <circle key={`curr-${i}`} cx={getX(i)} cy={getY(v)} r={4} fill="white" stroke={colorPrimary} strokeWidth="2" />
+            ))}
+
+            {/* 第二条线的圆点 */}
+            {safeValuesSecondary.length > 0 && safeValuesSecondary.map((v, i) => (
+              <circle key={`sec-${i}`} cx={getX(i)} cy={getY(v)} r={4} fill="white" stroke={colorSecondary} strokeWidth="2" />
             ))}
 
             {showExtremes && (
@@ -288,6 +312,11 @@ const LineTrendChart = ({
               <circle cx={getX(hoverIndex)} cy={getY(values[hoverIndex])} r={6} fill="white" stroke={colorPrimary} strokeWidth="2" pointerEvents="none" />
             )}
 
+            {/* 第二条线的悬浮圆点 */}
+            {hoverIndex !== null && safeValuesSecondary.length > 0 && (
+              <circle cx={getX(hoverIndex)} cy={getY(safeValuesSecondary[hoverIndex])} r={6} fill="white" stroke={colorSecondary} strokeWidth="2" pointerEvents="none" />
+            )}
+
             {hoverIndex !== null && showYoY && valuesYoY && valuesYoY.length === values.length && (
               <circle cx={getX(hoverIndex)} cy={getY(valuesYoY[hoverIndex])} r={4} fill="white" stroke={colorYoY} strokeWidth="2" pointerEvents="none" />
             )}
@@ -299,6 +328,7 @@ const LineTrendChart = ({
                   const val = values[idx];
                   const valLY = showYoY && valuesYoY && valuesYoY.length ? valuesYoY[idx] : undefined;
                   const valPct = showYoY && valuesPct && valuesPct.length ? valuesPct[idx] : undefined;
+                  const valSecondary = safeValuesSecondary.length > 0 ? safeValuesSecondary[idx] : undefined;
 
                   let yoyStr = "";
                   let yoyColor = "#374151";
@@ -328,16 +358,21 @@ const LineTrendChart = ({
                   const subText = getHoverSubtitle ? getHoverSubtitle(idx) : "";
                   const curText = `${valueFormatter(val)}`;
                   const lastText = showYoY && valLY !== undefined ? `${valueFormatter(valLY)}` : "";
+                  const secondaryText = valSecondary !== undefined ? `${valueFormatter(valSecondary)}` : "";
 
                   const titleW = measureText(titleText);
                   const dateW = measureText(subText);
                   const curW = measureText(curText);
                   const lastW = showYoY ? measureText(lastText) : 0;
                   const yoyW = showYoY ? measureText(yoyStr) : 0;
+                  const secondaryW = valSecondary !== undefined ? measureText(secondaryText) : 0;
 
-                  const maxContentW = Math.max(titleW, dateW, curW, lastW, yoyW);
+                  const maxContentW = Math.max(titleW, dateW, curW, lastW, yoyW, secondaryW);
                   const boxWidth = Math.max(220, maxContentW + 100);
-                  const boxHeight = showYoY ? 145 : (subText ? 100 : 80);
+                  // 增加高度以容纳第二条线的数据
+                  const hasSecondary = valSecondary !== undefined;
+                  const baseHeight = showYoY ? 145 : (subText ? 100 : 80);
+                  const boxHeight = hasSecondary ? baseHeight + 24 : baseHeight;
 
                   const x = getX(idx);
                   const y = getY(val);
@@ -368,12 +403,17 @@ const LineTrendChart = ({
                         <text y={subText ? "48" : "24"} fill="#6b7280" fontSize="12">
                           {currentLabel}：<tspan fill={colorPrimary} fontWeight="bold">{curText}</tspan>
                         </text>
+                        {hasSecondary ? (
+                          <text y={subText ? "72" : "48"} fill="#6b7280" fontSize="12">
+                            {secondaryLabel}：<tspan fill={colorSecondary} fontWeight="bold">{secondaryText}</tspan>
+                          </text>
+                        ) : null}
                         {showYoY && valLY !== undefined ? (
                           <>
-                            <text y={subText ? "72" : "48"} fill="#6b7280" fontSize="12">
+                            <text y={subText ? (hasSecondary ? "96" : "72") : (hasSecondary ? "72" : "48")} fill="#6b7280" fontSize="12">
                               {lastLabel}：<tspan fill={colorYoY} fontWeight="bold">{lastText}</tspan>
                             </text>
-                            <text y={subText ? "96" : "72"} fill="#6b7280" fontSize="12">
+                            <text y={subText ? (hasSecondary ? "120" : "96") : (hasSecondary ? "96" : "72")} fill="#6b7280" fontSize="12">
                               {yoyLabel}：<tspan fill={yoyColor} fontWeight="bold">{yoyStr}</tspan>
                             </text>
                           </>

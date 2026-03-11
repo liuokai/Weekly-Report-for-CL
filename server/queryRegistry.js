@@ -272,6 +272,11 @@ const queryRegistry = {
     sql: loadSql('cash_flow_new_store_and_cashflow_operation.sql'),
     description: '2026年城市新店投资与现金流预算执行情况'
   },
+  // 总部月度利润统计
+  getHeadquartersProfitMonthly: {
+    sql: loadSql('profit_monthly.sql'),
+    description: '总部月度利润统计（含收入、人工成本、固定成本及利润）'
+  },
 };
 
 module.exports = queryRegistry;

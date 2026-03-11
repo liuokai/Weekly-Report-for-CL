@@ -25,7 +25,7 @@ const AnnualCostAnalysis = ({ data }) => {
 
     const totalRevenue = Number(data.total_revenue) || 1; // Avoid division by zero
 
-    return costMapping.categories.map(category => {
+    const result = costMapping.categories.map(category => {
       let value = 0;
       let details = [];
 
@@ -58,6 +58,8 @@ const AnnualCostAnalysis = ({ data }) => {
         percentage: (value / totalRevenue * 100).toFixed(2)
       };
     }).filter(item => item.value > 0);
+
+    return result;
   }, [data]);
 
   // Data for the Pie Chart
@@ -189,41 +191,41 @@ const AnnualCostAnalysis = ({ data }) => {
     return null;
   };
 
-  // Custom Tooltip for Bar Chart (Optimized Width & Layout)
+  // Custom Tooltip for Bar Chart (Responsive & Optimized)
   const CustomBarTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const total = payload.reduce((sum, entry) => sum + (entry.value || 0), 0);
       const totalRevenue = Number(data.total_revenue) || 1;
       
       return (
-        <div className="bg-white p-3 border border-gray-100 shadow-xl rounded-lg min-w-[280px] max-w-[320px] text-xs z-50 relative">
+        <div className="bg-white p-2 sm:p-3 border border-gray-100 shadow-xl rounded-lg w-[240px] sm:min-w-[280px] sm:max-w-[320px] text-xs z-50 relative">
           <div className="flex justify-between items-center mb-2 border-b border-gray-100 pb-1">
-            <span className="font-bold text-gray-800 truncate max-w-[180px]" title={label}>{label}</span>
-            <span className="text-gray-400 scale-90 origin-right">按金额排序</span>
+            <span className="font-bold text-gray-800 truncate max-w-[120px] sm:max-w-[180px]" title={label}>{label}</span>
+            <span className="text-gray-400 scale-90 origin-right hidden sm:inline">按金额排序</span>
           </div>
           
           {/* Header Row - Compact */}
           <div className="flex justify-between text-gray-500 mb-1 px-1">
-            <span>成本项</span>
-            <div className="flex gap-3">
-               <span className="w-16 text-right">金额</span>
-               <span className="w-12 text-right">占比</span>
+            <span className="text-xs">成本项</span>
+            <div className="flex gap-2 sm:gap-3">
+               <span className="w-12 sm:w-16 text-right text-xs">金额</span>
+               <span className="w-8 sm:w-12 text-right text-xs">占比</span>
             </div>
           </div>
 
-          <div className="space-y-1 max-h-250px] overflow-y-auto custom-scrollbar px-1">
+          <div className="space-y-1 px-1">
             {payload.sort((a,b) => b.value - a.value).map((entry, index) => (
               <div key={index} className="flex justify-between items-center hover:bg-gray-50 p-0.5 rounded transition-colors">
-                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1">
                   <div className="w-2 h-2 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: entry.color }} />
-                  <span className="text-gray-700 truncate" title={entry.name}>{entry.name}</span>
+                  <span className="text-gray-700 truncate text-xs" title={entry.name}>{entry.name}</span>
                 </div>
-                <div className="flex gap-3 flex-shrink-0">
-                   <div className="w-16 text-right font-medium text-gray-900">
-                      {formatCurrency(entry.value)}
+                <div className="flex gap-2 sm:gap-3 flex-shrink-0">
+                   <div className="w-12 sm:w-16 text-right font-medium text-gray-900 text-xs">
+                      {entry.value >= 10000 ? `${(entry.value / 10000).toFixed(1)}万` : formatCurrency(entry.value)}
                    </div>
-                   <div className="w-12 text-right text-gray-500">
-                      {(entry.value / totalRevenue * 100).toFixed(2)}%
+                   <div className="w-8 sm:w-12 text-right text-gray-500 text-xs">
+                      {(entry.value / totalRevenue * 100).toFixed(1)}%
                    </div>
                 </div>
               </div>
@@ -231,10 +233,12 @@ const AnnualCostAnalysis = ({ data }) => {
           </div>
           
           <div className="border-t border-gray-100 pt-2 mt-2 flex justify-between items-center font-bold text-gray-800 px-1">
-            <span>合计</span>
-            <div className="flex gap-3">
-                <span className="w-16 text-right text-[#a40035]">{formatCurrency(total)}</span>
-                <span className="w-12 text-right text-[#a40035]">{(total / totalRevenue * 100).toFixed(2)}%</span>
+            <span className="text-xs">合计</span>
+            <div className="flex gap-2 sm:gap-3">
+                <span className="w-12 sm:w-16 text-right text-[#a40035] text-xs">
+                  {total >= 10000 ? `${(total / 10000).toFixed(1)}万` : formatCurrency(total)}
+                </span>
+                <span className="w-8 sm:w-12 text-right text-[#a40035] text-xs">{(total / totalRevenue * 100).toFixed(1)}%</span>
             </div>
           </div>
         </div>
@@ -247,7 +251,7 @@ const AnnualCostAnalysis = ({ data }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-      <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">年度成本结构分析</h3>
+      <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">门店年度成本结构分析</h3>
       
       {/* Header Metrics Section */}
       <div className="grid grid-cols-6 gap-4 mb-8 bg-gray-50 rounded-lg p-4 border border-gray-100">
@@ -267,7 +271,7 @@ const AnnualCostAnalysis = ({ data }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Pie Chart */}
         <div className="flex flex-col border-r border-gray-100 pr-4 relative">
-          <div className="h-[360px] w-full -ml-4">
+          <div className="h-[360px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

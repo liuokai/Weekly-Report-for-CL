@@ -27,6 +27,12 @@ WITH weekly_last_day_data AS (
 -- 第三步：自连接计算 2025 年对比 2024 年同周的数据
 SELECT curr.s_year                                                                 AS stat_year,
        curr.s_week                                                                 AS stat_week,
+       -- 添加周的日期范围
+       CONCAT(
+           DATE_FORMAT(STR_TO_DATE(CONCAT(curr.s_year, '-01-01'), '%Y-%m-%d') + INTERVAL (curr.s_week - 1) * 7 DAY, '%Y-%m-%d'),
+           ' ~ ',
+           DATE_FORMAT(STR_TO_DATE(CONCAT(curr.s_year, '-01-01'), '%Y-%m-%d') + INTERVAL (curr.s_week - 1) * 7 + 6 DAY, '%Y-%m-%d')
+       ) AS week_date_range,
        curr.last_date_of_week                                                      AS snapshot_date,
        curr.massager_on_duty_count                                                 AS massager_on_duty_count,
        curr.bed_count                                                              AS bed_count,
