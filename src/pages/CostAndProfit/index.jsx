@@ -169,6 +169,19 @@ const CostAndProfitTab = () => {
           xLabels,
           formatter: (v) => v.toFixed(2) + '%'
         };
+      } else if (metric === 'revenue_cost') {
+        const revenueValues = recentData.map(d => Number(d.total_revenue) || 0);
+        const costValues = recentData.map(d => Number(d.total_cost) || 0);
+        
+        return { 
+          title: '营业额与成本', 
+          unit: '元', 
+          values: revenueValues, // 主线：营业额
+          valuesYoY: [], 
+          costValues, // 副线：成本
+          xLabels,
+          formatter: (v) => (v/10000).toFixed(2) + '万'
+        };
       }
       return { title: '', unit: '', values: [], valuesYoY: [], xLabels: [], formatter: (v) => v };
     }
@@ -578,7 +591,8 @@ const CostAndProfitTab = () => {
         {LineTrendStyle.renderMetricSwitch(
           [
             { key: 'monthly_profit', label: '月度利润金额' },
-            { key: 'profit_rate', label: '利润率' }
+            { key: 'profit_rate', label: '利润率' },
+            { key: 'revenue_cost', label: '营业额与成本' }
           ],
           activeMetric,
           setActiveMetric
@@ -596,7 +610,7 @@ const CostAndProfitTab = () => {
         <LineTrendChart
           values={trendConfig.values}
           valuesYoY={trendConfig.valuesYoY}
-          valuesSecondary={activeMetric === 'monthly_profit' ? trendConfig.costValues : []}
+          valuesSecondary={activeMetric === 'revenue_cost' ? trendConfig.costValues : []}
           secondaryLabel="成本"
           xLabels={trendConfig.xLabels || months}
           showYoY={showYoY}
@@ -604,7 +618,7 @@ const CostAndProfitTab = () => {
           showExtremes={showExtremes}
           valueFormatter={trendConfig.formatter}
           yAxisFormatter={trendConfig.formatter}
-          currentLabel="利润"
+          currentLabel={activeMetric === 'revenue_cost' ? '营业额' : '利润'}
           height={LineTrendStyle.DIMENSIONS.height}
           width={LineTrendStyle.DIMENSIONS.width}
           colorPrimary={LineTrendStyle.COLORS.primary}

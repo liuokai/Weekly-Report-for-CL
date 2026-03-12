@@ -86,7 +86,7 @@ const HeadquartersCostBudget = () => {
     });
 
     // 计算预算收入：营业额目标 * 0.025
-    const budgetIncome = turnoverTarget * 10000 * 0.025; // 转换为元并乘以0.025
+    const budgetIncome = Number((turnoverTarget * 10000 * 0.025).toFixed(2)); // 转换为元并乘以0.025，保留2位小数
 
     // 计算占比(相对于总收入)
     const calcRatio = (value) => {
@@ -166,7 +166,7 @@ const HeadquartersCostBudget = () => {
   const { budget_income, income, labor_costs, fixed_costs, summary } = data;
 
   const formatCurrency = (val) => {
-    return val.toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+    return val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const renderSection = (sectionData) => (
