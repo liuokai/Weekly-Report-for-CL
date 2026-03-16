@@ -25,7 +25,8 @@ const RechartsLineTrend = ({
   height = 320,
   targetValue = null,   // 目标虚线值
   targetLabel = "目标", // 目标虚线标签
-  targetColor = "#9ca3af" // 目标虚线颜色（默认灰色）
+  targetColor = "#9ca3af", // 目标虚线颜色（默认灰色）
+  showWeeklyTarget = false // 是否显示按周累计目标斜线（ytdRevenue 专用）
 }) => {
   // 计算合适的 Y 轴刻度范围
   const calculateYAxisDomain = React.useMemo(() => {
@@ -39,12 +40,22 @@ const RechartsLineTrend = ({
     });
     // 将目标值纳入范围计算
     if (targetValue != null) allValues.push(Number(targetValue));
+    if (showWeeklyTarget) {
+      data.forEach(item => { if (item.weeklyTarget != null) allValues.push(item.weeklyTarget); });
+    }
 
     if (allValues.length === 0) return ['auto', 'auto'];
 
     // 使用传入的 min/max 或数据的 min/max
     let dataMin = yAxisMin !== undefined && yAxisMin !== null ? yAxisMin : Math.min(...allValues);
     let dataMax = yAxisMax !== undefined && yAxisMax !== null ? yAxisMax : Math.max(...allValues);
+
+    // 即使外部传入了 yAxisMax，也要确保目标值在可见范围内
+    if (targetValue != null) {
+      const tv = Number(targetValue);
+      if (tv > dataMax) dataMax = tv * 1.05;
+      if (tv < dataMin) dataMin = tv * 0.95;
+    }
 
     // 计算数量级（例如：120万 -> 100万，1120万 -> 100万）
     const range = dataMax - dataMin;
@@ -72,7 +83,7 @@ const RechartsLineTrend = ({
     const max = Math.ceil(dataMax / step) * step;
 
     return [min, max];
-  }, [data, showYoY, yAxisMin, yAxisMax]);
+  }, [data, showYoY, yAxisMin, yAxisMax, targetValue, showWeeklyTarget]);
 
   // 计算 Y 轴刻度
   const yAxisTicks = React.useMemo(() => {
@@ -222,6 +233,11 @@ const RechartsLineTrend = ({
             <p style={{ color: colorPrimary }}>
               当前：{valueFormatter ? valueFormatter(item.value) : item.value}
             </p>
+            {showWeeklyTarget && item.weeklyTarget != null && (
+              <p style={{ color: '#9ca3af' }} className="mt-1">
+                累计目标：{valueFormatter ? valueFormatter(item.weeklyTarget) : item.weeklyTarget}
+              </p>
+            )}
             {showYoY && (
               <p style={{ color: colorYoY }} className="mt-1">
                 去年同期：{valueFormatter ? valueFormatter(item.valueLastYear) : item.valueLastYear}
@@ -259,6 +275,22 @@ const RechartsLineTrend = ({
           />
           <Tooltip content={<CustomTooltip />} />
           
+          {/* 按周累计目标斜线（ytdRevenue 专用） */}
+          {showWeeklyTarget && (
+            <Line
+              type="monotone"
+              dataKey="weeklyTarget"
+              stroke="#9ca3af"
+              strokeWidth={1.5}
+              strokeDasharray="8 4"
+              dot={false}
+              activeDot={false}
+              name="累计目标"
+              isAnimationActive={false}
+              connectNulls
+            />
+          )}
+
           {/* 目标虚线 */}
           {targetValue != null && (
             <ReferenceLine

@@ -3,7 +3,7 @@ import RechartsLineTrend from "../../components/Common/RechartsLineTrend";
 import LineTrendStyle from "../../components/Common/LineTrendStyleConfig";
 import useFetchData from "../../hooks/useFetchData";
 
-const WeeklyTurnoverChart = ({ annualTarget = 0 }) => {
+const WeeklyTurnoverChart = ({ annualTarget = 0, totalStores = 0 }) => {
   // 定义指标配置
   const METRICS = [
     { key: 'revenue', queryKey: 'getWeeklyTurnover', label: '周度营业额', unit: '元', format: (val) => `¥ ${(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 10000).toFixed(0) + '万' },
@@ -61,8 +61,7 @@ const WeeklyTurnoverChart = ({ annualTarget = 0 }) => {
           yoyChange: row.yoy_change,
           activeDays: row.active_days
         }));
-      setChartData(processed);
-    } else {
+      setChartData(processed);    } else {
       setChartData([]);
     }
   }, [fetchedData, selectedMetricKey]);
@@ -82,7 +81,9 @@ const WeeklyTurnoverChart = ({ annualTarget = 0 }) => {
     // For YTD Revenue, use a different scaling strategy to make it look "slowly rising"
     if (selectedMetricKey === 'ytdRevenue') {
       const annualTargetYuan = (annualTarget || 0) * 10000;
-      const ytdMax = annualTargetYuan > 0 ? Math.max(dataMax, annualTargetYuan) : dataMax;
+      const maxWeek = chartData.length > 0 ? chartData[chartData.length - 1].weekNum : 0;
+      const ytdTarget = maxWeek > 0 ? annualTargetYuan / 52 * maxWeek : annualTargetYuan;
+      const ytdMax = ytdTarget > 0 ? Math.max(dataMax, ytdTarget) : dataMax;
       return { 
         min: 0, 
         max: ytdMax * 1.1
@@ -90,16 +91,23 @@ const WeeklyTurnoverChart = ({ annualTarget = 0 }) => {
     }
     
     // 策略：通过大幅扩大 Y 轴展示范围（取平均值的 50% 作为窗口）来压低折线波动感
-    // 这样即便有几万元的波动，在数百万/千万的坐标系下也会显得非常平稳
     const targetRange = avg * 0.50;
     
-    // 居中展示
     let min = avg - targetRange / 2;
     let max = avg + targetRange / 2;
     
     // 确保所有数据点仍可见（安全溢出处理）
     if (dataMin < min) min = dataMin * 0.95;
     if (dataMax > max) max = dataMax * 1.05;
+
+    // 确保目标虚线也在可见范围内
+    const currentTargetValue = annualTargetYuan
+      ? (selectedMetricKey === 'revenue'
+          ? annualTargetYuan / 365 * 7
+          : totalStores > 0 ? annualTargetYuan / 365 / totalStores : annualTargetYuan / 365)
+      : null;
+    if (currentTargetValue && currentTargetValue > max) max = currentTargetValue * 1.1;
+    if (currentTargetValue && currentTargetValue < min) min = currentTargetValue * 0.9;
     
     // 对于金额类数据，通常不希望看到负数坐标轴
     return { min: Math.max(0, min), max };
@@ -112,12 +120,23 @@ const WeeklyTurnoverChart = ({ annualTarget = 0 }) => {
   const targetValue = (() => {
     if (!annualTargetYuan) return null;
     if (selectedMetricKey === 'revenue') return annualTargetYuan / 365 * 7;
-    if (selectedMetricKey === 'dailyAvgRevenue') return annualTargetYuan / 365;
-    if (selectedMetricKey === 'ytdRevenue') return annualTargetYuan;
+    // 天均目标 = 年营业额目标 / 365 / 门店数
+    if (selectedMetricKey === 'dailyAvgRevenue') return totalStores > 0 ? annualTargetYuan / 365 / totalStores : annualTargetYuan / 365;
+    if (selectedMetricKey === 'ytdRevenue') {
+      // 累计目标只算到图表中最后一周，按 年目标/52*最大周数 计算
+      const maxWeek = chartData.length > 0 ? chartData[chartData.length - 1].weekNum : 0;
+      return maxWeek > 0 ? annualTargetYuan / 52 * maxWeek : annualTargetYuan;
+    }
     return null;
   })();
 
-  const width = LineTrendStyle.DIMENSIONS.width;
+  // ytdRevenue 模式下，给每个数据点注入按周累计的目标值（斜线）
+  const chartDataWithTarget = (selectedMetricKey === 'ytdRevenue' && annualTargetYuan > 0)
+    ? chartData.map(d => ({
+        ...d,
+        weeklyTarget: annualTargetYuan / 52 * d.weekNum
+      }))
+    : chartData;
   const height = LineTrendStyle.DIMENSIONS.height;
   const padding = LineTrendStyle.DIMENSIONS.padding;
 
@@ -140,7 +159,7 @@ const WeeklyTurnoverChart = ({ annualTarget = 0 }) => {
         <div className="flex justify-center items-center h-[320px] text-gray-400">加载中...</div>
       ) : chartData.length > 0 ? (
         <RechartsLineTrend
-          data={chartData}
+          data={selectedMetricKey === 'ytdRevenue' ? chartDataWithTarget : chartData}
           showYoY={showYoY}
           showTrend={showTrend}
           showExtremes={showExtremes}
@@ -151,13 +170,13 @@ const WeeklyTurnoverChart = ({ annualTarget = 0 }) => {
           colorPrimary={LineTrendStyle.COLORS.primary}
           colorYoY={LineTrendStyle.COLORS.yoy}
           height={height}
-          targetValue={targetValue}
+          targetValue={selectedMetricKey !== 'ytdRevenue' ? targetValue : null}
           targetLabel={
             selectedMetricKey === 'revenue' ? `周目标 ${currentMetric.axisFormat(targetValue)}` :
-            selectedMetricKey === 'dailyAvgRevenue' ? `日均目标 ${currentMetric.axisFormat(targetValue)}` :
-            selectedMetricKey === 'ytdRevenue' ? `年度目标 ${currentMetric.axisFormat(targetValue)}` : null
+            selectedMetricKey === 'dailyAvgRevenue' ? `日均目标 ${currentMetric.axisFormat(targetValue)}` : null
           }
           targetColor="#9ca3af"
+          showWeeklyTarget={selectedMetricKey === 'ytdRevenue' && annualTargetYuan > 0}
         />
       ) : (
         <div className="flex justify-center items-center h-[320px] text-gray-400">暂无数据</div>

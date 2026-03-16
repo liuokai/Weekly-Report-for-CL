@@ -10,6 +10,7 @@ import BusinessTargets from "../../config/businessTargets";
 import { getTimeProgress } from "../../components/Common/TimeProgressUtils";
 import difyService from "../../services/difyService";
 import dataLoader from "../../utils/dataLoader";
+import useFetchData from "../../hooks/useFetchData";
 
 // Global cache object to store data during the session (cleared on page refresh)
 const sessionCache = {
@@ -21,6 +22,26 @@ const sessionCache = {
 };
 
 const TurnoverReport = () => {
+  // 获取门店数量数据（与 CashFlow 页面同源）
+  const { data: newStoreProcessData } = useFetchData('getCashFlowNewStoreProcess');
+
+  // 计算当前门店总数
+  const totalStores = React.useMemo(() => {
+    if (!newStoreProcessData || newStoreProcessData.length === 0) return 0;
+    const detailRows = newStoreProcessData.filter(r => r.city_name !== '月度合计' && r.city_name !== '月度累计汇总');
+    const monthlyStores = {};
+    detailRows.forEach(r => {
+      if (r.month && Number(r.total_store_count) > 0) {
+        if (!monthlyStores[r.month]) monthlyStores[r.month] = true;
+      }
+    });
+    const sortedMonths = Object.keys(monthlyStores).sort();
+    if (sortedMonths.length === 0) return 0;
+    const latestMonth = sortedMonths[sortedMonths.length - 1];
+    return detailRows
+      .filter(r => r.month === latestMonth && r.city_name !== '月度合计')
+      .reduce((sum, r) => sum + (Number(r.total_store_count) || 0), 0);
+  }, [newStoreProcessData]);
   // Initialize state from cache if available
   const [turnoverData, setTurnoverData] = useState(sessionCache.turnoverData || []);
   const [aiAnalysis, setAiAnalysis] = useState(sessionCache.aiAnalysis || "");
@@ -321,7 +342,7 @@ const TurnoverReport = () => {
           </h2>
         </div>
         <div className="p-6 space-y-8">
-          <WeeklyTurnoverChart annualTarget={revenueMetrics.target} />
+          <WeeklyTurnoverChart annualTarget={revenueMetrics.target} totalStores={totalStores} />
           <RevenueDecompositionContainer />
         </div>
       </div>
