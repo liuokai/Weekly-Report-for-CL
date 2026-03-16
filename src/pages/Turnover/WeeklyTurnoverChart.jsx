@@ -3,7 +3,7 @@ import RechartsLineTrend from "../../components/Common/RechartsLineTrend";
 import LineTrendStyle from "../../components/Common/LineTrendStyleConfig";
 import useFetchData from "../../hooks/useFetchData";
 
-const WeeklyTurnoverChart = () => {
+const WeeklyTurnoverChart = ({ annualTarget = 0 }) => {
   // 定义指标配置
   const METRICS = [
     { key: 'revenue', queryKey: 'getWeeklyTurnover', label: '周度营业额', unit: '元', format: (val) => `¥ ${(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, axisFormat: (val) => (val / 10000).toFixed(0) + '万' },
@@ -12,7 +12,7 @@ const WeeklyTurnoverChart = () => {
   ];
 
   const [selectedMetricKey, setSelectedMetricKey] = useState('revenue');
-  const [showTrend, setShowTrend] = useState(true);
+  const [showTrend, setShowTrend] = useState(false);
   const [showExtremes, setShowExtremes] = useState(true);
   const [showYoY, setShowYoY] = useState(false);
   const [chartData, setChartData] = useState([]);
@@ -81,11 +81,11 @@ const WeeklyTurnoverChart = () => {
 
     // For YTD Revenue, use a different scaling strategy to make it look "slowly rising"
     if (selectedMetricKey === 'ytdRevenue') {
-      // 策略：年度累计通常从 0 或一个小值涨到很大。为了让它显得上升缓慢，
-      // 我们将 Y 轴的最大值设为当前最大累计值的 2 倍左右，或者在顶部留出巨大空间。
+      const annualTargetYuan = (annualTarget || 0) * 10000;
+      const ytdMax = annualTargetYuan > 0 ? Math.max(dataMax, annualTargetYuan) : dataMax;
       return { 
         min: 0, 
-        max: dataMax * 1.5 // 在上方留出 50% 的空白空间，使折线坡度变缓
+        max: ytdMax * 1.1
       };
     }
     
@@ -106,6 +106,16 @@ const WeeklyTurnoverChart = () => {
   };
 
   const { min: yAxisMin, max: yAxisMax } = getCustomYAxisRange();
+
+  // 根据指标类型计算目标虚线值（annualTarget 单位为万元，转换为元）
+  const annualTargetYuan = (annualTarget || 0) * 10000;
+  const targetValue = (() => {
+    if (!annualTargetYuan) return null;
+    if (selectedMetricKey === 'revenue') return annualTargetYuan / 365 * 7;
+    if (selectedMetricKey === 'dailyAvgRevenue') return annualTargetYuan / 365;
+    if (selectedMetricKey === 'ytdRevenue') return annualTargetYuan;
+    return null;
+  })();
 
   const width = LineTrendStyle.DIMENSIONS.width;
   const height = LineTrendStyle.DIMENSIONS.height;
@@ -141,6 +151,13 @@ const WeeklyTurnoverChart = () => {
           colorPrimary={LineTrendStyle.COLORS.primary}
           colorYoY={LineTrendStyle.COLORS.yoy}
           height={height}
+          targetValue={targetValue}
+          targetLabel={
+            selectedMetricKey === 'revenue' ? `周目标 ${currentMetric.axisFormat(targetValue)}` :
+            selectedMetricKey === 'dailyAvgRevenue' ? `日均目标 ${currentMetric.axisFormat(targetValue)}` :
+            selectedMetricKey === 'ytdRevenue' ? `年度目标 ${currentMetric.axisFormat(targetValue)}` : null
+          }
+          targetColor="#9ca3af"
         />
       ) : (
         <div className="flex justify-center items-center h-[320px] text-gray-400">暂无数据</div>

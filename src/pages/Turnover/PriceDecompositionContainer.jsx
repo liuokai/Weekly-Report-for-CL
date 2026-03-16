@@ -369,7 +369,7 @@ const PriceDecompositionContainer = () => {
         const targetRate = BusinessTargets.turnover.priceDecomposition.targetGrowthRate || 3;
         const isHigh = num >= targetRate;
         return (
-          <span className={isHigh ? 'text-red-600' : 'text-green-600'}>
+          <span className={isHigh ? 'text-gray-500' : 'text-red-600'}>
             {val}
           </span>
         );
@@ -417,7 +417,7 @@ const PriceDecompositionContainer = () => {
         if (val == null) return null;
         const isNegative = `${val}`.includes('-');
         return (
-          <span className={isNegative ? 'text-green-600' : 'text-red-600'}>
+          <span className={isNegative ? 'text-gray-500' : 'text-red-600'}>
             {val}
           </span>
         );
@@ -450,7 +450,7 @@ const PriceDecompositionContainer = () => {
         const targetRate = BusinessTargets.turnover.priceDecomposition.targetGrowthRate || 3;
         const isHigh = num >= targetRate;
         return (
-          <span className={isHigh ? 'text-red-600' : 'text-green-600'}>
+          <span className={isHigh ? 'text-gray-500' : 'text-red-600'}>
             {val}
           </span>
         );
@@ -497,7 +497,7 @@ const PriceDecompositionContainer = () => {
       render: (val) => {
         const isNegative = `${val}`.includes('-');
         return (
-          <span className={isNegative ? 'text-green-600' : 'text-red-600'}>
+          <span className={isNegative ? 'text-gray-500' : 'text-red-600'}>
             {val}
           </span>
         );
@@ -511,17 +511,35 @@ const PriceDecompositionContainer = () => {
     { key: 'target', title: '目标', dataIndex: 'target' },
     { key: 'status', title: '达标', dataIndex: 'status',
       render: (val) => {
-        const cls = val === '达标' ? 'text-green-600' : 'text-red-600';
+        const cls = val === '达标' ? 'text-gray-500' : 'text-red-600';
         return <span className={cls}>{val}</span>;
       } 
     },
   ];
   
+  const defaultSort = useMemo(() => {
+    // 根据当前使用的列配置决定排序key
+    const isUsingDynamicColumns = procColumnsDyn.length > 0;
+    
+    switch (procMetric) {
+      case 'returnRate':
+        return { key: "value", direction: "asc" };
+      case 'configRatio':
+        // 动态列使用current_year_ratio，默认列使用value
+        return { key: isUsingDynamicColumns ? "current_year_ratio" : "value", direction: "asc" };
+      case 'newEmpReturn':
+        // 动态列使用compliance_rate，默认列使用value
+        return { key: isUsingDynamicColumns ? "compliance_rate" : "value", direction: "asc" };
+      default:
+        return { key: null, direction: "asc" };
+    }
+  }, [procMetric, procColumnsDyn.length]);
+
   const cityColumnsComputed = useMemo(() => (procColumnsDyn.length ? procColumnsDyn : procColumnsDefault), [procColumnsDyn, procColumnsDefault]);
-  const { sortedData: sortedProcCityRows, sortConfig: procSortConfig, handleSort: handleProcSort } = useTableSorting(cityColumnsComputed, procCityRows);
+  const { sortedData: sortedProcCityRows, sortConfig: procSortConfig, handleSort: handleProcSort } = useTableSorting(cityColumnsComputed, procCityRows, defaultSort);
   const modalColumnsComputed = useMemo(() => (modalColumns.length > 0 ? modalColumns : columnsForStore), [modalColumns, columnsForStore]);
-  const { sortedData: sortedStoreRows, sortConfig: storeSortConfig, handleSort: handleStoreSort } = useTableSorting(modalColumnsComputed, storeRows);
-  const { sortedData: sortedTableData, sortConfig: tableSortConfig, handleSort: handleTableSort } = useTableSorting(columns, tableData);
+  const { sortedData: sortedStoreRows, sortConfig: storeSortConfig, handleSort: handleStoreSort } = useTableSorting(modalColumnsComputed, storeRows, { key: "yoyRate", direction: "asc" });
+  const { sortedData: sortedTableData, sortConfig: tableSortConfig, handleSort: handleTableSort } = useTableSorting(columns, tableData, { key: "yoyRate", direction: "asc" });
 
   const getISOWeek = (date) => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -784,7 +802,7 @@ const PriceDecompositionContainer = () => {
             const num = parseFloat(String(val).replace('%','')) || 0;
             const target = 30;
             const isHigh = num >= target;
-            return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{`${num.toFixed(2)}%`}</span>;
+            return <span className={isHigh ? 'text-gray-500' : 'text-red-600'}>{`${num.toFixed(2)}%`}</span>;
           }
         },
         { key: 'prevValue', title: '去年项目回头率', dataIndex: 'prevValue',
@@ -796,13 +814,13 @@ const PriceDecompositionContainer = () => {
         { key: 'yoy', title: '同比', dataIndex: 'yoy',
           render: (val) => {
              const num = Number(val);
-             const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+             const cls = num > 0 ? 'text-gray-500' : num < 0 ? 'text-red-600' : 'text-gray-600';
              const sign = num > 0 ? '+' : '';
              return <span className={cls}>{sign}{num.toFixed(2)}%</span>;
           }
         },
         { key: 'status', title: '是否达标', dataIndex: 'status',
-          render: (val) => <span className={val === '达标' ? 'text-red-600 font-medium' : 'text-gray-500'}>{val}</span>
+          render: (val) => <span className={val === '达标' ? 'text-gray-500 font-medium' : 'text-red-600'}>{val}</span>
         }
       ];
 
@@ -865,7 +883,7 @@ const PriceDecompositionContainer = () => {
           render: (val) => {
             if (val == null) return '';
             const num = Number(val);
-            const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+            const cls = num > 0 ? 'text-gray-500' : num < 0 ? 'text-red-600' : 'text-gray-600';
             const sign = num > 0 ? '+' : '';
             return <span className={cls}>{sign}{num}%</span>;
           }
@@ -914,7 +932,7 @@ const PriceDecompositionContainer = () => {
              const num = parseFloat(String(val)) || 0;
              const target = (BusinessTargets && BusinessTargets.turnover && BusinessTargets.turnover.impactAnalysis.bedStaffRatio.target) || 0.7;
              const isHigh = num >= target;
-             return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+             return <span className={isHigh ? 'text-gray-500' : 'text-red-600'}>{val}</span>;
           }
         },
         { key: 'target', title: '目标', dataIndex: 'target', render: () => (BusinessTargets && BusinessTargets.turnover && BusinessTargets.turnover.impactAnalysis.bedStaffRatio.target) || 0.7 },
@@ -924,7 +942,7 @@ const PriceDecompositionContainer = () => {
               if (val == null) return '-';
               const num = parseFloat(val);
               if (isNaN(num)) return val;
-              const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+              const cls = num > 0 ? 'text-gray-500' : num < 0 ? 'text-red-600' : 'text-gray-600';
               const sign = num > 0 ? '+' : '';
               return <span className={cls}>{sign}{val}</span>;
            }
@@ -1120,7 +1138,7 @@ const PriceDecompositionContainer = () => {
             const num = parseFloat(String(val)) || 0;
             const target = 0.5;
             const isHigh = num >= target;
-            return <span className={isHigh ? 'text-red-600' : 'text-green-600'}>{val}</span>;
+            return <span className={isHigh ? 'text-gray-500' : 'text-red-600'}>{val}</span>;
           }
         },
         { 
@@ -1129,7 +1147,7 @@ const PriceDecompositionContainer = () => {
           dataIndex: '同比',
           render: (val) => {
             const num = parseFloat(String(val).replace('%','')) || 0;
-            const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+            const cls = num > 0 ? 'text-gray-500' : num < 0 ? 'text-red-600' : 'text-gray-600';
             const sign = num > 0 ? '+' : '';
             return <span className={cls}>{sign}{val}</span>;
           }
@@ -1364,7 +1382,7 @@ const PriceDecompositionContainer = () => {
                  render: (val) => {
                    if (val == null) return '';
                    const num = parseFloat(val);
-                   const cls = num > 0 ? 'text-red-600' : num < 0 ? 'text-green-600' : 'text-gray-600';
+                   const cls = num > 0 ? 'text-gray-500' : num < 0 ? 'text-red-600' : 'text-gray-600';
                    const sign = num > 0 ? '+' : '';
                    return <span className={cls}>{sign}{val}</span>;
                  }
@@ -1774,8 +1792,8 @@ const PriceDecompositionContainer = () => {
               <div className="mt-2 text-xs">
                 {impactInfos[procMetric]?.target
                   ? (Number(impactInfos[procMetric]?.actual) >= Number(impactInfos[procMetric]?.target)
-                      ? <span className="text-sm font-semibold text-red-600">达标</span>
-                      : <span className="text-xs text-green-600">未达标</span>)
+                      ? <span className="text-sm font-semibold text-gray-500">达标</span>
+                      : <span className="text-xs text-red-600">未达标</span>)
                   : <span className="text-gray-400">无目标值</span>}
               </div>
             </div>

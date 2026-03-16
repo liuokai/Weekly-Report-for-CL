@@ -76,6 +76,7 @@ const RevenueDecompositionContainer = () => {
           营业额目标: Math.round(target),
           时间进度: `${timeProgressVal}%`,
           营业额完成率: `${completionRate.toFixed(1)}%`,
+          是否达标: completionRate >= timeProgressVal ? "达标" : "未达标",
           预算金额: budget,
           预算花费金额: budgetSpent,
           预算消耗率: null,
@@ -227,6 +228,7 @@ const RevenueDecompositionContainer = () => {
         营业额目标: null,
         时间进度: `${timeProgressVal}%`,
         营业额完成率: null,
+        是否达标: null, // 门店暂无目标，无法计算达标状态
         预算金额: null,
         预算花费金额: null,
         预算消耗率: null,
@@ -376,12 +378,23 @@ const RevenueDecompositionContainer = () => {
       render: (value, row) => {
         const rateNum = parseFloat(value);
         const timeNum = parseFloat(row?.["时间进度"] || "0");
-        const highlight = rateNum > timeNum;
-        const cls = highlight ? "text-red-600 font-semibold" : "text-gray-700";
+        const highlight = rateNum >= timeNum;
+        const cls = highlight ? "text-gray-500" : "text-red-600 font-semibold";
         return <span className={cls}>{value}</span>;
       }
     },
     { key: "timeProgress", title: "时间进度", dataIndex: "时间进度", align: "right" },
+    { 
+      key: "isCompliant", 
+      title: "是否达标", 
+      dataIndex: "是否达标", 
+      align: "center",
+      render: (value) => {
+        const isCompliant = value === "达标";
+        const cls = isCompliant ? "text-gray-500" : "text-red-600";
+        return <span className={cls}>{value}</span>;
+      }
+    },
     { key: "budget", title: "预算金额", dataIndex: "预算金额", align: "right" },
     { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额", align: "right" },
     { 
@@ -423,8 +436,8 @@ const RevenueDecompositionContainer = () => {
         if (!value) return '-';
         const rateNum = parseFloat(value);
         const timeNum = parseFloat(row?.["时间进度"] || "0");
-        const highlight = rateNum > timeNum;
-        const cls = highlight ? "text-red-600 font-semibold" : "text-gray-700";
+        const highlight = rateNum >= timeNum;
+        const cls = highlight ? "text-gray-500" : "text-red-600 font-semibold";
         return <span className={cls}>{value}</span>;
       }
     },
@@ -443,11 +456,23 @@ const RevenueDecompositionContainer = () => {
       render: (value) => {
         if (!value || value === '-') return '-';
         const num = parseFloat(value);
-        const color = num >= 0 ? "text-red-600" : "text-green-600";
+        const color = num >= 0 ? "text-gray-500" : "text-red-600";
         return <span className={`${color} font-medium`}>{value}</span>;
       }
     },
     { key: "timeProgress", title: "时间进度", dataIndex: "时间进度", align: "right" },
+    { 
+      key: "isCompliant", 
+      title: "是否达标", 
+      dataIndex: "是否达标", 
+      align: "center",
+      render: (value) => {
+        if (!value) return '-';
+        const isCompliant = value === "达标";
+        const cls = isCompliant ? "text-gray-500" : "text-red-600";
+        return <span className={cls}>{value}</span>;
+      }
+    },
     { key: "budget", title: "预算金额", dataIndex: "预算金额", align: "right" },
     { key: "budgetSpent", title: "预算花费金额", dataIndex: "预算花费金额", align: "right" },
     { 
@@ -465,7 +490,7 @@ const RevenueDecompositionContainer = () => {
     },
   ];
 
-  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, rows);
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, rows, { key: "revRate", direction: "asc" });
   const { sortedData: sortedStoreRows, sortConfig: storeSortConfig, handleSort: handleStoreSort } = useTableSorting(columnsForStore, storeRows);
 
   const renderContent = () => {

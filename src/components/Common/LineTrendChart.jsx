@@ -28,6 +28,9 @@ const LineTrendChart = ({
   colorPrimary = "#a40035",
   colorYoY = "#2563eb",
   colorSecondary = "#10b981", // 第二条线颜色
+  targetValue = null, // 目标虚线值
+  targetLabel = "目标", // 目标虚线标签
+  targetColor = "#f59e0b", // 目标虚线颜色
   includeLastPointInTrend = true,
   getHoverTitle,
   getHoverSubtitle
@@ -61,6 +64,10 @@ const LineTrendChart = ({
   if (showYoY) {
     allValues.push(...safeValuesYoY);
   }
+  // 将目标值纳入范围计算
+  if (targetValue !== null && targetValue !== undefined) {
+    allValues.push(Number(targetValue));
+  }
   
   // Handle empty data case
   if (allValues.length === 0) {
@@ -75,19 +82,37 @@ const LineTrendChart = ({
   const dataMax = Math.max(...allValues);
   const dataMin = Math.min(...allValues);
   
-  // 2. Y-Axis Scaling Logic
+  // 2. Y-Axis Scaling Logic - 计算合适的整数刻度范围
   let minVal, maxVal;
 
-  if (yAxisMin !== undefined && yAxisMax !== undefined) {
-    minVal = yAxisMin;
-    maxVal = yAxisMax;
+  // 使用传入的 min/max 或数据的 min/max
+  let targetMin = yAxisMin !== undefined && yAxisMin !== null ? yAxisMin : dataMin;
+  let targetMax = yAxisMax !== undefined && yAxisMax !== null ? yAxisMax : dataMax;
+
+  // 计算数量级和合适的步长
+  const range = targetMax - targetMin;
+  let step;
+  
+  if (range === 0) {
+    // 如果所有值相同，使用该值的 20% 作为范围
+    const magnitude = Math.pow(10, Math.floor(Math.log10(Math.abs(targetMax) || 1)));
+    step = magnitude;
   } else {
-    // Ensure we have a small buffer even for flat lines
-    const range = dataMax - dataMin;
-    const paddingVal = (range === 0 ? (Math.abs(dataMax) || 1) * 0.1 : range * 0.05);
-    maxVal = dataMax + paddingVal;
-    minVal = dataMin - paddingVal;
+    // 根据范围计算合适的步长
+    const magnitude = Math.pow(10, Math.floor(Math.log10(range)));
+    const normalized = range / magnitude;
+    
+    // 选择合适的步长倍数
+    if (normalized <= 1) step = magnitude * 0.2;
+    else if (normalized <= 2) step = magnitude * 0.5;
+    else if (normalized <= 5) step = magnitude;
+    else step = magnitude * 2;
   }
+
+  // 向下取整到步长的整数倍
+  minVal = Math.floor(targetMin / step) * step;
+  // 向上取整到步长的整数倍
+  maxVal = Math.ceil(targetMax / step) * step;
 
   const getX = (index) => padding.left + (index / (Math.max(safeValues.length - 1, 1))) * graphWidth;
   const getY = (value) => {
@@ -184,18 +209,26 @@ const LineTrendChart = ({
             <line x1={padding.left} y1={padding.top} x2={padding.left} y2={height - padding.bottom} stroke="#e5e7eb" strokeWidth="1" />
             <line x1={padding.left} y1={height - padding.bottom} x2={width - padding.right} y2={height - padding.bottom} stroke="#e5e7eb" strokeWidth="1" />
 
-            {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-              const val = minVal + (maxVal - minVal) * ratio;
-              const y = getY(val);
-              return (
-                <g key={ratio}>
-                  <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#f3f4f6" strokeDasharray="4 4" />
-                  <text x={padding.left - 10} y={y} dy="4" textAnchor="end" fontSize="12" fill="#9ca3af">
-                    {formatYAxis(val)}
-                  </text>
-                </g>
-              );
-            })}
+            {/* Y 轴刻度 - 根据步长均匀分布 */}
+            {(() => {
+              const ticks = [];
+              const tickStep = (maxVal - minVal) / 4; // 生成 5 个刻度点（0, 0.25, 0.5, 0.75, 1）
+              for (let i = 0; i <= 4; i++) {
+                const val = minVal + tickStep * i;
+                ticks.push(val);
+              }
+              return ticks.map((val, i) => {
+                const y = getY(val);
+                return (
+                  <g key={i}>
+                    <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#f3f4f6" strokeDasharray="4 4" />
+                    <text x={padding.left - 10} y={y} dy="4" textAnchor="end" fontSize="12" fill="#9ca3af">
+                      {formatYAxis(val)}
+                    </text>
+                  </g>
+                );
+              });
+            })()}
 
             {values.map((_, i) => (
               <text
@@ -213,6 +246,33 @@ const LineTrendChart = ({
 
             {showTrend && (
               <path d={trendPathD} fill="none" stroke="#9ca3af" strokeWidth="2" strokeDasharray="6 4" opacity="0.6" pointerEvents="none" />
+            )}
+
+            {/* 目标虚线 */}
+            {targetValue !== null && targetValue !== undefined && (
+              <g pointerEvents="none">
+                <line
+                  x1={padding.left}
+                  y1={getY(Number(targetValue))}
+                  x2={width - padding.right}
+                  y2={getY(Number(targetValue))}
+                  stroke={targetColor}
+                  strokeWidth="1.5"
+                  strokeDasharray="8 4"
+                  opacity="0.85"
+                />
+                <text
+                  x={width - padding.right + 4}
+                  y={getY(Number(targetValue))}
+                  dy="4"
+                  textAnchor="start"
+                  fontSize="11"
+                  fill={targetColor}
+                  fontWeight="bold"
+                >
+                  {targetLabel}
+                </text>
+              </g>
             )}
 
             {showAverage && (

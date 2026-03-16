@@ -321,7 +321,7 @@ const TurnoverReport = () => {
           </h2>
         </div>
         <div className="p-6 space-y-8">
-          <WeeklyTurnoverChart />
+          <WeeklyTurnoverChart annualTarget={revenueMetrics.target} />
           <RevenueDecompositionContainer />
         </div>
       </div>

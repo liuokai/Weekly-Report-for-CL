@@ -105,7 +105,7 @@ const VolumeDecompositionContainer = () => {
         const num = parseFloat(val);
         const isNegative = num < 0;
         return (
-          <span className={isNegative ? 'text-green-600' : 'text-red-600'}>
+          <span className={isNegative ? 'text-red-600' : 'text-gray-500'}>
             {val}
           </span>
         );
@@ -169,7 +169,7 @@ const VolumeDecompositionContainer = () => {
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-gray-400">同比</span>
                     <span className={`font-bold ${
-                      growthRate != null ? (growthRate >= 0 ? 'text-red-600' : 'text-green-600') : 'text-gray-400'
+                      growthRate != null ? (growthRate >= 0 ? 'text-gray-500' : 'text-red-600') : 'text-gray-400'
                     }`}>
                       {growthRate != null ? `${growthRate > 0 ? '+' : ''}${Number(growthRate).toFixed(2)}%` : '—'}
                     </span>
@@ -599,7 +599,7 @@ const VolumeDecompositionContainer = () => {
 
            let colorClass = 'text-gray-700';
            if (influenceMetric !== 'active_members') {
-               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-green-600' : 'text-gray-700';
+               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-gray-500' : 'text-gray-700';
            }
  
            return <span className={colorClass}>{displayVal}</span>;
@@ -832,7 +832,7 @@ const VolumeDecompositionContainer = () => {
 
            let colorClass = 'text-gray-700';
            if (influenceMetric !== 'active_members') {
-               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-green-600' : 'text-gray-700';
+               colorClass = Number.isFinite(num) && config.isGood(num) ? 'text-gray-500' : 'text-gray-700';
            }
  
            return <span className={colorClass}>{displayVal}</span>;

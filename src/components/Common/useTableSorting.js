@@ -1,7 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
-const useTableSorting = (columns, data) => {
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+const useTableSorting = (columns, data, defaultSort = { key: null, direction: 'asc' }) => {
+  const [sortConfig, setSortConfig] = useState(defaultSort);
+
+  // 当defaultSort变化时重置排序配置
+  useEffect(() => {
+    setSortConfig(defaultSort);
+  }, [defaultSort.key, defaultSort.direction]);
 
   const handleSort = (key) => {
     let direction = 'asc';

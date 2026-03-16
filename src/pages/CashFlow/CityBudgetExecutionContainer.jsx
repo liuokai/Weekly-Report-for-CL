@@ -180,8 +180,8 @@ const CityBudgetExecutionContainer = () => {
     }
   ];
 
-  // 使用排序 Hook
-  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, tableData);
+  // 使用排序 Hook，默认按现金流达成率升序排序
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, tableData, { key: "achievement", direction: "asc" });
 
   const renderFilters = () => (
     <div className="flex flex-row relative z-40">

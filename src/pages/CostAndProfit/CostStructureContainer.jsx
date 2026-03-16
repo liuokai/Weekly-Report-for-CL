@@ -463,8 +463,29 @@ const CostStructureContainer = () => {
       return true;
     };
 
-    cols.forEach(col => {
-      if (processed.has(col)) return;
+    // 定义优先显示的字段顺序
+    const priorityFields = [
+      'revenue',
+      'net_profit',
+      'net_cash_flow',
+      'actual_profit_rate',
+      'cash_flow_target',
+      'store_profit',
+      'profit_before_tax',
+      'income_tax',
+      'payback_period',
+      'store_operation_status',
+      'service_fee',
+      'labor_cost',
+      'fixed_cost',
+      'variable_cost',
+      'masseur_cost',
+      'manager_cost'
+    ];
+
+    // 处理单个字段的函数
+    const processField = (col) => {
+      if (processed.has(col)) return null;
 
       let baseName = null;
       if (col.endsWith('_budget')) baseName = col.slice(0, -7);
@@ -477,12 +498,14 @@ const CostStructureContainer = () => {
         const diffKey = `${baseName}_variance`;
 
         if (cols.includes(budgetKey) && cols.includes(actualKey) && cols.includes(diffKey)) {
-          // 检查是否需要显示占比
           const needPercentage = shouldShowPercentage(baseName);
           
+          processed.add(budgetKey);
+          processed.add(actualKey);
+          processed.add(diffKey);
+          
           if (needPercentage) {
-            // 需要占比的字段，拆分为6列：预算值、预算占比、实际值、实际占比、差异值、差异占比
-            groups.push({
+            return {
               title: getLabel(baseName),
               isGroup: true,
               subHeaders: [
@@ -493,10 +516,9 @@ const CostStructureContainer = () => {
                 { label: '差异值', key: diffKey, type: 'amount' },
                 { label: '差异占比', key: diffKey, type: 'percentage' }
               ]
-            });
+            };
           } else {
-            // 不需要占比的字段，保持原来的3列
-            groups.push({
+            return {
               title: getLabel(baseName),
               isGroup: true,
               subHeaders: [
@@ -504,33 +526,51 @@ const CostStructureContainer = () => {
                 { label: '实际值', key: actualKey, type: 'amount' },
                 { label: '差异值', key: diffKey, type: 'amount' }
               ]
-            });
+            };
           }
-          
-          processed.add(budgetKey);
-          processed.add(actualKey);
-          processed.add(diffKey);
         } else {
-          groups.push({ title: getLabel(col), isGroup: false, key: col });
           processed.add(col);
+          return { title: getLabel(col), isGroup: false, key: col };
         }
       } else {
-        // 单独的字段，检查是否需要拆分为金额和占比
+        processed.add(col);
         if (shouldShowPercentage(col) && col !== 'profit_rate' && col !== 'actual_profit_rate') {
-          groups.push({
+          return {
             title: getLabel(col),
             isGroup: true,
             subHeaders: [
               { label: '金额', key: col, type: 'amount' },
               { label: '占比', key: col, type: 'percentage' }
             ]
-          });
+          };
         } else {
-          groups.push({ title: getLabel(col), isGroup: false, key: col });
+          return { title: getLabel(col), isGroup: false, key: col };
         }
-        processed.add(col);
+      }
+    };
+
+    // 先处理优先字段
+    priorityFields.forEach(fieldBase => {
+      // 尝试处理带后缀的字段
+      const budgetKey = `${fieldBase}_budget`;
+      const actualKey = `${fieldBase}_actual`;
+      const varKey = `${fieldBase}_variance`;
+      
+      if (cols.includes(budgetKey) || cols.includes(actualKey) || cols.includes(varKey)) {
+        const group = processField(budgetKey);
+        if (group) groups.push(group);
+      } else if (cols.includes(fieldBase)) {
+        const group = processField(fieldBase);
+        if (group) groups.push(group);
       }
     });
+
+    // 再处理剩余字段
+    cols.forEach(col => {
+      const group = processField(col);
+      if (group) groups.push(group);
+    });
+
     return groups;
   }, [processedData]);
 

@@ -19,7 +19,7 @@ annual_turnover AS (
         YEAR(off_clock_time) AS year,
         SUM(order_actual_payment) AS total_turnover
     FROM data_warehouse.dwd_sales_order_detail
-    WHERE 1 =1 and (order_type in ('01','03') or project_name='修脚') and off_clock_time < (SELECT today FROM base_info)
+    WHERE 1 =1 and (order_type in ('01','03') or project_name='修脚')
     GROUP BY YEAR(off_clock_time)
 ),
 
@@ -32,7 +32,7 @@ same_period_turnover AS (
     CROSS JOIN base_info b
     LEFT JOIN data_warehouse.dwd_sales_order_detail t
         ON t.off_clock_time >= CONCAT(y.year, '-01-01')
-       AND t.off_clock_time <  CONCAT(y.year, '-', b.cur_mmdd) and (t.order_type in ('01','03') or t.project_name='修脚')
+       and (t.order_type in ('01','03') or t.project_name='修脚')
     GROUP BY y.year
 ),
 

@@ -48,7 +48,7 @@ const HQMetricsTrendChart = () => {
   const [activeMetric, setActiveMetric] = useState('annualAvgPrice');
   const [controls, setControls] = useState({
     showYoY: true,
-    showTrend: true,
+    showTrend: false,
     showExtremes: true
   });
 
@@ -168,12 +168,17 @@ const HQMetricsTrendChart = () => {
         height={LineTrendStyle.DIMENSIONS.height}
         colorPrimary={LineTrendStyle.COLORS.primary}
         colorYoY={LineTrendStyle.COLORS.yoy}
+        targetValue={(activeMetric === 'annualAvgPrice' || activeMetric === 'weeklyAvgPrice') ? 169.55 : null}
+        targetLabel="目标 169.55"
+        targetColor="#999"
         yAxisFormatter={(v) => {
+          if (v == null || isNaN(v)) return '';
           if (isPercentMetric) return `${v.toFixed(1)}%`;
           if (isPriceMetric) return `¥${v.toFixed(2)}`;
           return v.toFixed(2);
         }}
         valueFormatter={(v) => {
+          if (v == null || isNaN(v)) return '-';
           if (isPercentMetric) return `${v.toFixed(2)}%`;
           if (isPriceMetric) return `¥${v.toFixed(2)}`;
           return v.toFixed(2);
