@@ -36,7 +36,7 @@ const PriceDecompositionContainer = () => {
   const [procValues, setProcValues] = useState([]);
   const [procValuesLY, setProcValuesLY] = useState([]);
   const [procShowYoY, setProcShowYoY] = useState(false);
-  const [procShowTrend, setProcShowTrend] = useState(true);
+  const [procShowTrend, setProcShowTrend] = useState(false);
   const [procShowExtremes, setProcShowExtremes] = useState(true);
   const [procCityRows, setProcCityRows] = useState([]);
   const [procColumnsDyn, setProcColumnsDyn] = useState([]);
@@ -63,11 +63,11 @@ const PriceDecompositionContainer = () => {
   const { data: newEmpStoreAnnual, loading: newEmpStoreLoading } = useFetchData('getNewEmpReturnComplianceStoreAnnual', [], null, { manual: !(isModalOpen && procMetric === 'newEmpReturn') });
 
   
-  // Bed Staff Ratio Data (Added for configRatio metric)
+  // 床位人员配置比数据（月度）
   const { data: bedStaffRatioAnnual } = useFetchData('getBedStaffRatioAnnual', [], null, { manual: procMetric !== 'configRatio' });
-  const { data: bedStaffRatioWeekly } = useFetchData('getBedStaffRatioWeekly', [], null, { manual: procMetric !== 'configRatio' });
+  const { data: bedStaffRatioMonthly } = useFetchData('getBedStaffRatioMonthly', [], null, { manual: procMetric !== 'configRatio' });
   const { data: bedStaffRatioCityAnnual } = useFetchData('getBedStaffRatioCityAnnual', [], null, { manual: procMetric !== 'configRatio' });
-  const { data: bedStaffRatioCityWeekly } = useFetchData('getBedStaffRatioCityWeekly', [], null, { manual: procMetric !== 'configRatio' });
+  const { data: bedStaffRatioCityMonthly } = useFetchData('getBedStaffRatioCityMonthly', [], null, { manual: procMetric !== 'configRatio' });
   const { data: bedStaffRatioStoreAnnual, loading: bedStaffRatioStoreLoading } = useFetchData('getBedStaffRatioStoreAnnual', [], null, { manual: !(isModalOpen && procMetric === 'configRatio') });
   // 推拿师产值达标率（月度/城市月度/门店月度）
   const { data: empOutputMonthly } = useFetchData('getEmployeeOutputStandardRateMonthly', [], null, { manual: procMetric !== 'therapistYield' });
@@ -741,11 +741,20 @@ const PriceDecompositionContainer = () => {
         setProcValuesLY([]);
       }
     } else if (procMetric === 'configRatio') {
-      if (bedStaffRatioWeekly && bedStaffRatioWeekly.length > 0) {
-        const { values, valuesLY, weeks } = processChartData(bedStaffRatioWeekly, 'week_date_range', 'current_week_ratio', 'last_year_same_week_ratio');
-        setProcValues(values);
-        setProcValuesLY(valuesLY);
-        setProcWeeks(weeks);
+      // 月度数据，取近12个月，按 stat_month_date 升序排列
+      if (bedStaffRatioMonthly && bedStaffRatioMonthly.length > 0) {
+        const sorted = [...bedStaffRatioMonthly].sort((a, b) =>
+          a.stat_month_date > b.stat_month_date ? 1 : -1
+        );
+        const last12 = sorted.slice(-12);
+        setProcValues(last12.map(d => Number(d.current_month_ratio)));
+        setProcValuesLY(last12.map(d => d.last_year_same_month_ratio != null ? Number(d.last_year_same_month_ratio) : null));
+        setProcWeeks(last12.map(d => ({
+          label: d.stat_month_date,           // 格式 "2025-01"
+          weekNo: Number(d.stat_month),        // 月份数字，用于 xLabel
+          year: Number(d.stat_year),
+          rangeRaw: d.stat_month_date
+        })));
       } else {
         setProcValues([]);
         setProcValuesLY([]);
@@ -954,15 +963,19 @@ const PriceDecompositionContainer = () => {
       
       setProcColumnsDyn(cols);
 
-      if (bedStaffRatioCityAnnual && Array.isArray(bedStaffRatioCityAnnual) && bedStaffRatioCityAnnual.length > 0) {
-         const validData = bedStaffRatioCityAnnual.filter(d => d && d.stat_year != null);
+      // 城市维度取月度数据，找最新月份展示
+      if (bedStaffRatioCityMonthly && Array.isArray(bedStaffRatioCityMonthly) && bedStaffRatioCityMonthly.length > 0) {
+         const validData = bedStaffRatioCityMonthly.filter(d => d && d.stat_month_date != null);
          if (validData.length > 0) {
-             const maxYear = Math.max(...validData.map(d => Number(d.stat_year)));
-             const latestData = validData.filter(d => Number(d.stat_year) === maxYear);
-             setProcCityRows(latestData.map((r, i) => ({ 
-                key: i, 
+             const latestMonth = validData.reduce((max, d) => d.stat_month_date > max ? d.stat_month_date : max, validData[0].stat_month_date);
+             const latestData = validData.filter(d => d.stat_month_date === latestMonth);
+             setProcCityRows(latestData.map((r, i) => ({
+                key: i,
                 city: r.city_name,
-                ...r 
+                current_year_ratio: r.current_month_ratio,
+                last_year_ratio: r.last_year_same_month_ratio,
+                yoy_difference: r.yoy_diff_value,
+                ...r
              })));
          } else {
              setProcCityRows([]);
@@ -1022,7 +1035,7 @@ const PriceDecompositionContainer = () => {
       setProcCityRows([]);
       setProcColumnsDyn(procColumnsDefault);
     }
-  }, [procMetric, repurchaseWeekly, repurchaseCityWeekly, bedStaffRatioWeekly, bedStaffRatioCityAnnual, newEmpMonthly, newEmpCityAnnual, empOutputMonthly, empOutputCityMonthly]);
+  }, [procMetric, repurchaseWeekly, repurchaseCityWeekly, bedStaffRatioMonthly, bedStaffRatioCityAnnual, newEmpMonthly, newEmpCityAnnual, empOutputMonthly, empOutputCityMonthly]);
 
   const openCityModal = (cityName) => {
     setSelectedCity(cityName);
@@ -1040,54 +1053,22 @@ const PriceDecompositionContainer = () => {
     if (!isModalOpen || !selectedCity) return;
 
     if (procMetric === 'configRatio' && !isPriceDecompositionModal) {
-      // 1. City Trend (Weekly)
-      if (bedStaffRatioCityWeekly && bedStaffRatioCityWeekly.length > 0) {
-         const cityTrend = bedStaffRatioCityWeekly.filter(d => d.city_name === selectedCity);
-         const sorted = [...cityTrend].sort((a, b) => {
-            if (a.stat_year !== b.stat_year) return a.stat_year - b.stat_year;
-            return a.stat_week - b.stat_week;
-         });
-         
-         // 过滤出已经完整结束的周（不包含当周）
-         const today = new Date();
-         today.setHours(0, 0, 0, 0);
-         
-         const completedWeeks = sorted.filter(d => {
-            if (d.date_range) {
-               const parts = (d.date_range || '').split('~');
-               if (parts.length >= 2) {
-                  const endDateStr = parts[1].trim();
-                  try {
-                     // 使用本地时区解析日期，避免UTC偏移问题
-                     const dateParts = endDateStr.split('-');
-                     if (dateParts.length === 3) {
-                        const year = parseInt(dateParts[0]);
-                        const month = parseInt(dateParts[1]);
-                        const day = parseInt(dateParts[2]);
-                        const endDate = new Date(year, month - 1, day);
-                        endDate.setHours(0, 0, 0, 0);
-                        // 只包含结束日期在今天之前的周
-                        return endDate < today;
-                     }
-                  } catch (e) {
-                     console.error('日期解析错误:', endDateStr, e);
-                     return true; // 解析失败时包含该数据
-                  }
-               }
-            }
-            return true; // 如果没有日期范围，默认包含
-         });
-         
-         const last12 = completedWeeks.slice(-12);
-         
-         setWeeklyPrice(last12.map(d => Number(d.current_week_ratio)));
-         setWeeklyPriceLY(last12.map(d => Number(d.last_year_same_week_ratio)));
-         
+      // 1. 城市趋势（月度，近12个月）
+      if (bedStaffRatioCityMonthly && bedStaffRatioCityMonthly.length > 0) {
+         const cityTrend = bedStaffRatioCityMonthly.filter(d => d.city_name === selectedCity);
+         const sorted = [...cityTrend].sort((a, b) =>
+           a.stat_month_date > b.stat_month_date ? 1 : -1
+         );
+         const last12 = sorted.slice(-12);
+
+         setWeeklyPrice(last12.map(d => Number(d.current_month_ratio)));
+         setWeeklyPriceLY(last12.map(d => d.last_year_same_month_ratio != null ? Number(d.last_year_same_month_ratio) : null));
+
          const dynamicWeeks = last12.map(d => ({
-            label: `第${String(d.stat_week).padStart(2, '0')}周`,
-            weekNo: d.stat_week,
-            year: d.stat_year,
-            fullLabel: d.date_range
+            label: d.stat_month_date,          // "2025-01"
+            weekNo: Number(d.stat_month),
+            year: Number(d.stat_year),
+            fullLabel: d.stat_month_date
          }));
          setWeeks(dynamicWeeks);
       } else {
@@ -1486,7 +1467,7 @@ const PriceDecompositionContainer = () => {
        setModalColumns(columnsForStore);
        setStoreRows(processedStores);
    }
-  }, [isModalOpen, selectedCity, modalContextCity, procMetric, tableData, cityWeeklyData, storeWeeklyData, isPriceDecompositionModal, repurchaseCityWeekly, repurchaseStoreWeekly, bedStaffRatioCityWeekly, bedStaffRatioStoreAnnual, empOutputCityMonthly, empOutputStoreMonthly]);
+  }, [isModalOpen, selectedCity, modalContextCity, procMetric, tableData, cityWeeklyData, storeWeeklyData, isPriceDecompositionModal, repurchaseCityWeekly, repurchaseStoreWeekly, bedStaffRatioCityMonthly, bedStaffRatioStoreAnnual, empOutputCityMonthly, empOutputStoreMonthly]);
 
  const [showReminder, setShowReminder] = useState(false);
   const [reminderText, setReminderText] = useState('');
@@ -1743,6 +1724,12 @@ const PriceDecompositionContainer = () => {
                     return unit === '%' ? `${Number(actual).toFixed(2)}%` : `${actual}`;
                   })()}
                 </div>
+                <div className="text-xs text-red-500 mt-1">
+                  {procMetric === 'returnRate' && '定义：回头订单数 / 回头订单数'}
+                  {procMetric === 'configRatio' && '定义：在职人数 / 床位数'}
+                  {procMetric === 'newEmpReturn' && '定义：回头率达标新员工数 / 新员工总数'}
+                  {procMetric === 'therapistYield' && '定义：产值达标推拿师数 / 推拿师总数'}
+                </div>
               <div className="mt-2 text-xs text-gray-500 space-y-1">
                 <div>
                   目标值：
@@ -1943,8 +1930,9 @@ const PriceDecompositionContainer = () => {
         <div className="flex flex-col mb-4">
           {LineTrendStyle.renderHeader(
             procMetric === 'returnRate' ? '项目回头率趋势表现' :
-            procMetric === 'newEmpReturn' ? '新员工回头率达标率趋势表现' : '指标趋势（近12周）',
-            procMetric === 'returnRate' ? '' : '%'
+            procMetric === 'newEmpReturn' ? '新员工回头率达标率趋势表现' :
+            procMetric === 'configRatio' ? '床位人员配置比趋势（近12月）' : '指标趋势（近12周）',
+            procMetric === 'returnRate' ? '' : procMetric === 'configRatio' ? '' : '%'
           )}
           {LineTrendStyle.renderAuxControls({
             showYoY: procShowYoY,
@@ -1960,11 +1948,11 @@ const PriceDecompositionContainer = () => {
             values={procValues}
             valuesYoY={procValuesLY}
             xLabels={procWeeks.map(w => {
-              // 对于月度数据（新员工回头率和推拿师产值），显示月份格式
-              if (procMetric === 'newEmpReturn' || procMetric === 'therapistYield') {
+              // 月度数据：新员工回头率、推拿师产值、床位配置比，显示月份格式
+              if (procMetric === 'newEmpReturn' || procMetric === 'therapistYield' || procMetric === 'configRatio') {
                 return w.label || `${w.year}-${String(w.weekNo).padStart(2, '0')}`;
               }
-              // 对于周度数据，显示周格式
+              // 周度数据显示周格式
               return `第${w.weekNo}周`;
             })}
             showYoY={procShowYoY}
@@ -1981,8 +1969,27 @@ const PriceDecompositionContainer = () => {
             colorYoY={LineTrendStyle.COLORS.yoy}
             width={LineTrendStyle.DIMENSIONS.width}
             height={LineTrendStyle.DIMENSIONS.height}
-            getHoverTitle={(idx) => procWeeks[idx] ? `${procWeeks[idx].year}年第${procWeeks[idx].weekNo}周` : ''}
-            getHoverSubtitle={(idx) => procWeeks[idx]?.rangeRaw ? `日期范围：${procWeeks[idx].rangeRaw}` : ''}
+            getHoverTitle={(idx) => {
+              if (!procWeeks[idx]) return '';
+              if (procMetric === 'configRatio') return `${procWeeks[idx].year}年${procWeeks[idx].weekNo}月`;
+              return `${procWeeks[idx].year}年第${procWeeks[idx].weekNo}周`;
+            }}
+            getHoverSubtitle={(idx) => procWeeks[idx]?.rangeRaw ? `统计月份：${procWeeks[idx].rangeRaw}` : ''}
+            targetValue={(() => {
+              if (procMetric === 'returnRate') return 30;
+              if (procMetric === 'configRatio') return 0.5;
+              if (procMetric === 'newEmpReturn') return 60;
+              if (procMetric === 'therapistYield') return 80;
+              return null;
+            })()}
+            targetLabel={(() => {
+              if (procMetric === 'returnRate') return '目标 30%';
+              if (procMetric === 'configRatio') return '目标 0.50';
+              if (procMetric === 'newEmpReturn') return '目标 60%';
+              if (procMetric === 'therapistYield') return '目标 80%';
+              return '目标';
+            })()}
+            targetColor="#4b5563"
           />
         ) : (
           <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">暂无数据</div>
@@ -2039,7 +2046,7 @@ const PriceDecompositionContainer = () => {
               <LineTrendChart
                 values={weeklyPrice}
                 valuesYoY={weeklyPriceLY}
-                xLabels={(procMetric === 'newEmpReturn' || procMetric === 'therapistYield' || isPriceDecompositionModal)
+                xLabels={(procMetric === 'newEmpReturn' || procMetric === 'therapistYield' || procMetric === 'configRatio' || isPriceDecompositionModal)
                   ? weeks.map(w => w.label)
                   : weeks.map(w => `第${String(w.weekNo).padStart(2, '0')}周`)}
                 showYoY={showYoY}
@@ -2062,9 +2069,30 @@ const PriceDecompositionContainer = () => {
                 width={LineTrendStyle.DIMENSIONS.width}
                 height={LineTrendStyle.DIMENSIONS.height}
                 valuesPct={weeklyYoYRates}
-                getHoverTitle={(idx) => weeks[idx] ? `${weeks[idx].year}年第${weeks[idx].weekNo}周` : ''}
-                getHoverSubtitle={(idx) => weeks[idx]?.fullLabel ? `日期范围：${weeks[idx].fullLabel.replace(/-/g, '/').replace(' ~ ', ' ～ ')}` : ''}
+                getHoverTitle={(idx) => {
+                  if (!weeks[idx]) return '';
+                  if (procMetric === 'configRatio') return `${weeks[idx].year}年${weeks[idx].weekNo}月`;
+                  return `${weeks[idx].year}年第${weeks[idx].weekNo}周`;
+                }}
+                getHoverSubtitle={(idx) => weeks[idx]?.fullLabel ? `统计月份：${weeks[idx].fullLabel}` : ''}
                 includeLastPointInTrend={LineTrendStyle.computeIncludeLastPointInTrend(weeks && weeks.length ? weeks[weeks.length - 1]?.fullLabel : null)}
+                targetValue={(() => {
+                  if (isPriceDecompositionModal) return null;
+                  if (procMetric === 'returnRate') return 30;
+                  if (procMetric === 'configRatio') return 0.5;
+                  if (procMetric === 'newEmpReturn') return 60;
+                  if (procMetric === 'therapistYield') return 80;
+                  return null;
+                })()}
+                targetLabel={(() => {
+                  if (isPriceDecompositionModal) return '目标';
+                  if (procMetric === 'returnRate') return '目标 30%';
+                  if (procMetric === 'configRatio') return '目标 0.50';
+                  if (procMetric === 'newEmpReturn') return '目标 60%';
+                  if (procMetric === 'therapistYield') return '目标 80%';
+                  return '目标';
+                })()}
+                targetColor="#4b5563"
               />
               <div>
                 <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">

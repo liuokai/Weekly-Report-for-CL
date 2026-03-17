@@ -192,6 +192,10 @@ const queryRegistry = {
     sql: loadSql('bed_to_staff_ratio_weekly.sql'),
     description: '周度床位人员配置比统计'
   },
+  getBedStaffRatioMonthly: {
+    sql: loadSql('bed_to_staff_ratio_monthly.sql'),
+    description: '月度床位人员配置比统计'
+  },
   getBedStaffRatioCityAnnual: {
     sql: loadSql('bed_to_staff_ratio_city_annual.sql'),
     description: '城市年度床位人员配置比统计'
@@ -199,6 +203,10 @@ const queryRegistry = {
   getBedStaffRatioCityWeekly: {
     sql: loadSql('bed_to_staff_ratio_city_weekly.sql'),
     description: '城市周度床位人员配置比统计'
+  },
+  getBedStaffRatioCityMonthly: {
+    sql: loadSql('bed_to_staff_ratio_city_monthly.sql'),
+    description: '城市月度床位人员配置比统计'
   },
   getBedStaffRatioStoreAnnual: {
     sql: loadSql('bed_to_staff_ratio_store_annual.sql'),

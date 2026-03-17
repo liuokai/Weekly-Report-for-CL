@@ -1,13 +1,14 @@
+      
 -- 按月统计会员流失率
 
 WITH monthly_churn_stats AS (  
         -- 第一步：按月汇总全公司数据  
         SELECT  
             month,  
-            SUM(member_count) AS member_count,  
-            SUM(lost_member_count) AS lost_member_count,  
+            SUM(member_count_delay_60d) AS member_count,
+            SUM(lost_member_count_delay_60d) AS lost_member_count,
             -- 计算加权流失率  
-            ROUND(SUM(lost_member_count) / NULLIF(SUM(member_count), 0) * 100, 2) AS churn_rate  
+            ROUND(SUM(lost_member_count_delay_60d) / NULLIF(SUM(member_count_delay_60d), 0) * 100, 2) AS churn_rate
         FROM dws_store_member_statistics_monthly  
         GROUP BY month  
     )  
@@ -23,5 +24,7 @@ WITH monthly_churn_stats AS (
          LEFT JOIN monthly_churn_stats prev  
                 ON SUBSTRING(curr.month, 6, 2) = SUBSTRING(prev.month, 6, 2) -- 月份匹配  
                    AND CAST(SUBSTRING(curr.month, 1, 4) AS INT) = CAST(SUBSTRING(prev.month, 1, 4) AS INT) + 1 -- 年份差1  
-    WHERE curr.month >= '2025-01'  
+    WHERE curr.month >= '2025-01'  AND curr.month <= DATE_FORMAT(CURRENT_DATE, '%Y-%m')
     ORDER BY curr.month ASC, churn_rate DESC;
+
+    

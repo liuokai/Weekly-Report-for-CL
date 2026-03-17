@@ -66,5 +66,5 @@ FROM cumulative_city_sales
 WHERE sales_year >= 2025
 ORDER BY
     statistics_city_name,
-    sales_year,
-    sales_week;
+    sales_year desc ,
+    sales_week desc ;

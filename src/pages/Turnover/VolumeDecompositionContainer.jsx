@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
@@ -7,18 +7,18 @@ import useFetchData from '../../hooks/useFetchData';
 import BusinessTargets from '../../config/businessTargets';
 import useTableSorting from '../../components/Common/useTableSorting';
 
-const VolumeDecompositionContainer = () => {
+const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
   // 保持空数据状态，去掉填充的数据
   const [data] = useState([]);
   const [trendMetric, setTrendMetric] = useState('daily'); // 'daily' | 'cumulative'
   const [showYoY, setShowYoY] = useState(true);
-  const [showAvg, setShowAvg] = useState(true);
+  const [showAvg, setShowAvg] = useState(false);
   const [showExtremes, setShowExtremes] = useState(true);
 
   // Influence Analysis Chart State
   const [influenceMetric, setInfluenceMetric] = useState('duration'); // 'duration' | 'compliance'
   const [showInfYoY, setShowInfYoY] = useState(true);
-  const [showInfAvg, setShowInfAvg] = useState(true);
+  const [showInfAvg, setShowInfAvg] = useState(false);
   const [showInfExtremes, setShowInfExtremes] = useState(true);
   
   // City Modal State
@@ -320,6 +320,11 @@ const VolumeDecompositionContainer = () => {
           setShowExtremes: () => setShowExtremes(!showExtremes)
         })}
 
+        {trendMetric === 'daily' && (
+          <p className="text-xs text-red-500 mt-1 mb-2">天均客次量 = 客次量 / 所有门店营业天数之和　　
+          目标 = 年营业额预算 / 365 / 门店数</p>
+        )}
+
         <LineTrendChart
           values={values}
           valuesYoY={valuesYoY}
@@ -335,6 +340,22 @@ const VolumeDecompositionContainer = () => {
           colorYoY={LineTrendStyle.COLORS.yoy}
           yAxisFormatter={yAxisFormatter}
           valueFormatter={(v) => Math.round(v).toLocaleString()}
+          targetValue={(() => {
+            if (!annualTarget) return null;
+            const annualTargetYuan = annualTarget * 10000;
+            if (trendMetric === 'daily') {
+              // 天均客次量目标 = 年营业额目标 / 365 / 客单价 / 门店数
+              return annualTargetYuan / 365 / 169.55 / (totalStores || 1);
+            }
+            // 累计客次量不显示目标虚线
+            return null;
+          })()}
+          targetLabel={(() => {
+            if (!annualTarget || trendMetric !== 'daily') return '目标';
+            const val = (annualTarget * 10000) / 365 / 169.55 / (totalStores || 1);
+            return `目标 ${Math.round(val).toLocaleString()}`;
+          })()}
+          targetColor="#4b5563"
         />
       </div>
     );
@@ -670,6 +691,19 @@ const VolumeDecompositionContainer = () => {
                 showExtremes={showInfExtremes}
                 currentLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx]}年` : '当前年'}
                 lastLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx] - 1}年` : '去年'}
+                targetValue={(() => {
+                  if (influenceMetric === 'duration') return 300;
+                  if (influenceMetric === 'compliance') return 0.25;
+                  if (influenceMetric === 'review_rate') return 0.7;
+                  return null;
+                })()}
+                targetLabel={(() => {
+                  if (influenceMetric === 'duration') return '目标 300';
+                  if (influenceMetric === 'compliance') return '目标 0.25';
+                  if (influenceMetric === 'review_rate') return '目标 0.70';
+                  return '目标';
+                })()}
+                targetColor="#4b5563"
               />
             </div>
 
@@ -1064,6 +1098,7 @@ const VolumeDecompositionContainer = () => {
           )}
           
           {/* Row 2: Options */}
+          {/* Row 2: Options */}
           {LineTrendStyle.renderAuxControls({
             showYoY: showInfYoY,
             setShowYoY: () => setShowInfYoY(!showInfYoY),
@@ -1072,6 +1107,14 @@ const VolumeDecompositionContainer = () => {
             showExtremes: showInfExtremes,
             setShowExtremes: () => setShowInfExtremes(!showInfExtremes)
           })}
+
+          <p className="text-xs text-red-500">
+            {influenceMetric === 'duration' && '定义：订单服务时长 / 出勤天数'}
+            {influenceMetric === 'compliance' && '定义：天均服务时长达标推拿师数 / 在职推拿师数'}
+            {influenceMetric === 'active_members' && '定义：30日内订单数 ≥ 2次的用户数'}
+            {influenceMetric === 'churn_rate' && '定义：最后一次下单在60日前的用户数 / 用户数（注：最后下单时间 + 60天进行统计）'}
+            {influenceMetric === 'review_rate' && '定义：主动评价订单数 / 订单总数'}
+          </p>
         </div>
 
         <LineTrendChart
@@ -1090,8 +1133,20 @@ const VolumeDecompositionContainer = () => {
           colorYoY={LineTrendStyle.COLORS.yoy}
           yAxisFormatter={yAxisFormatter}
           valueFormatter={valueFormatter}
+          targetValue={(() => {
+            if (influenceMetric === 'duration') return 300;
+            if (influenceMetric === 'compliance') return 25;
+            if (influenceMetric === 'review_rate') return 70;
+            return null;
+          })()}
+          targetLabel={(() => {
+            if (influenceMetric === 'duration') return '目标 300';
+            if (influenceMetric === 'compliance') return '目标 25';
+            if (influenceMetric === 'review_rate') return '目标 70';
+            return '目标';
+          })()}
+          targetColor="#4b5563"
         />
-        
         {renderInfluenceTable()}
       </div>
     );

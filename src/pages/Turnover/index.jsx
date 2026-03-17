@@ -351,7 +351,7 @@ const TurnoverReport = () => {
       <PriceDecompositionContainer />
 
       {/* 客次量拆解 */}
-      <VolumeDecompositionContainer />
+      <VolumeDecompositionContainer annualTarget={revenueMetrics.target} totalStores={totalStores} />
     </div>
   );
 };

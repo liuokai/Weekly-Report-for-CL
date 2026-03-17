@@ -154,6 +154,10 @@ const WeeklyTurnoverChart = ({ annualTarget = 0, totalStores = 0 }) => {
         showExtremes,
         setShowExtremes
       })}
+
+      {selectedMetricKey === 'dailyAvgRevenue' && (
+        <p className="text-xs text-red-500 mt-1 mb-2">天均营业额 = 营业额合计 / 所有门店营业天数之和</p>
+      )}
       
       {loading ? (
         <div className="flex justify-center items-center h-[320px] text-gray-400">加载中...</div>
