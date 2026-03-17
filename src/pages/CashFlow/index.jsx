@@ -6,6 +6,7 @@ import useTableSorting from '../../components/Common/useTableSorting';
 import CapitalForecastContainer from './CapitalForecastContainer';
 import CityBudgetExecutionContainer from './CityBudgetExecutionContainer';
 import NewStoreOperationStatusContainer from './NewStoreOperationStatusContainer';
+import RampUpStoreOperationContainer from './RampUpStoreOperationContainer';
 import NewStoreSupplyContainer from './NewStoreSupplyContainer';
 import CashFlowContinuousLossContainer from './CashFlowContinuousLossContainer';
 import ClosingWarningContainer from './ClosingWarningContainer';
@@ -585,6 +586,9 @@ const CashFlowTab = () => {
 
       {/* 新店经营情况总结 */}
       <NewStoreOperationStatusContainer />
+
+      {/* 爬坡期门店经营情况总结 */}
+      <RampUpStoreOperationContainer />
 
       {/* 现金流持续亏损门店 */}
       <CashFlowContinuousLossContainer />

@@ -276,6 +276,10 @@ const queryRegistry = {
     sql: loadSql('cash_flow_new_store_operation_status.sql'),
     description: '新店经营情况总结'
   },
+  getRampUpStoreOperationStatus: {
+    sql: loadSql('cash_flow_new_store_commission.sql'),
+    description: '爬坡期门店经营情况总结'
+  },
   getCashFlowNewStoreAndOperation: {
     sql: loadSql('cash_flow_new_store_and_cashflow_operation.sql'),
     description: '2026年城市新店投资与现金流预算执行情况'
