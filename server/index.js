@@ -90,8 +90,17 @@ app.post('/api/fetch-data', async (req, res) => {
     connection = await pool.getConnection();
     await connection.query('SET enable_fallback_to_original_planner = true');
     await connection.query('SET enable_nereids_planner = false');
+    // 部分 SQL 含多个 ? 占位符，需要将参数自动补齐到占位符数量
+    const placeholderCount = (queryConfig.sql.match(/\?/g) || []).length;
+    let effectiveParams = Array.isArray(params) ? [...params] : (params ? [params] : []);
+    if (placeholderCount > effectiveParams.length && effectiveParams.length > 0) {
+      // 用最后一个参数循环填充剩余占位符
+      while (effectiveParams.length < placeholderCount) {
+        effectiveParams.push(effectiveParams[effectiveParams.length - 1]);
+      }
+    }
     // Use .query() instead of .execute() because Doris might not support prepared statements
-    let [rows] = await connection.query(queryConfig.sql, params);
+    let [rows] = await connection.query(queryConfig.sql, effectiveParams);
 
     // Special handling for getTurnoverOverview and getCityTurnover to include targets from cash_flow_budget.sql
     if (queryKey === 'getTurnoverOverview' || queryKey === 'getCityTurnover') {

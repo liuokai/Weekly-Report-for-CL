@@ -639,8 +639,8 @@ const CostAndProfitTab = () => {
       {/* Headquarters Cost Budget */}
       <HeadquartersCostBudgetTable />
 
-
-  <HeadquartersCostBudget />
+{/* 总部成本预算 老版 */}
+  {/* <HeadquartersCostBudget /> */}
       {renderCityModal()}
     </div>
   );

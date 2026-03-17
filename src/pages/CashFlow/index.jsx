@@ -4,6 +4,7 @@ import DataTable from '../../components/Common/DataTable';
 import DataContainer from '../../components/Common/DataContainer';
 import useTableSorting from '../../components/Common/useTableSorting';
 import CapitalForecastContainer from './CapitalForecastContainer';
+import CapitalForecastTable from './CapitalForecastTable';
 import CityBudgetExecutionContainer from './CityBudgetExecutionContainer';
 import NewStoreOperationStatusContainer from './NewStoreOperationStatusContainer';
 import RampUpStoreOperationContainer from './RampUpStoreOperationContainer';
@@ -576,7 +577,10 @@ const CashFlowTab = () => {
       </DataContainer>
 
       {/* 2026年公司总部及城市维度资金测算周报 (NEW) */}
-      <CapitalForecastContainer />
+      {/* <CapitalForecastContainer /> */}
+
+      {/* 2026年资金测算汇总表 */}
+      <CapitalForecastTable />
 
       {/* 2026年城市新店投资与现金流预算执行情况 (NEW) */}
       <CityBudgetExecutionContainer />

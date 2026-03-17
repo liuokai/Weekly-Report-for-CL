@@ -7,7 +7,7 @@ WITH weekly_city_base AS (
         WEEK(STR_TO_DATE(CONCAT(YEARWEEK(a.off_clock_time, 1), ' Monday'), '%x%v %W'), 1) AS s_week,
         b.statistics_city_name,
         SUM(a.order_actual_payment) AS total_weekly_revenue, -- 【当期分子】周总营业额
-        COUNT(DISTINCT DATE(a.off_clock_time),store_code) AS active_day_count -- 【当期分母】营业天数
+        COUNT(DISTINCT CONCAT(DATE(a.off_clock_time), '_', store_code)) AS active_day_count -- 【当期分母】营业天数
     FROM data_warehouse.dwd_sales_order_detail AS a
     LEFT JOIN data_warehouse.dm_city AS b
         ON a.city_code = b.city_code
@@ -46,7 +46,7 @@ ly_agg AS (
         mapped_curr_week_end,
         statistics_city_name,
         SUM(order_actual_payment) AS ly_total_weekly_revenue, -- 【去年分子】
-        COUNT(DISTINCT ly_order_date,store_code) AS ly_active_day_count -- 【去年分母】
+        COUNT(DISTINCT CONCAT(ly_order_date, '_', store_code)) AS ly_active_day_count -- 【去年分母】
     FROM ly_data_prep
     GROUP BY mapped_curr_week_start, mapped_curr_week_end, statistics_city_name
 ),

@@ -156,10 +156,10 @@ const HQMetricsTrendChart = () => {
       })}
 
       {activeMetric === 'annualAvgPrice' && (
-        <p className="text-xs text-red-500 mt-1 mb-2">年初到截止统计周营业额之和 / 年初到截止统计周客次量之和</p>
+        <p className="text-xs text-gray-500 mt-1 mb-2">年初到截止统计周营业额之和 / 年初到截止统计周客次量之和</p>
       )}
       {activeMetric === 'weeklyAvgPrice' && (
-        <p className="text-xs text-red-500 mt-1 mb-2">统计周营业额之和 / 统计周客次量之和</p>
+        <p className="text-xs text-gray-500 mt-1 mb-2">统计周营业额之和 / 统计周客次量之和</p>
       )}
 
       <LineTrendChart

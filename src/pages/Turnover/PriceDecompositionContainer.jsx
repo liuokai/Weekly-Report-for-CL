@@ -1724,8 +1724,8 @@ const PriceDecompositionContainer = () => {
                     return unit === '%' ? `${Number(actual).toFixed(2)}%` : `${actual}`;
                   })()}
                 </div>
-                <div className="text-xs text-red-500 mt-1">
-                  {procMetric === 'returnRate' && '定义：回头订单数 / 回头订单数'}
+                <div className="text-xs text-gray-500 mt-1">
+                  {procMetric === 'returnRate' && '定义：回头订单数 / 总订单数'}
                   {procMetric === 'configRatio' && '定义：在职人数 / 床位数'}
                   {procMetric === 'newEmpReturn' && '定义：回头率达标新员工数 / 新员工总数'}
                   {procMetric === 'therapistYield' && '定义：产值达标推拿师数 / 推拿师总数'}
@@ -1931,7 +1931,7 @@ const PriceDecompositionContainer = () => {
           {LineTrendStyle.renderHeader(
             procMetric === 'returnRate' ? '项目回头率趋势表现' :
             procMetric === 'newEmpReturn' ? '新员工回头率达标率趋势表现' :
-            procMetric === 'configRatio' ? '床位人员配置比趋势（近12月）' : '指标趋势（近12周）',
+            procMetric === 'configRatio' ? '床位人员配置比趋势（近12月）' : '指标趋势（近12月）',
             procMetric === 'returnRate' ? '' : procMetric === 'configRatio' ? '' : '%'
           )}
           {LineTrendStyle.renderAuxControls({

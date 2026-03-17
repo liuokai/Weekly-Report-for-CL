@@ -321,7 +321,7 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
         })}
 
         {trendMetric === 'daily' && (
-          <p className="text-xs text-red-500 mt-1 mb-2">天均客次量 = 客次量 / 所有门店营业天数之和　　
+          <p className="text-xs text-gray-500 mt-1 mb-2">天均客次量 = 客次量 / 所有门店营业天数之和　　
           目标 = 年营业额预算 / 365 / 门店数</p>
         )}
 
@@ -1108,7 +1108,7 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
             setShowExtremes: () => setShowInfExtremes(!showInfExtremes)
           })}
 
-          <p className="text-xs text-red-500">
+          <p className="text-xs  text-gray-500">
             {influenceMetric === 'duration' && '定义：订单服务时长 / 出勤天数'}
             {influenceMetric === 'compliance' && '定义：天均服务时长达标推拿师数 / 在职推拿师数'}
             {influenceMetric === 'active_members' && '定义：30日内订单数 ≥ 2次的用户数'}
