@@ -136,13 +136,18 @@ const CapitalForecastTable = () => {
         openTotal,
         finalBalance,
       };
+    }).sort((a, b) => {
+      // 总部行始终置顶，其余按实际结余资金升序
+      if (a.isHQ) return -1;
+      if (b.isHQ) return 1;
+      return a.finalBalance - b.finalBalance;
     });
   }, [cityList, cashFlowByCity, safetyByCity, openSpendByCity, cityTargets2025]);
 
   const formatWan = (val) => {
     if (val === null || val === undefined) return '-';
     const wan = Number(val) / 10000;
-    return `${wan.toLocaleString('zh-CN', { maximumFractionDigits: 0 })} 万`;
+    return wan.toFixed(2);
   };
 
   const finalBalanceColor = (val) =>
@@ -150,27 +155,35 @@ const CapitalForecastTable = () => {
 
   return (
     <DataContainer title="2026年公司总部及城市资金测算" maxHeight="none">
+      <div className="text-xs text-gray-500 text-left pr-2 mb-1">单位：万元</div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-center">
+        <table className="w-full text-sm text-center table-fixed">
+          <colgroup>
+            {/* 城市列略窄，其余 10 列等宽 */}
+            <col style={{ width: '7%' }} />
+            {Array.from({ length: 10 }).map((_, i) => (
+              <col key={i} style={{ width: '9.3%' }} />
+            ))}
+          </colgroup>
           <thead>
             {/* 第一行：合并表头 */}
             <tr className="bg-gray-100 border-b border-gray-300">
-              <th rowSpan={2} className="px-4 py-3 font-bold text-gray-800 border-r border-gray-300 whitespace-nowrap">城市</th>
-              <th rowSpan={2} className="px-4 py-3 font-bold text-gray-800 border-r border-gray-300 whitespace-nowrap">2025年末资金结余</th>
-              <th colSpan={3} className="px-4 py-3 font-bold text-gray-800 border-r border-gray-300 whitespace-nowrap">预计2026年经营资金结余</th>
-              <th rowSpan={2} className="px-4 py-3 font-bold text-gray-800 border-r border-gray-300 whitespace-nowrap">预计2026年资金安全线</th>
-              <th rowSpan={2} className="px-4 py-3 font-bold text-gray-800 border-r border-gray-300 whitespace-nowrap">预计自有资金可用金额</th>
-              <th colSpan={3} className="px-4 py-3 font-bold text-gray-800 border-r border-gray-300 whitespace-nowrap">预计2026年开店支出</th>
-              <th rowSpan={2} className="px-4 py-3 font-bold text-gray-800 whitespace-nowrap">预计2026年实际结余资金</th>
+              <th rowSpan={2} className="px-2 py-3 font-bold text-gray-800 border-r border-gray-300 whitespace-nowrap">城市</th>
+              <th rowSpan={2} className="px-2 py-3 font-bold text-gray-800 border-r border-gray-300">2025年末资金结余</th>
+              <th colSpan={3} className="px-2 py-3 font-bold text-gray-800 border-r border-gray-300">预计2026年经营资金结余</th>
+              <th rowSpan={2} className="px-2 py-3 font-bold text-gray-800 border-r border-gray-300">预计2026年资金安全线</th>
+              <th rowSpan={2} className="px-2 py-3 font-bold text-gray-800 border-r border-gray-300">预计自有资金可用金额</th>
+              <th colSpan={3} className="px-2 py-3 font-bold text-gray-800 border-r border-gray-300">预计2026年开店支出</th>
+              <th rowSpan={2} className="px-2 py-3 font-bold text-gray-800">预计2026年实际结余资金</th>
             </tr>
             {/* 第二行：子表头 */}
             <tr className="bg-gray-100 border-b border-gray-300">
-              <th className="px-4 py-2 font-semibold text-gray-600 border-r border-gray-200 whitespace-nowrap">已发生值</th>
-              <th className="px-4 py-2 font-semibold text-gray-600 border-r border-gray-200 whitespace-nowrap">待发生值</th>
-              <th className="px-4 py-2 font-semibold text-gray-600 border-r border-gray-300 whitespace-nowrap">合计</th>
-              <th className="px-4 py-2 font-semibold text-gray-600 border-r border-gray-200 whitespace-nowrap">已发生值</th>
-              <th className="px-4 py-2 font-semibold text-gray-600 border-r border-gray-200 whitespace-nowrap">待发生值</th>
-              <th className="px-4 py-2 font-semibold text-gray-600 border-r border-gray-300 whitespace-nowrap">合计</th>
+              <th className="px-2 py-2 font-semibold text-gray-600 border-r border-gray-200">已发生值</th>
+              <th className="px-2 py-2 font-semibold text-gray-600 border-r border-gray-200">待发生值</th>
+              <th className="px-2 py-2 font-semibold text-gray-600 border-r border-gray-300">合计</th>
+              <th className="px-2 py-2 font-semibold text-gray-600 border-r border-gray-200">已发生值</th>
+              <th className="px-2 py-2 font-semibold text-gray-600 border-r border-gray-200">待发生值</th>
+              <th className="px-2 py-2 font-semibold text-gray-600 border-r border-gray-300">合计</th>
             </tr>
           </thead>
           <tbody>
@@ -179,17 +192,17 @@ const CapitalForecastTable = () => {
                 key={row.city}
                 className={`border-b border-gray-200 ${row.isHQ ? 'bg-[#a40035]/5 font-bold' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-gray-50`}
               >
-                <td className="px-4 py-3 font-medium text-gray-900 border-r border-gray-200 whitespace-nowrap">{row.city}</td>
-                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.balance2025)}</td>
-                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.operatingOccurred)}</td>
-                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.operatingPending)}</td>
-                <td className="px-4 py-3 text-gray-900 border-r border-gray-300">{formatWan(row.operatingTotal)}</td>
-                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.safetyLine)}</td>
-                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.availableFunds)}</td>
-                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.openOccurred)}</td>
-                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.openPending)}</td>
-                <td className="px-4 py-3 text-gray-900 border-r border-gray-300">{formatWan(row.openTotal)}</td>
-                <td className="px-4 py-3 text-gray-900">{formatWan(row.finalBalance)}</td>
+                <td className="px-2 py-3 font-medium text-gray-900 border-r border-gray-200 whitespace-nowrap">{row.city}</td>
+                <td className="px-2 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.balance2025)}</td>
+                <td className="px-2 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.operatingOccurred)}</td>
+                <td className="px-2 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.operatingPending)}</td>
+                <td className="px-2 py-3 text-gray-900 border-r border-gray-300">{formatWan(row.operatingTotal)}</td>
+                <td className="px-2 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.safetyLine)}</td>
+                <td className="px-2 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.availableFunds)}</td>
+                <td className="px-2 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.openOccurred)}</td>
+                <td className="px-2 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.openPending)}</td>
+                <td className="px-2 py-3 text-gray-900 border-r border-gray-300">{formatWan(row.openTotal)}</td>
+                <td className="px-2 py-3 text-gray-900">{formatWan(row.finalBalance)}</td>
               </tr>
             ))}
           </tbody>

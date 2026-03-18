@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import useFetchData from '../../hooks/useFetchData';
 import useTableSorting from '../../components/Common/useTableSorting';
+import FilterDropdown from '../../components/Common/FilterDropdown';
 
 /**
  * 爬坡期门店经营情况总结组件
@@ -10,11 +11,33 @@ const RampUpStoreOperationContainer = () => {
   const { data, loading, error, fetchData } = useFetchData('getRampUpStoreOperationStatus', []);
 
   // 计算昨天的日期
-  const yesterday = React.useMemo(() => {
+  const yesterday = useMemo(() => {
     const date = new Date();
     date.setDate(date.getDate() - 1);
     return date.toISOString().split('T')[0];
   }, []);
+
+  // 从数据中提取月份列表（降序）
+  const monthList = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    const months = [...new Set(data.map(item => item['month']).filter(Boolean))];
+    return months.sort().reverse();
+  }, [data]);
+
+  // 默认选中最新月份
+  const [selectedMonth, setSelectedMonth] = useState('');
+  useEffect(() => {
+    if (monthList.length > 0 && !selectedMonth) {
+      setSelectedMonth(monthList[0]);
+    }
+  }, [monthList, selectedMonth]);
+
+  // 按月份筛选后的数据
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    if (!selectedMonth) return data;
+    return data.filter(item => item['month'] === selectedMonth);
+  }, [data, selectedMonth]);
 
   const columns = [
     { key: 'month', label: '月份', dataIndex: 'month' },
@@ -44,7 +67,7 @@ const RampUpStoreOperationContainer = () => {
     { key: 'incentive_variance', label: '激励费差异', dataIndex: 'incentive_variance' },
   ];
 
-  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, data || []);
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, filteredData);
 
   const formatCurrency = (val) => {
     if (val === null || val === undefined) return '-';
@@ -73,6 +96,16 @@ const RampUpStoreOperationContainer = () => {
             重试
           </button>
         )}
+        {/* 月份筛选下拉 */}
+        <div className="flex flex-row relative z-40">
+          <FilterDropdown
+            label="月份"
+            value={selectedMonth}
+            options={monthList}
+            onChange={(val) => setSelectedMonth(val || monthList[0] || '')}
+            showAllOption={false}
+          />
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -120,7 +153,7 @@ const RampUpStoreOperationContainer = () => {
                   <td className="px-6 py-4 text-center">{item['current_ramp_up_month_index']}</td>
                   <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['cash_flow_budget_total'])}</td>
                   <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['cash_flow_actual_to_date'])}</td>
-                  <td className={`px-6 py-4 text-right font-mono font-bold ${item['cash_flow_variance'] < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <td className={`px-6 py-4 text-right font-mono font-bold ${item['cash_flow_variance'] < 0 ? 'text-red-600' : ''}`}>
                     {formatCurrency(item['cash_flow_variance'])}
                   </td>
                   <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['marketing_budget_total'])}</td>
@@ -137,7 +170,7 @@ const RampUpStoreOperationContainer = () => {
                   <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['incentive_budget_total'])}</td>
                   <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['incentive_actual_total'])}</td>
                   <td className="px-6 py-4 text-right font-mono text-gray-500">{item['incentive_usage_ratio_display'] || '-'}</td>
-                  <td className={`px-6 py-4 text-right font-mono font-bold ${item['incentive_variance'] > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <td className={`px-6 py-4 text-right font-mono font-bold ${item['incentive_variance'] > 0 ? 'text-red-600' : ''}`}>
                     {formatCurrency(item['incentive_variance'])}
                   </td>
                 </tr>

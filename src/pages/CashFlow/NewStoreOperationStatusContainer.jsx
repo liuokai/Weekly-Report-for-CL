@@ -60,7 +60,7 @@ const NewStoreOperationStatusContainer = () => {
              {loading ? '...' : `${data?.length || 0} 家`}
            </span>
            <span className="ml-3 text-sm font-normal text-[#a40035]">
-             数据区间: 2026-01-01 ~ {yesterday}
+             {/* 数据区间: 2026-01-01 ~ {yesterday} */}
            </span>
          </h2>
          {error && (
@@ -116,7 +116,7 @@ const NewStoreOperationStatusContainer = () => {
                             <td className="px-6 py-4 text-center">{item['current_ramp_up_month_index']}</td>
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['cash_flow_budget_total'])}</td>
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['cash_flow_actual_to_date'])}</td>
-                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['cash_flow_variance'] < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['cash_flow_variance'] < 0 ? 'text-red-600' : ''}`}>
                                 {formatCurrency(item['cash_flow_variance'])}
                             </td>
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['marketing_budget_total'])}</td>
@@ -133,7 +133,7 @@ const NewStoreOperationStatusContainer = () => {
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['incentive_budget_total'])}</td>
                             <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['incentive_actual_total'])}</td>
                             <td className="px-6 py-4 text-right font-mono text-gray-500">{item['incentive_usage_ratio_display'] || '-'}</td>
-                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['incentive_variance'] > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['incentive_variance'] > 0 ? 'text-red-600' : ''}`}>
                                 {formatCurrency(item['incentive_variance'])}
                             </td>
                         </tr>

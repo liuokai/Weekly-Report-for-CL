@@ -449,7 +449,7 @@ const CostAndProfitTab = () => {
                   height="h-3"
                 />
                 <div className="mt-2 flex items-center justify-end">
-                   <span className={`text-xs font-medium px-2 py-0.5 rounded ${combinedProfitValueCompletion >= timeProgress ? 'bg-red-50 text-[#a40035]' : 'bg-green-50 text-green-600'}`}>
+                   <span className={`text-xs font-medium px-2 py-0.5 rounded ${combinedProfitValueCompletion >= timeProgress ? 'bg-green-50 text-green-600' : 'bg-red-50 text-[#a40035]'}`}>
                      {combinedProfitValueCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
                    </span>
                 </div>
@@ -484,7 +484,7 @@ const CostAndProfitTab = () => {
                   height="h-3"
                 />
                 <div className="mt-2 flex items-center justify-end">
-                   <span className={`text-xs font-medium px-2 py-0.5 rounded ${combinedProfitRateCompletion >= timeProgress ? 'bg-red-50 text-[#a40035]' : 'bg-green-50 text-green-600'}`}>
+                   <span className={`text-xs font-medium px-2 py-0.5 rounded ${combinedProfitRateCompletion >= timeProgress ? 'bg-green-50 text-green-600' : 'bg-red-50 text-[#a40035]'}`}>
                      {combinedProfitRateCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
                    </span>
                 </div>
@@ -545,7 +545,7 @@ const CostAndProfitTab = () => {
                   height="h-3"
                 />
                 <div className="mt-2 flex items-center justify-end">
-                   <span className={`text-xs font-medium px-2 py-0.5 rounded ${profitValueCompletion >= timeProgress ? 'bg-red-50 text-[#a40035]' : 'bg-green-50 text-green-600'}`}>
+                   <span className={`text-xs font-medium px-2 py-0.5 rounded ${profitValueCompletion >= timeProgress ? 'bg-green-50 text-green-600' : 'bg-red-50 text-[#a40035]'}`}>
                      {profitValueCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
                    </span>
                 </div>
@@ -591,7 +591,7 @@ const CostAndProfitTab = () => {
                   height="h-3"
                 />
                 <div className="mt-2 flex items-center justify-end">
-                   <span className={`text-xs font-medium px-2 py-0.5 rounded ${profitRateCompletion >= timeProgress ? 'bg-red-50 text-[#a40035]' : 'bg-green-50 text-green-600'}`}>
+                   <span className={`text-xs font-medium px-2 py-0.5 rounded ${profitRateCompletion >= timeProgress ? 'bg-green-50 text-green-600' : 'bg-red-50 text-[#a40035]'}`}>
                      {profitRateCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
                    </span>
                 </div>

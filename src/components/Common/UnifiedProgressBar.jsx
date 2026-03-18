@@ -5,8 +5,8 @@ import PropTypes from 'prop-types';
  * Color Configuration - 使用Hex码方便手动调整
  */
 const COLORS = {
-  theme: '#a40035',      // 主题色 (实际 >= 时间)
-  success: '#16a34a',    // 绿色 (实际 < 时间)
+  theme: '#16a34a',      // 绿色 (实际 >= 时间，达标)
+  success: '#a40035',    // 品牌红 (实际 < 时间，未达标)
   lineAhead: '#FFFFFF',  // 白色 (实际 >= 时间, 竖线颜色)
   lineBehind: '#4B5563', // 深灰色 (实际 < 时间, 竖线颜色)
 };
