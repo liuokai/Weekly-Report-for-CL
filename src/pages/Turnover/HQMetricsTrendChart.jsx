@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import LineTrendStyle from '../../components/Common/LineTrendStyleConfig';
 import useFetchData from "../../hooks/useFetchData";
@@ -51,6 +51,23 @@ const HQMetricsTrendChart = () => {
     showTrend: false,
     showExtremes: true
   });
+
+  // 容器宽度自适应
+  const chartContainerRef = useRef(null);
+  const [chartContainerWidth, setChartContainerWidth] = useState(800);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const w = Math.floor(entry.contentRect.width);
+        if (w > 0) setChartContainerWidth(w);
+      }
+    });
+    observer.observe(chartContainerRef.current);
+    setChartContainerWidth(Math.floor(chartContainerRef.current.getBoundingClientRect().width) || 800);
+    return () => observer.disconnect();
+  }, []);
 
   const [metricsData, setMetricsData] = useState(METRICS);
   
@@ -162,6 +179,7 @@ const HQMetricsTrendChart = () => {
         <p className="text-xs text-gray-500 mt-1 mb-2">统计周营业额之和 / 统计周客次量之和</p>
       )}
 
+      <div ref={chartContainerRef} style={{ overflow: 'hidden' }}>
       <LineTrendChart
         key={activeMetric}
         values={currentMetricConfig.data}
@@ -171,8 +189,9 @@ const HQMetricsTrendChart = () => {
         showYoY={controls.showYoY}
         showTrend={controls.showTrend}
         showExtremes={controls.showExtremes}
-        width={LineTrendStyle.DIMENSIONS.width}
+        width={chartContainerWidth}
         height={LineTrendStyle.DIMENSIONS.height}
+        padding={{ top: 40, right: 90, bottom: 60, left: 90 }}
         colorPrimary={LineTrendStyle.COLORS.primary}
         colorYoY={LineTrendStyle.COLORS.yoy}
         targetValue={(activeMetric === 'annualAvgPrice' || activeMetric === 'weeklyAvgPrice') ? 169.55 : null}
@@ -206,6 +225,7 @@ const HQMetricsTrendChart = () => {
           return `日期范围：${wm.rangeRaw}`;
         }}
       />
+      </div>
     </div>
   );
 };

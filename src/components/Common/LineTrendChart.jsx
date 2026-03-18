@@ -203,8 +203,8 @@ const LineTrendChart = ({
         </div>
       ) : null}
 
-      <div className="w-full overflow-x-auto">
-        <div style={{ minWidth: `${width}px` }}>
+      <div className="w-full overflow-hidden">
+        <div>
           <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
             <line x1={padding.left} y1={padding.top} x2={padding.left} y2={height - padding.bottom} stroke="#e5e7eb" strokeWidth="1" />
             <line x1={padding.left} y1={height - padding.bottom} x2={width - padding.right} y2={height - padding.bottom} stroke="#e5e7eb" strokeWidth="1" />

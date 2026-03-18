@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo, useRef, useEffect } from 'react';
 import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
 import LineTrendChart from '../../components/Common/LineTrendChart';
@@ -23,6 +23,40 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
   
   // City Modal State
   const [selectedCity, setSelectedCity] = useState(null);
+
+  // 折线图容器宽度自适应
+  const chartContainerRef = useRef(null);
+  const [chartContainerWidth, setChartContainerWidth] = useState(800);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const w = Math.floor(entry.contentRect.width);
+        if (w > 0) setChartContainerWidth(w);
+      }
+    });
+    observer.observe(chartContainerRef.current);
+    setChartContainerWidth(Math.floor(chartContainerRef.current.getBoundingClientRect().width) || 800);
+    return () => observer.disconnect();
+  }, []);
+
+  // 影响指标折线图容器宽度自适应
+  const infChartContainerRef = useRef(null);
+  const [infChartContainerWidth, setInfChartContainerWidth] = useState(800);
+
+  useEffect(() => {
+    if (!infChartContainerRef.current) return;
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const w = Math.floor(entry.contentRect.width);
+        if (w > 0) setInfChartContainerWidth(w);
+      }
+    });
+    observer.observe(infChartContainerRef.current);
+    setInfChartContainerWidth(Math.floor(infChartContainerRef.current.getBoundingClientRect().width) || 800);
+    return () => observer.disconnect();
+  }, []);
 
   const getMetricConfig = () => {
     switch(influenceMetric) {
@@ -325,6 +359,7 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
           目标 = 年营业额预算 / 365 / 门店数</p>
         )}
 
+        <div ref={chartContainerRef} style={{ overflow: 'hidden' }}>
         <LineTrendChart
           values={values}
           valuesYoY={valuesYoY}
@@ -335,7 +370,8 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
           currentLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx]}年` : '当前年'}
           lastLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx] - 1}年` : '去年'}
           height={LineTrendStyle.DIMENSIONS.height}
-          width={LineTrendStyle.DIMENSIONS.width}
+          width={chartContainerWidth}
+          padding={{ top: 40, right: 100, bottom: 60, left: 100 }}
           colorPrimary={LineTrendStyle.COLORS.primary}
           colorYoY={LineTrendStyle.COLORS.yoy}
           yAxisFormatter={yAxisFormatter}
@@ -357,6 +393,7 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
           })()}
           targetColor="#4b5563"
         />
+        </div>
       </div>
     );
   };
@@ -874,10 +911,13 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
       }))
     ];
 
+    // 按最新月份（m1）默认升序排序
+    const { sortedData: sortedCityData, sortConfig: citySortConfig, handleSort: handleCitySort } = useTableSorting(columns, cityData, { key: 'm1', direction: 'asc' });
+
     return (
       <div className="mt-8 border-t border-gray-100 pt-6">
          <h4 className="text-sm font-bold text-gray-800 mb-4">城市维度数据统计</h4>
-         <DataTable data={cityData} columns={columns} stickyHeader={true} />
+         <DataTable data={sortedCityData} columns={columns} stickyHeader={true} onSort={handleCitySort} sortConfig={citySortConfig} />
       </div>
     );
   };
@@ -1117,6 +1157,7 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
           </p>
         </div>
 
+        <div ref={infChartContainerRef} style={{ overflow: 'hidden' }}>
         <LineTrendChart
           values={values}
           valuesYoY={valuesYoY}
@@ -1128,7 +1169,8 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
           currentLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx]}年` : '当前年'}
           lastLabel={(idx) => yearByIndex[idx] ? `${yearByIndex[idx] - 1}年` : '去年'}
           height={LineTrendStyle.DIMENSIONS.height}
-          width={LineTrendStyle.DIMENSIONS.width}
+          width={infChartContainerWidth}
+          padding={{ top: 40, right: 90, bottom: 60, left: 90 }}
           colorPrimary={LineTrendStyle.COLORS.primary}
           colorYoY={LineTrendStyle.COLORS.yoy}
           yAxisFormatter={yAxisFormatter}
@@ -1147,6 +1189,7 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
           })()}
           targetColor="#4b5563"
         />
+        </div>
         {renderInfluenceTable()}
       </div>
     );

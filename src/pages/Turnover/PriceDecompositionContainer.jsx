@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import DataContainer from '../../components/Common/DataContainer';
 import DataTable from '../../components/Common/DataTable';
@@ -84,7 +84,23 @@ const PriceDecompositionContainer = () => {
 
   const [modalContextCity, setModalContextCity] = useState(null);
   
-  // Fetch modal data
+  // 主页面折线图容器宽度（自适应）
+  const chartContainerRef = useRef(null);
+  const [chartContainerWidth, setChartContainerWidth] = useState(800);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const w = Math.floor(entry.contentRect.width);
+        if (w > 0) setChartContainerWidth(w);
+      }
+    });
+    observer.observe(chartContainerRef.current);
+    // 初始值
+    setChartContainerWidth(Math.floor(chartContainerRef.current.getBoundingClientRect().width) || 800);
+    return () => observer.disconnect();
+  }, []);
   
 
   const impactInfos = useMemo(() => {
@@ -530,6 +546,8 @@ const PriceDecompositionContainer = () => {
       case 'newEmpReturn':
         // 动态列使用compliance_rate，默认列使用value
         return { key: isUsingDynamicColumns ? "compliance_rate" : "value", direction: "asc" };
+      case 'therapistYield':
+        return { key: "output_standard_rate_pct", direction: "asc" };
       default:
         return { key: null, direction: "asc" };
     }
@@ -1943,6 +1961,7 @@ const PriceDecompositionContainer = () => {
             setShowExtremes: () => setProcShowExtremes(!procShowExtremes)
           })}
         </div>
+        <div ref={chartContainerRef} style={{ overflow: 'hidden' }}>
         {procValues.length >= 2 ? (
           <LineTrendChart
             values={procValues}
@@ -1967,8 +1986,9 @@ const PriceDecompositionContainer = () => {
             }}
             colorPrimary={LineTrendStyle.COLORS.primary}
             colorYoY={LineTrendStyle.COLORS.yoy}
-            width={LineTrendStyle.DIMENSIONS.width}
+            width={chartContainerWidth}
             height={LineTrendStyle.DIMENSIONS.height}
+            padding={{ top: 40, right: 100, bottom: 60, left: 100 }}
             getHoverTitle={(idx) => {
               if (!procWeeks[idx]) return '';
               if (procMetric === 'configRatio') return `${procWeeks[idx].year}年${procWeeks[idx].weekNo}月`;
@@ -1994,6 +2014,7 @@ const PriceDecompositionContainer = () => {
         ) : (
           <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">暂无数据</div>
         )}
+        </div>
         <div className="mt-4 bg-white rounded-lg border border-gray-100 shadow-sm p-4">
           <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">
               {procMetric === 'returnRate' ? '城市维度项目回头率统计' : '城市维度数据统计'}

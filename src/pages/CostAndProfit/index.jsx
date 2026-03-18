@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import LineTrendChart from '../../components/Common/LineTrendChart';
 import LineTrendStyle from '../../components/Common/LineTrendStyleConfig';
 import DataTable from '../../components/Common/DataTable';
@@ -110,6 +110,23 @@ const CostAndProfitTab = () => {
   const [showYoY, setShowYoY] = useState(false);
   const [showAvg, setShowAvg] = useState(true);
   const [showExtremes, setShowExtremes] = useState(true);
+
+  // 折线图容器宽度自适应
+  const chartContainerRef = useRef(null);
+  const [chartContainerWidth, setChartContainerWidth] = useState(800);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const w = Math.floor(entry.contentRect.width);
+        if (w > 0) setChartContainerWidth(w);
+      }
+    });
+    observer.observe(chartContainerRef.current);
+    setChartContainerWidth(Math.floor(chartContainerRef.current.getBoundingClientRect().width) || 800);
+    return () => observer.disconnect();
+  }, []);
   
   // City Modal State
   const [selectedCity, setSelectedCity] = useState(null);
@@ -608,6 +625,7 @@ const CostAndProfitTab = () => {
         })}
 
         {/* Chart Component */}
+        <div ref={chartContainerRef} style={{ overflow: 'hidden' }}>
         <LineTrendChart
           values={trendConfig.values}
           valuesYoY={trendConfig.valuesYoY}
@@ -621,11 +639,13 @@ const CostAndProfitTab = () => {
           yAxisFormatter={trendConfig.formatter}
           currentLabel={activeMetric === 'revenue_cost' ? '营业额' : '利润'}
           height={LineTrendStyle.DIMENSIONS.height}
-          width={LineTrendStyle.DIMENSIONS.width}
+          width={chartContainerWidth}
+          padding={{ top: 40, right: 90, bottom: 60, left: 90 }}
           colorPrimary={LineTrendStyle.COLORS.primary}
           colorYoY={LineTrendStyle.COLORS.yoy}
           colorSecondary="#10b981"
         />
+        </div>
       </div>
 
       

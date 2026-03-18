@@ -12,6 +12,8 @@ WITH monthly_city_store_output_metrics AS (
     FROM data_warehouse.dws_indicator_detail_store_monthly a
              left join data_warehouse.dm_city b on a.city_code = b.city_code
     WHERE month IS NOT NULL
+     and store_code is not null
+    and month <= date_format(now(), '%Y-%m')
     GROUP BY b.statistics_city_name,
              a.store_code,
              a.store_name, month),

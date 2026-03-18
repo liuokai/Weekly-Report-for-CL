@@ -180,16 +180,16 @@ const CapitalForecastTable = () => {
                 className={`border-b border-gray-200 ${row.isHQ ? 'bg-[#a40035]/5 font-bold' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-gray-50`}
               >
                 <td className="px-4 py-3 font-medium text-gray-900 border-r border-gray-200 whitespace-nowrap">{row.city}</td>
-                <td className="px-4 py-3 font-mono text-gray-800 border-r border-gray-200">{formatWan(row.balance2025)}</td>
-                <td className="px-4 py-3 font-mono text-gray-700 border-r border-gray-200">{formatWan(row.operatingOccurred)}</td>
-                <td className="px-4 py-3 font-mono text-gray-700 border-r border-gray-200">{formatWan(row.operatingPending)}</td>
-                <td className="px-4 py-3 font-mono text-gray-800 border-r border-gray-300">{formatWan(row.operatingTotal)}</td>
-                <td className="px-4 py-3 font-mono text-green-700 border-r border-gray-200">{formatWan(row.safetyLine)}</td>
-                <td className="px-4 py-3 font-mono font-bold text-[#a40035] border-r border-gray-200">{formatWan(row.availableFunds)}</td>
-                <td className="px-4 py-3 font-mono text-gray-700 border-r border-gray-200">{formatWan(row.openOccurred)}</td>
-                <td className="px-4 py-3 font-mono text-gray-700 border-r border-gray-200">{formatWan(row.openPending)}</td>
-                <td className="px-4 py-3 font-mono text-gray-800 border-r border-gray-300">{formatWan(row.openTotal)}</td>
-                <td className={`px-4 py-3 font-mono font-bold ${finalBalanceColor(row.finalBalance)}`}>{formatWan(row.finalBalance)}</td>
+                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.balance2025)}</td>
+                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.operatingOccurred)}</td>
+                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.operatingPending)}</td>
+                <td className="px-4 py-3 text-gray-900 border-r border-gray-300">{formatWan(row.operatingTotal)}</td>
+                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.safetyLine)}</td>
+                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.availableFunds)}</td>
+                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.openOccurred)}</td>
+                <td className="px-4 py-3 text-gray-900 border-r border-gray-200">{formatWan(row.openPending)}</td>
+                <td className="px-4 py-3 text-gray-900 border-r border-gray-300">{formatWan(row.openTotal)}</td>
+                <td className="px-4 py-3 text-gray-900">{formatWan(row.finalBalance)}</td>
               </tr>
             ))}
           </tbody>
