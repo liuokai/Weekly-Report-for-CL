@@ -64,7 +64,7 @@ const NewStoreOperationStatusContainer = () => {
       if (!d.opening_date) return null;
       return d.opening_date.split('T')[0].slice(0, 7); // 取 YYYY-MM
     }).filter(Boolean))];
-    return months.sort();
+    return months.sort().reverse();
   }, [data]);
 
   // 过滤后的数据，默认按城市分组再按城市门店排序升序

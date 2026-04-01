@@ -107,7 +107,7 @@ const RampUpStoreOperationContainer = () => {
         <h2 className="text-lg font-bold text-[#a40035] flex items-center gap-2">
           爬坡期门店经营情况总结
           <span className="ml-2 text-sm font-normal bg-[#a40035]/10 text-[#a40035] px-2 py-0.5 rounded-full">
-            {loading ? '...' : `${data?.length || 0} 家`}
+            {loading ? '...' : `${filteredData?.length || 0} 家`}
           </span>
           <span className="ml-3 text-sm font-normal text-[#a40035]">
             数据区间: 开业至 {yesterday}
