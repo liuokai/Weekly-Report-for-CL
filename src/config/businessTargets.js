@@ -189,41 +189,43 @@ export const BusinessTargets = {
   },
 
   // =================================================================
-  // 总部成本核算 (Headquarters Cost Accounting)
+  // 总部成本核算 (Headquarters Cost Accounting) - 2026年预算数据
   // =================================================================
   headquartersCostAccounting: {
-    // 收入
+    // 收入预算
     revenue: [
-      { name: "服务费收入", value: 12142741.76 },
-      { name: "租金收入", value: 776400.00 },
-      { name: "商品销售收入", value: 138000.00 },
-      { name: "小计", value: 13057141.76 }
+      { key: 'management_income',           name: "服务费收入",     value: 12142742 },
+      { key: 'rental_income',               name: "租金收入",       value: 776400 },
+      { key: 'goods_sales_income',          name: "商品销售收入",   value: 138000 },
+      { key: 'total_income',                name: "小计",           value: 13057142 }
     ],
-    // 人工成本
+    // 人工成本预算
     laborCosts: [
-      { name: "人工成本-投融资管理", value: 5236511.74 },
-      { name: "人工成本-推拿之家", value: 5431538.46 },
-      { name: "人工成本-用户中心", value: 6768164.21 },
-      { name: "人工成本-IT中心", value: 7142000.00 },
-      { name: "小计", value: 24578214.40 }
+      { key: 'investment_financing_budget', name: "人工成本-投融资管理", value: 5236512 },
+      { key: 'massage_home_budget',         name: "人工成本-推拿之家",   value: 5431538 },
+      { key: 'user_center_budget',          name: "人工成本-用户中心",   value: 6826335 },
+      { key: 'digital_platform_budget',     name: "人工成本-IT中心",     value: 7142000 },
+      { key: 'labor_cost',                  name: "小计",               value: 24636385 }
     ],
-    // 固定成本
+    // 固定成本预算
     fixedCosts: [
-      { name: "房租费", value: 210252.93 },
-      { name: "折旧费", value: 47884.62 },
-      { name: "研发培训费", value: 2504709.71 },
-      { name: "招聘渠道费", value: 1029371.05 },
-      { name: "办公费", value: 909462.33 },
-      { name: "水电费", value: 48000.00 },
-      { name: "服务器租赁", value: 1207900.00 },
-      { name: "手续费", value: 5000.00 },
-      { name: "税金", value: 891603.20 },
-      { name: "小计", value: 6854183.84 }
+      { key: 'rent_fee',                    name: "房租费",       value: 210253 },
+      { key: 'depreciation_fee',            name: "折旧费",       value: 47885 },
+      { key: 'rd_training_fee',             name: "研发培训费",   value: 2504710 },
+      { key: 'recruitment_channel_fee',     name: "招聘渠道费",   value: 1029371 },
+      { key: 'office_fee',                  name: "办公费",       value: 909462 },
+      { key: 'utilities_fee',               name: "水电费",       value: 48000 },
+      { key: 'server_leasing_fee',          name: "服务器租赁",   value: 1207900 },
+      { key: 'handling_fee',                name: "手续费",       value: 5000 },
+      { key: 'tax_and_surcharge',           name: "税金",         value: 891603 },
+      { key: 'fixed_cost',                  name: "小计",         value: 6854184 }
     ],
-    // 合计与利润
+    // 合计与利润预算
     summary: {
-      totalExpenditure: 31432398.25, // 支出合计
-      headquartersProfit: -18375256.49 // 总部利润
+      totalExpenditure: 31490569,   // 支出合计
+      headquartersProfit: -18433427, // 总部利润
+      storeProfit: 44660566,         // 门店利润
+      annualProfit: 26227138         // 2026年利润合计
     }
   },
 

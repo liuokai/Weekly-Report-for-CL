@@ -1,144 +1,84 @@
+      
 -- 新店经营情况总结
+SELECT r.month                                                        AS month,                         -- 月份
+       r.city_name                                                    AS city_name,                     -- 城市
+       r.store_name                                                   AS store_name,                    -- 门店名称
+       r.store_code                                                   AS store_code,                    -- 门店编码
+       r.opening_date                                                 AS opening_date,                  -- 开业日期
+       m.city_manager_name                                            AS city_manager_name,             -- 城市经理
+       m.technology_vice_name                                         AS tech_vice_president_name,      -- 技术副总
+       r.city_store_order                                             AS city_store_order,   -- 城市门店排序
+       r.ramp_up_period                                               AS ramp_up_period_months,         -- 爬坡期长度(月)
+       r.ramp_up_month_count                                          AS current_ramp_up_month_index,   -- 当前爬坡期月数
 
-WITH ramp_config AS (
-    -- 1. 锁定 2026 年新开门店爬坡期的起点、长度、开业日期及基础信息
-    SELECT
-        month,
-        store_code,
-        store_name,
-        city_code,
-        city_name,
-        opening_date,
-        month AS start_month,
-        ramp_up_period,
-        ramp_up_month_count
-    FROM data_warehouse.dws_new_store_commission_monthly
-    WHERE opening_date >= '2026-01-01'
-      AND LEFT(month, 4) >= '2026'
-      AND ramp_up_period >= ramp_up_month_count
-),
-budget_agg AS (
-    -- 2. 汇总该门店整个爬坡周期内的预算总额（现金流目标值）
-    SELECT
-        b.store_code,
-        SUM(b.cash_flow_budget) AS total_cash_flow_budget
-    FROM data_warehouse.dws_store_revenue_estimate b
-    INNER JOIN ramp_config r ON b.store_code = r.store_code
-    WHERE (
-          (CAST(LEFT(b.month, 4) AS INT) * 12 + CAST(RIGHT(b.month, 2) AS INT)) -
-          (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
-      ) BETWEEN 1 AND r.ramp_up_period
-    GROUP BY b.store_code
-),
-actual_agg AS (
-    -- 3. 汇总截止当前月份（昨日所在月）且在爬坡期内的实际现金流
-    SELECT
-        a.store_code,
-        SUM(a.net_cash_flow) AS actual_cash_flow_to_date
-    FROM data_warehouse.dws_profit_store_detail_monthly a
-    INNER JOIN ramp_config r ON a.store_code = r.store_code
-    WHERE
-      ((CAST(LEFT(a.month, 4) AS INT) * 12 + CAST(RIGHT(a.month, 2) AS INT)) -
-       (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
-      ) BETWEEN 1 AND r.ramp_up_period
-      AND a.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
-    GROUP BY a.store_code
-),
-cost_agg AS (
-    -- 4. 汇总爬坡期内（截止昨日所在月）的各项费用预算与明细实际值
-    SELECT
-        c.store_code,
-        SUM(c.marketing_est)      AS total_marketing_est,
-        SUM(c.incentive_est)      AS total_incentive_est,
-        SUM(c.ad_fee)             AS total_ad_fee,
-        SUM(c.group_buy_discount) AS total_group_buy_discount,
-        SUM(c.offline_ad_fee)     AS total_offline_ad_fee,
-        SUM(c.new_guest_discount) AS total_new_guest_discount,
-        SUM(c.exhibition_fee)     AS total_exhibition_fee,
-        SUM(c.masseur_commission) AS total_masseur_commission,
-        SUM(c.incentive_actual)   AS total_incentive_actual
-    FROM data_warehouse.dws_new_store_ramp_up_cost_execution_statistics c
-    INNER JOIN ramp_config r ON c.store_code = r.store_code
-    WHERE
-      ((CAST(LEFT(c.month, 4) AS INT) * 12 + CAST(RIGHT(c.month, 2) AS INT)) -
-       (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
-      ) BETWEEN 1 AND r.ramp_up_period
-      AND c.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
-    GROUP BY c.store_code
-)
+       -- 1. 现金流数据
+       ROUND(nvl(b.cash_flow_budget, 0), 2)                           AS cash_flow_budget_total,        -- 现金流目标值
+       ROUND(nvl(a.net_cash_flow, 0), 2)                              AS cash_flow_actual_to_date,      -- 爬坡期现金流实际值
+       ROUND(nvl(a.net_cash_flow, 0) - nvl(b.cash_flow_budget, 0), 2) AS cash_flow_variance,            -- 现金流差异
 
--- 5. 最终合并结果集
-SELECT
-    r.month                             AS month, -- 原字段：月份
-    r.city_name                             AS city_name, -- 原字段：城市
-    r.store_name                            AS store_name, -- 原字段：门店名称
-    r.store_code                            AS store_code, -- 原字段：门店编码
-    r.opening_date                          AS opening_date, -- 原字段：开业日期
-    m.city_manager_name                     AS city_manager_name, -- 原字段：城市经理
-    m.technology_vice_name                  AS tech_vice_president_name, -- 原字段：技术副总
-    r.ramp_up_period                        AS ramp_up_period_months, -- 原字段：爬坡期长度
-    ( (CAST(LEFT(DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'), 4) AS INT) * 12
-       + CAST(RIGHT(DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'), 2) AS INT))
-      - (CAST(LEFT(r.start_month, 4) AS INT) * 12 + CAST(RIGHT(r.start_month, 2) AS INT)) + 1
-    )                                       AS current_ramp_up_month_index, -- 原字段：当前爬坡期
+       -- 2. 营销费用相关
+       ROUND(nvl(c.marketing_est, 0), 2)                              AS marketing_budget_total,        -- 营销费预算
+       ROUND(
+               nvl(c.ad_fee, 0) +
+               nvl(c.group_buy_discount, 0) +
+               nvl(c.offline_ad_fee, 0) +
+               nvl(c.new_guest_discount, 0) +
+               nvl(c.exhibition_fee, 0) +
+               nvl(c.masseur_commission, 0)
+           , 2)                                                       AS marketing_actual_total,        -- 营销费实际合计
 
-    -- 1. 现金流数据
-    ROUND(b.total_cash_flow_budget, 2)      AS cash_flow_budget_total, -- 原字段：现金流目标值
-    ROUND(COALESCE(a.actual_cash_flow_to_date, 0), 2) AS cash_flow_actual_to_date, -- 原字段：爬坡期现金流实际值
-    ROUND((COALESCE(a.actual_cash_flow_to_date, 0) - b.total_cash_flow_budget), 2) AS cash_flow_variance, -- 原字段：现金流差异
+       -- 营销费使用率（保留1位小数的百分数）
+       CASE
+           WHEN nvl(c.marketing_est, 0) = 0 THEN '0%'
+           ELSE CONCAT(ROUND( (nvl(c.ad_fee, 0) + nvl(c.group_buy_discount, 0) + nvl(c.offline_ad_fee, 0) +
+                                nvl(c.new_guest_discount, 0) + nvl(c.exhibition_fee, 0) +
+                                nvl(c.masseur_commission, 0))
+                                   / c.marketing_est * 100 , 1), '%') END     AS marketing_usage_ratio_display, -- 营销费使用率
 
-    -- 2. 营销费用相关
-    ROUND(COALESCE(c.total_marketing_est, 0), 2)      AS marketing_budget_total, -- 原字段：营销费预算
-    ROUND(
-        COALESCE(c.total_ad_fee, 0) +
-        COALESCE(c.total_group_buy_discount, 0) +
-        COALESCE(c.total_offline_ad_fee, 0) +
-        COALESCE(c.total_new_guest_discount, 0) +
-        COALESCE(c.total_exhibition_fee, 0) +
-        COALESCE(c.total_masseur_commission, 0)
-    , 2)                                              AS marketing_actual_total, -- 原字段：营销费合计
+       -- 营销费差异值
+       ROUND( nvl(c.marketing_est, 0) -
+               (nvl(c.ad_fee, 0) + nvl(c.group_buy_discount, 0) + nvl(c.offline_ad_fee, 0) +
+                nvl(c.new_guest_discount, 0) + nvl(c.exhibition_fee, 0) + nvl(c.masseur_commission, 0))
+           , 2)                                                       AS marketing_usage_diff,          -- 营销费差异值
 
-    -- 营销费使用率：保留1位小数的百分数格式
-    CASE
-        WHEN c.total_marketing_est IS NULL OR c.total_marketing_est = 0 THEN NULL
-        ELSE CONCAT(ROUND(
-            (COALESCE(c.total_ad_fee, 0) + COALESCE(c.total_group_buy_discount, 0) + COALESCE(c.total_offline_ad_fee, 0) +
-             COALESCE(c.total_new_guest_discount, 0) + COALESCE(c.total_exhibition_fee, 0) + COALESCE(c.total_masseur_commission, 0))
-            / c.total_marketing_est * 100
-        , 1), '%')
-    END                                               AS marketing_usage_ratio_display, -- 原字段：营销费使用率
-    -- 营销费差异值
-    ROUND(
-        CASE
-            WHEN c.total_marketing_est IS NULL OR c.total_marketing_est = 0 THEN NULL
-            ELSE c.total_marketing_est -
-                (COALESCE(c.total_ad_fee, 0) + COALESCE(c.total_group_buy_discount, 0) + COALESCE(c.total_offline_ad_fee, 0) +
-                 COALESCE(c.total_new_guest_discount, 0) + COALESCE(c.total_exhibition_fee, 0) + COALESCE(c.total_masseur_commission, 0))
-        END
-    , 2)                                              AS marketing_usage_diff, -- 原字段：营销费差异
+       -- 营销费用明细
+       ROUND(nvl(c.ad_fee, 0), 2)                                     AS ad_fee_actual,                 -- 广告费实际值
+       ROUND(nvl(c.group_buy_discount, 0), 2)                         AS group_buy_discount_actual,     -- 团购优惠实际值
+       ROUND(nvl(c.offline_ad_fee, 0), 2)                             AS offline_ad_fee_actual,         -- 线下广告实际值
+       ROUND(nvl(c.new_guest_discount, 0), 2)                         AS new_guest_discount_actual,     -- 新客优惠实际值
+       ROUND(nvl(c.exhibition_fee, 0), 2)                             AS exhibition_fee_actual,         -- 布展费实际值
+       ROUND(nvl(c.masseur_commission, 0), 2)                         AS masseur_commission_actual,     -- 推拿师提成实际值
 
-    ROUND(COALESCE(c.total_ad_fee, 0), 2)             AS ad_fee_actual, -- 原字段：广告费
-    ROUND(COALESCE(c.total_group_buy_discount, 0), 2) AS group_buy_discount_actual, -- 原字段：团购优惠
-    ROUND(COALESCE(c.total_offline_ad_fee, 0), 2)     AS offline_ad_fee_actual, -- 原字段：线下广告
-    ROUND(COALESCE(c.total_new_guest_discount, 0), 2) AS new_guest_discount_actual, -- 原字段：新客优惠
-    ROUND(COALESCE(c.total_exhibition_fee, 0), 2)     AS exhibition_fee_actual, -- 原字段：布展
-    ROUND(COALESCE(c.total_masseur_commission, 0), 2) AS masseur_commission_actual, -- 原字段：推拿师提成
+       -- 3. 激励费用相关
+       ROUND(nvl(c.incentive_est, 0), 2)                              AS incentive_budget_total,        -- 激励费预算
+       ROUND(nvl(c.incentive_actual, 0), 2)                           AS incentive_actual_total,        -- 激励费实际值
 
-    -- 3. 激励费用相关
-    ROUND(COALESCE(c.total_incentive_est, 0), 2)      AS incentive_budget_total, -- 原字段：激励费预算
-    ROUND(COALESCE(c.total_incentive_actual, 0), 2)   AS incentive_actual_total, -- 原字段：激励费实际
+       -- 激励费使用率（保留1位小数的百分数）
+       CASE WHEN nvl(c.incentive_est, 0) = 0 THEN '0%'
+           ELSE CONCAT(ROUND(nvl(c.incentive_actual, 0) / c.incentive_est * 100, 1), '%')
+           END                                                        AS incentive_usage_ratio_display, -- 激励费使用率
 
-    -- 激励费使用率：保留1位小数的百分数格式
-    CASE
-        WHEN c.total_incentive_est IS NULL OR c.total_incentive_est = 0 THEN NULL
-        ELSE CONCAT(ROUND(COALESCE(c.total_incentive_actual, 0) / c.total_incentive_est * 100, 1), '%')
-    END                                               AS incentive_usage_ratio_display, -- 原字段：激励费使用率
+       -- 激励费差异值
+       ROUND(nvl(c.incentive_actual, 0) - nvl(c.incentive_est, 0), 2) AS incentive_variance             -- 激励费差异值
 
-    ROUND(COALESCE(c.total_incentive_actual, 0) - COALESCE(c.total_incentive_est, 0), 2) AS incentive_variance -- 原字段：激励费差异
+-- 纯表直接关联，无嵌套子查询
+FROM data_warehouse.dws_new_store_commission_monthly r
+         LEFT JOIN data_warehouse.dws_store_revenue_estimate b ON r.store_code = b.store_code AND r.month = b.month
+         LEFT JOIN data_warehouse.dws_profit_store_detail_monthly a ON r.store_code = a.store_code AND r.month = a.month
+         LEFT JOIN data_warehouse.dws_new_store_ramp_up_cost_execution_statistics c ON r.store_code = c.store_code AND r.month = c.month
+         LEFT JOIN data_warehouse.tmp_manager_store_mapping m ON r.store_code = m.store_code
 
-FROM ramp_config r
-LEFT JOIN budget_agg b ON r.store_code = b.store_code
-LEFT JOIN actual_agg a ON r.store_code = a.store_code
-LEFT JOIN cost_agg c ON r.store_code = c.store_code
-LEFT JOIN data_warehouse.tmp_manager_store_mapping m ON r.store_code = m.store_code
-ORDER BY r.city_code, r.store_code;
+-- 所有筛选条件集中管理
+WHERE r.opening_date >= '2025-01-01'
+  AND r.month >= '2025-01'
+  AND r.ramp_up_period >= r.ramp_up_month_count
+  AND r.ramp_up_month_count > 0
+  AND (a.month IS NULL OR a.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'))
+  AND (c.month IS NULL OR c.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'))
+
+-- 排序优化（NULL值后置）
+ORDER BY r.city_code ASC NULLS LAST,
+         r.store_code ASC NULLS LAST,
+         r.month ASC NULLS LAST;
+
+    

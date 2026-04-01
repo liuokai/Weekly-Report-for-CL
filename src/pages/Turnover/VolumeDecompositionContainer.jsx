@@ -10,7 +10,7 @@ import useTableSorting from '../../components/Common/useTableSorting';
 const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
   // 保持空数据状态，去掉填充的数据
   const [data] = useState([]);
-  const [trendMetric, setTrendMetric] = useState('daily'); // 'daily' | 'cumulative'
+  const [trendMetric, setTrendMetric] = useState('total'); // 'total' | 'daily' | 'cumulative'
   const [showYoY, setShowYoY] = useState(true);
   const [showAvg, setShowAvg] = useState(false);
   const [showExtremes, setShowExtremes] = useState(true);
@@ -71,6 +71,7 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
 
   // Fetch Data
   const { data: annualVisitData } = useFetchData('getUserVisitCountAnnual', []);
+  const { data: dailyAvgVisitMonthlyTotalData } = useFetchData('getUserVisitCountDailyAvgVisitMonthlyTotal', [], null, { manual: trendMetric !== 'total' });
   const { data: dailyAvgVisitMonthlyData } = useFetchData('getUserVisitCountDailyAvgMonthly', [], null, { manual: trendMetric !== 'daily' });
   const { data: cumVisitMonthlyData } = useFetchData('getUserVisitCountCumMonthly', [], null, { manual: trendMetric !== 'cumulative' });
   // 旧的城市下钻数据源移除，统一使用新的真实数据源（各指标按月/城市/门店）
@@ -296,7 +297,27 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
     let values = [], valuesYoY = [], months = [], title, unit, yAxisFormatter;
     let yearByIndex = []; // 存储每个数据点对应的年份
 
-    if (trendMetric === 'daily') {
+    if (trendMetric === 'total') {
+      title = "天均客次量趋势（全公司）";
+      unit = "人次";
+      yAxisFormatter = (v) => Math.round(v).toLocaleString();
+      if (dailyAvgVisitMonthlyTotalData && dailyAvgVisitMonthlyTotalData.length > 0) {
+        // 取近12个月，按月份升序排列
+        const sorted = [...dailyAvgVisitMonthlyTotalData]
+          .sort((a, b) => a.month.localeCompare(b.month))
+          .slice(-12);
+        months = sorted.map(d => {
+          const [y, m] = String(d.month).split('-');
+          return `${String(y).slice(-2)}年${Number(m)}月`;
+        });
+        values = sorted.map(d => Number(d.daily_avg_visits));
+        valuesYoY = sorted.map(d => Number(d.last_year_daily_avg_visits));
+        yearByIndex = sorted.map(d => {
+          const [y] = String(d.month).split('-');
+          return Number(y);
+        });
+      }
+    } else if (trendMetric === 'daily') {
       title = "天均客次量趋势";
       unit = "人次";
       yAxisFormatter = (v) => Math.round(v).toLocaleString();
@@ -339,7 +360,8 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
         {LineTrendStyle.renderHeader(title, unit)}
         {LineTrendStyle.renderMetricSwitch(
           [
-            { key: 'daily', label: '天均客次量' },
+            { key: 'total', label: '天均客次量' },
+            { key: 'daily', label: '单店天均客次量' },
             { key: 'cumulative', label: '年度累计客次量' }
           ],
           trendMetric,
@@ -354,9 +376,13 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
           setShowExtremes: () => setShowExtremes(!showExtremes)
         })}
 
+        {trendMetric === 'total' && (
+          <p className="text-xs text-gray-500 mt-1 mb-2">  1. 天均客次量 = 客次量 / 本月营业天数　　
+  2. 目标 = 年营业额预算 / 365/ 客单价169.55 </p>
+        )}
         {trendMetric === 'daily' && (
-          <p className="text-xs text-gray-500 mt-1 mb-2">天均客次量 = 客次量 / 所有门店营业天数之和　　
-          目标 = 年营业额预算 / 365 / 门店数</p>
+          <p className="text-xs text-gray-500 mt-1 mb-2">单店天均客次量 = 客次量 / 所有门店营业天数之和　　
+          目标 = 年营业额预算 / 365 / 客单价169.55/ 门店数</p>
         )}
 
         <div ref={chartContainerRef} style={{ overflow: 'hidden' }}>
@@ -379,17 +405,28 @@ const VolumeDecompositionContainer = ({ annualTarget, totalStores }) => {
           targetValue={(() => {
             if (!annualTarget) return null;
             const annualTargetYuan = annualTarget * 10000;
+            if (trendMetric === 'total') {
+              // 天均客次量目标 = 年营业额目标 / 365 / 客单价
+              return annualTargetYuan / 365 / 169.55;
+            }
             if (trendMetric === 'daily') {
-              // 天均客次量目标 = 年营业额目标 / 365 / 客单价 / 门店数
+              // 单店天均客次量目标 = 年营业额目标 / 365 / 客单价 / 门店数
               return annualTargetYuan / 365 / 169.55 / (totalStores || 1);
             }
-            // 累计客次量不显示目标虚线
+            // cumulative 不显示目标虚线
             return null;
           })()}
           targetLabel={(() => {
-            if (!annualTarget || trendMetric !== 'daily') return '目标';
-            const val = (annualTarget * 10000) / 365 / 169.55 / (totalStores || 1);
-            return `目标 ${Math.round(val).toLocaleString()}`;
+            if (!annualTarget) return '目标';
+            if (trendMetric === 'total') {
+              const val = (annualTarget * 10000) / 365 / 169.55;
+              return `目标 ${Math.round(val).toLocaleString()}`;
+            }
+            if (trendMetric === 'daily') {
+              const val = (annualTarget * 10000) / 365 / 169.55 / (totalStores || 1);
+              return `目标 ${Math.round(val).toLocaleString()}`;
+            }
+            return '目标';
           })()}
           targetColor="#4b5563"
         />

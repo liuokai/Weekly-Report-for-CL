@@ -32,18 +32,39 @@ const RampUpStoreOperationContainer = () => {
     }
   }, [monthList, selectedMonth]);
 
-  // 按月份筛选后的数据
+  // 城市筛选
+  const [selectedCity, setSelectedCity] = useState(null);
+
+  // 从数据中提取城市列表
+  const cityList = useMemo(() => {
+    const cities = [...new Set((data || []).map(d => d.city_name).filter(Boolean))];
+    return cities.sort();
+  }, [data]);
+
+  // 分页状态
+  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // 按月份和城市筛选后的数据
   const filteredData = useMemo(() => {
     if (!data) return [];
-    if (!selectedMonth) return data;
-    return data.filter(item => item['month'] === selectedMonth);
-  }, [data, selectedMonth]);
+    return data.filter(item => {
+      if (selectedMonth && item['month'] !== selectedMonth) return false;
+      if (selectedCity && item['city_name'] !== selectedCity) return false;
+      return true;
+    });
+  }, [data, selectedMonth, selectedCity]);
+
+  // 分页数据
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const pagedData = filteredData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const columns = [
     { key: 'month', label: '月份', dataIndex: 'month' },
     { key: 'city_name', label: '城市', dataIndex: 'city_name' },
     { key: 'store_name', label: '门店名称', dataIndex: 'store_name' },
     { key: 'store_code', label: '门店编码', dataIndex: 'store_code' },
+    { key: 'city_store_order', label: '城市门店排序', dataIndex: 'city_store_order' },
     { key: 'opening_date', label: '开业日期', dataIndex: 'opening_date' },
     { key: 'city_manager_name', label: '城市经理', dataIndex: 'city_manager_name' },
     { key: 'tech_vice_president_name', label: '技术副总', dataIndex: 'tech_vice_president_name' },
@@ -67,7 +88,7 @@ const RampUpStoreOperationContainer = () => {
     { key: 'incentive_variance', label: '激励费差异', dataIndex: 'incentive_variance' },
   ];
 
-  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, filteredData);
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, filteredData, { key: 'city_store_order', direction: 'asc' });
 
   const formatCurrency = (val) => {
     if (val === null || val === undefined) return '-';
@@ -99,10 +120,16 @@ const RampUpStoreOperationContainer = () => {
         {/* 月份筛选下拉 */}
         <div className="flex flex-row relative z-40">
           <FilterDropdown
+            label="城市"
+            value={selectedCity}
+            options={cityList}
+            onChange={(val) => { setSelectedCity(val); setCurrentPage(1); }}
+          />
+          <FilterDropdown
             label="月份"
             value={selectedMonth}
             options={monthList}
-            onChange={(val) => setSelectedMonth(val || monthList[0] || '')}
+            onChange={(val) => { setSelectedMonth(val || monthList[0] || ''); setCurrentPage(1); }}
             showAllOption={false}
           />
         </div>
@@ -140,12 +167,13 @@ const RampUpStoreOperationContainer = () => {
             ) : sortedData.length === 0 ? (
               <tr><td colSpan={columns.length} className="px-6 py-8 text-center text-gray-400">暂无数据</td></tr>
             ) : (
-              sortedData.map((item, index) => (
+              pagedData.map((item, index) => (
                 <tr key={index} className="bg-white border-b hover:bg-gray-50/50">
                   <td className="px-6 py-4 whitespace-nowrap text-gray-700">{item['month'] || '-'}</td>
                   <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item['city_name']}</td>
                   <td className="px-6 py-4 text-gray-900 whitespace-nowrap">{item['store_name']}</td>
                   <td className="px-6 py-4 text-gray-500 text-xs">{item['store_code']}</td>
+                  <td className="px-6 py-4 text-center">{item['city_store_order'] ?? '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{formatDate(item['opening_date'])}</td>
                   <td className="px-6 py-4">{item['city_manager_name'] || '-'}</td>
                   <td className="px-6 py-4">{item['tech_vice_president_name'] || '-'}</td>
@@ -179,6 +207,32 @@ const RampUpStoreOperationContainer = () => {
           </tbody>
         </table>
       </div>
+
+      {/* 分页控件 */}
+      {totalPages > 1 && (
+        <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+          <span>共 {filteredData.length} 条，第 {currentPage} / {totalPages} 页</span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]">«</button>
+            <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]">‹</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+              .reduce((acc, p, idx, arr) => {
+                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, idx) => p === '...' ? (
+                <span key={`ellipsis-${idx}`} className="px-2">…</span>
+              ) : (
+                <button key={p} onClick={() => setCurrentPage(p)} className={`px-3 py-1 rounded border ${currentPage === p ? 'border-[#a40035] text-[#a40035] font-bold' : 'border-gray-200 hover:border-[#a40035] hover:text-[#a40035]'}`}>{p}</button>
+              ))
+            }
+            <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]">›</button>
+            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]">»</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

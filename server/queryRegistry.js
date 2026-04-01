@@ -102,6 +102,11 @@ const queryRegistry = {
     sql: loadSql('user_visit_count_daily_avg_visit_monthly.sql'),
     description: '按月统计天均客次量（含去年同期与同比），取最近12个月'
   },
+  // 客次量：天均（月度汇总，近12个月，全公司口径）
+  getUserVisitCountDailyAvgVisitMonthlyTotal: {
+    sql: loadSql('user_visit_count_daily_avg_visit_monthly_total.sql'),
+    description: '按月统计全公司天均客次量（含去年同期与同比），取最近12个月'
+  },
   // 客次量：年度累计（月度，近12个月）
   getUserVisitCountCumMonthly: {
     sql: loadSql('user_visit_count_cum_monthly.sql'),

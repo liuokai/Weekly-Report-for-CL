@@ -1,9 +1,18 @@
 import React from 'react';
 import useFetchData from '../../hooks/useFetchData';
 import useTableSorting from '../../components/Common/useTableSorting';
+import FilterDropdown from '../../components/Common/FilterDropdown';
 
 const NewStoreOperationStatusContainer = () => {
   const { data, loading, error, fetchData } = useFetchData('getNewStoreOperationStatus', []);
+  
+  // 筛选状态
+  const [selectedCity, setSelectedCity] = React.useState(null);
+  const [selectedMonth, setSelectedMonth] = React.useState(null);
+
+  // 分页状态
+  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   // 计算昨天的日期
   const yesterday = React.useMemo(() => {
@@ -16,6 +25,7 @@ const NewStoreOperationStatusContainer = () => {
     { key: 'city_name', label: '城市', dataIndex: 'city_name' },
     { key: 'store_name', label: '门店名称', dataIndex: 'store_name' },
     { key: 'store_code', label: '门店编码', dataIndex: 'store_code' },
+    { key: 'city_store_order', label: '城市门店排序', dataIndex: 'city_store_order' },
     { key: 'opening_date', label: '开业日期', dataIndex: 'opening_date' },
     { key: 'city_manager_name', label: '城市经理', dataIndex: 'city_manager_name' },
     { key: 'tech_vice_president_name', label: '技术副总', dataIndex: 'tech_vice_president_name' },
@@ -39,7 +49,37 @@ const NewStoreOperationStatusContainer = () => {
     { key: 'incentive_variance', label: '激励费差异', dataIndex: 'incentive_variance' },
   ];
 
-  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, data || []);
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, data || [], { key: 'city_store_order', direction: 'asc' });
+
+  // 从数据中提取城市列表和开业月份列表
+  const cityList = React.useMemo(() => {
+    const cities = [...new Set((data || []).map(d => d.city_name).filter(Boolean))];
+    return cities.sort();
+  }, [data]);
+
+  const monthList = React.useMemo(() => {
+    const months = [...new Set((data || []).map(d => {
+      if (!d.opening_date) return null;
+      return d.opening_date.split('T')[0].slice(0, 7); // 取 YYYY-MM
+    }).filter(Boolean))];
+    return months.sort();
+  }, [data]);
+
+  // 过滤后的数据
+  const filteredData = React.useMemo(() => {
+    return sortedData.filter(item => {
+      if (selectedCity && item.city_name !== selectedCity) return false;
+      if (selectedMonth) {
+        const itemMonth = item.opening_date ? item.opening_date.split('T')[0].slice(0, 7) : '';
+        if (itemMonth !== selectedMonth) return false;
+      }
+      return true;
+    });
+  }, [sortedData, selectedCity, selectedMonth]);
+
+  // 分页数据
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const pagedData = filteredData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const formatCurrency = (val) => {
     if (val === null || val === undefined) return '-';
@@ -57,7 +97,7 @@ const NewStoreOperationStatusContainer = () => {
          <h2 className="text-lg font-bold text-[#a40035] flex items-center gap-2">
            新店经营情况总结
            <span className="ml-2 text-sm font-normal bg-[#a40035]/10 text-[#a40035] px-2 py-0.5 rounded-full">
-             {loading ? '...' : `${data?.length || 0} 家`}
+             {loading ? '...' : `${filteredData?.length ?? data?.length ?? 0} 家`}
            </span>
            <span className="ml-3 text-sm font-normal text-[#a40035]">
              {/* 数据区间: 2026-01-01 ~ {yesterday} */}
@@ -68,6 +108,20 @@ const NewStoreOperationStatusContainer = () => {
             重试
             </button>
          )}
+         <div className="flex flex-row relative z-40">
+           <FilterDropdown
+             label="城市"
+             value={selectedCity}
+             options={cityList}
+             onChange={(val) => { setSelectedCity(val); setCurrentPage(1); }}
+           />
+           <FilterDropdown
+             label="开业月份"
+             value={selectedMonth}
+             options={monthList}
+             onChange={(val) => { setSelectedMonth(val); setCurrentPage(1); }}
+           />
+         </div>
       </div>
       
       <div className="overflow-x-auto">
@@ -101,14 +155,15 @@ const NewStoreOperationStatusContainer = () => {
             <tbody>
                 {loading ? (
                     <tr><td colSpan={columns.length} className="px-6 py-8 text-center text-gray-400">加载中...</td></tr>
-                ) : sortedData.length === 0 ? (
+                ) : filteredData.length === 0 ? (
                     <tr><td colSpan={columns.length} className="px-6 py-8 text-center text-gray-400">暂无数据</td></tr>
                 ) : (
-                    sortedData.map((item, index) => (
+                    pagedData.map((item, index) => (
                         <tr key={index} className="bg-white border-b hover:bg-gray-50/50">
                             <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item['city_name']}</td>
                             <td className="px-6 py-4 text-gray-900 whitespace-nowrap">{item['store_name']}</td>
                             <td className="px-6 py-4 text-gray-500 text-xs">{item['store_code']}</td>
+                            <td className="px-6 py-4 text-center">{item['city_store_order'] ?? '-'}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{formatDate(item['opening_date'])}</td>
                             <td className="px-6 py-4">{item['city_manager_name'] || '-'}</td>
                             <td className="px-6 py-4">{item['tech_vice_president_name'] || '-'}</td>
@@ -142,6 +197,52 @@ const NewStoreOperationStatusContainer = () => {
             </tbody>
         </table>
       </div>
+
+      {/* 分页控件 */}
+      {totalPages > 1 && (
+        <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+          <span>共 {filteredData.length} 条，第 {currentPage} / {totalPages} 页</span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]"
+            >«</button>
+            <button
+              onClick={() => setCurrentPage(p => p - 1)}
+              disabled={currentPage === 1}
+              className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]"
+            >‹</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+              .reduce((acc, p, idx, arr) => {
+                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, idx) => p === '...' ? (
+                <span key={`ellipsis-${idx}`} className="px-2">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`px-3 py-1 rounded border ${currentPage === p ? 'border-[#a40035] text-[#a40035] font-bold' : 'border-gray-200 hover:border-[#a40035] hover:text-[#a40035]'}`}
+                >{p}</button>
+              ))
+            }
+            <button
+              onClick={() => setCurrentPage(p => p + 1)}
+              disabled={currentPage === totalPages}
+              className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]"
+            >›</button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]"
+            >»</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

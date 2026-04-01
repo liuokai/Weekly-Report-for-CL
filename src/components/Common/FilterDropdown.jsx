@@ -23,16 +23,12 @@ const FilterDropdown = ({ label, value, options, onChange, showAllOption = true 
     <div className={`relative inline-block text-left mr-4 ${isOpen ? 'z-50' : 'z-10'}`} ref={dropdownRef}>
       <button
         type="button"
-        className={`inline-flex justify-between w-40 rounded-md border shadow-sm px-4 py-2 bg-white text-sm font-medium focus:outline-none ${
-          isSelected 
-            ? 'border-[#a40035] text-[#a40035]' 
-            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-        }`}
+        className="inline-flex justify-between w-40 rounded-md border shadow-sm px-4 py-2 bg-white text-sm font-medium focus:outline-none border-[#a40035] text-[#a40035] hover:bg-[#a40035]/5"
         onClick={() => setIsOpen(!isOpen)}
       >
         {value || `全部${label}`}
         <svg 
-          className={`-mr-1 ml-2 h-5 w-5 ${isSelected ? 'text-[#a40035]' : 'text-gray-500'}`} 
+          className={`-mr-1 ml-2 h-5 w-5 text-[#a40035]`} 
           xmlns="http://www.w3.org/2000/svg" 
           viewBox="0 0 20 20" 
           fill="currentColor"
