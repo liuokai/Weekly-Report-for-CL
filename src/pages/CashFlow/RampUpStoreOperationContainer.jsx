@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import useFetchData from '../../hooks/useFetchData';
 import useTableSorting from '../../components/Common/useTableSorting';
 import FilterDropdown from '../../components/Common/FilterDropdown';
+import Pagination from '../../components/Common/Pagination';
 
 /**
  * 爬坡期门店经营情况总结组件
@@ -42,8 +43,8 @@ const RampUpStoreOperationContainer = () => {
   }, [data]);
 
   // 分页状态
-  const PAGE_SIZE = 10;
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // 按月份和城市筛选后的数据
   const filteredData = useMemo(() => {
@@ -56,8 +57,8 @@ const RampUpStoreOperationContainer = () => {
   }, [data, selectedMonth, selectedCity]);
 
   // 分页数据
-  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
-  const pagedData = filteredData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const pagedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const columns = [
     { key: 'month', label: '月份', dataIndex: 'month' },
@@ -208,31 +209,13 @@ const RampUpStoreOperationContainer = () => {
         </table>
       </div>
 
-      {/* 分页控件 */}
-      {totalPages > 1 && (
-        <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-          <span>共 {filteredData.length} 条，第 {currentPage} / {totalPages} 页</span>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]">«</button>
-            <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]">‹</button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
-              .reduce((acc, p, idx, arr) => {
-                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, idx) => p === '...' ? (
-                <span key={`ellipsis-${idx}`} className="px-2">…</span>
-              ) : (
-                <button key={p} onClick={() => setCurrentPage(p)} className={`px-3 py-1 rounded border ${currentPage === p ? 'border-[#a40035] text-[#a40035] font-bold' : 'border-gray-200 hover:border-[#a40035] hover:text-[#a40035]'}`}>{p}</button>
-              ))
-            }
-            <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]">›</button>
-            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border border-gray-200 disabled:opacity-30 hover:border-[#a40035] hover:text-[#a40035]">»</button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        total={filteredData.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 };
