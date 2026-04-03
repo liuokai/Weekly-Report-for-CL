@@ -1,4 +1,3 @@
-      
 -- 闭店预警门店列表 
 
 WITH quarterly_store_metrics AS (
@@ -25,7 +24,7 @@ WITH quarterly_store_metrics AS (
                END                                                                                                              AS cost_ratio,    -- 原字段：当期成本占比
            row_number() over ( partition by a.store_code order by CONCAT(LEFT(a.month, 4), '-Q', CEIL(RIGHT(a.month, 2) / 3)) ) AS rn
     FROM dws_profit_store_detail_monthly a
-    WHERE a.month < DATE_FORMAT(date_sub(CURDATE(), interval 1 day), '%Y-%m')
+    WHERE a.month < DATE_FORMAT(date_sub(CURDATE(), interval 1 day), '%Y-%m') and nvl(main_business_income,0)<>0
     GROUP BY a.city_code,
              a.city_name,
              a.store_code,
@@ -158,5 +157,3 @@ WHERE
         OR (res.cum_net_cash_flow_mgmt < 0 AND -res.cum_net_cash_flow_mgmt > res.total_depreciation * 0.5))
 ORDER BY res.quarter,res.city_code,
          res.store_code ;
-
-    
