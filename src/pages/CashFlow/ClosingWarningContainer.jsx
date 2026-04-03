@@ -271,8 +271,8 @@ const WarningCard = ({ store }) => {
              </div>
              <div className="flex justify-between items-center">
                 <span className="text-gray-500">累计经营现金流</span>
-                <span className={`font-medium ${store['cumulative_net_cash_flow'] < 0 ? 'text-green-600' : 'text-[#a40035]'}`}>
-                  {fmtMoney(store['cumulative_net_cash_flow'])}
+                <span className={`font-medium ${store['cum_net_cash_flow_mgmt'] < 0 ?  'text-[#a40035]':'text-green-600' }`}>
+                  {fmtMoney(store['cum_net_cash_flow_mgmt'])}
                 </span>
              </div>
            </div>
