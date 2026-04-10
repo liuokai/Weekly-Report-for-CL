@@ -72,7 +72,15 @@ SELECT
     SUM(variable_cost)                AS variable_cost,                 -- 原字段：总计类-变动成本总计
     SUM(profit_before_tax)            AS profit_before_tax,             -- 原字段：总计类-税前利润
     SUM(income_tax)                   AS income_tax,                    -- 原字段：总计类-所得税金额
-    SUM(net_profit)                   AS total_profit,                  -- 年度净利润（对应原total_profit）
+    -- SUM(net_profit)                   AS total_profit,                  -- 年度净利润（对应原total_profit）
+    SUM(NVL(main_business_income,0) - NVL(service_fee,0) - NVL(income_tax,0) - round(NVL(labor_cost,0) + NVL(variable_cost,0)
+                                                   + NVL(fixed_cost,0) / DAY(LAST_DAY(STR_TO_DATE(CONCAT(month, '-01'), '%Y-%m-%d')))
+                                                   * CASE
+                                                         WHEN DATE_FORMAT(STR_TO_DATE(CONCAT(month, '-01'), '%Y-%m-%d'), '%Y-%m')
+                                                             = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
+                                                             THEN DAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY))
+                                                         ELSE DAY(LAST_DAY(STR_TO_DATE(CONCAT(month, '-01'), '%Y-%m-%d')))
+                                                         END,2))                   AS total_profit,                  -- 年度净利润（当前月份租金和折旧按照实际进行天数折算）
     SUM(net_cash_flow)                AS net_cash_flow                  -- 原字段：总计类-经营净现金流
 
 FROM dws_profit_store_detail_monthly
