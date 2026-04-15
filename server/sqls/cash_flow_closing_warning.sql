@@ -1,4 +1,5 @@
--- 闭店预警门店列表 
+
+-- 闭店预警门店列表
 
 WITH quarterly_store_metrics AS (
     -- 本季度数据
@@ -132,7 +133,8 @@ SELECT res.quarter                                                      as quart
        -- 资产与现金流指标
        res.total_depreciation                                           as total_depreciation,              -- 原字段：总折旧
        res.cum_net_cash_flow_mgmt                                     as cum_net_cash_flow_mgmt,        -- 原字段：累计经营现金流
-       CONCAT(ROUND(if(res.cumulative_cash_flow_loss_ratio<0,-cumulative_cash_flow_loss_ratio, null) * 100, 1),
+       res.cum_net_cash_flow_mgmt  -res.total_depreciation                                   as cumulative_cash_flow_mgmt,        -- 原字段：差异=累计经营现金流-总折旧
+       CONCAT(ROUND(if(res.cumulative_cash_flow_loss_ratio<0,-res.cumulative_cash_flow_loss_ratio, null) * 100, 1),
               '%')                                                      as cumulative_cash_flow_loss_ratio, -- 原字段：累计现金流亏损占比
        CASE
            WHEN (res.cost_ratio > 1 AND res.cost_ratio_last_quarter > 1 AND res.cost_ratio_prev_last_quarter > 1 and
@@ -145,7 +147,17 @@ SELECT res.quarter                                                      as quart
            WHEN (res.cum_net_cash_flow_mgmt < 0 AND -res.cum_net_cash_flow_mgmt > res.total_depreciation * 0.5)
                THEN '累计现金流亏损超过折旧的 50%'
            ELSE ''
-           END                                                          AS warning_reason                   -- 原字段：预警原因
+           END                                                          AS warning_reason,                   -- 原字段：预警原因
+       -- 🔥 新增：是否触发闭店
+       CASE
+           -- 亏损额 > 总折旧*50% → 是
+           WHEN res.cum_net_cash_flow_mgmt < 0 AND -res.cum_net_cash_flow_mgmt > res.total_depreciation * 0.5 THEN '是'
+           -- 总折旧*40% < 亏损额 <= 总折旧*50% → 预警闭店门店
+           WHEN res.cum_net_cash_flow_mgmt < 0 AND -res.cum_net_cash_flow_mgmt > res.total_depreciation * 0.4 AND -res.cum_net_cash_flow_mgmt <= res.total_depreciation * 0.5 THEN '预警闭店门店'
+           -- 满足WHERE条件（连续三个季度成本占比超100%）→ 是
+           WHEN res.cost_ratio > 1 AND res.cost_ratio_last_quarter > 1 AND res.cost_ratio_prev_last_quarter > 1 AND res.quarter >= rq.ramp_up_end_quarter THEN '是'
+           ELSE NULL
+       END AS is_close_warning -- 是否触发闭店
 FROM calculated_results res
          LEFT JOIN tmp_manager_store_mapping m ON res.store_code = m.store_code
          LEFT JOIN dm_city dc ON res.city_code = dc.city_code
@@ -154,6 +166,6 @@ WHERE
     -- 动态筛选：始终取数据集中最新的一个季度
     res.quarter= CONCAT( YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)), '-Q', QUARTER(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)))
     and  ((res.cost_ratio > 1 AND res.cost_ratio_last_quarter > 1 AND res.cost_ratio_prev_last_quarter > 1 and res.quarter >= rq.ramp_up_end_quarter)
-        OR (res.cum_net_cash_flow_mgmt < 0 AND -res.cum_net_cash_flow_mgmt > res.total_depreciation * 0.5))
-ORDER BY res.quarter,res.city_code,
-         res.store_code ;
+        OR (res.cum_net_cash_flow_mgmt < 0 ))
+ORDER BY res.cumulative_cash_flow_loss_ratio
+            ;

@@ -54,7 +54,7 @@ investment_monthly as (
     select
         b.city_name,
         b.opening_month as month,
-        sum(a.initial_investment_amount) as monthly_investment
+        sum(a.total_investment_amt) as monthly_investment
     from data_warehouse.dws_store_initial_investment a
     join new_store_info b on a.store_code = b.store_code
     where a.invest_type = '新店'

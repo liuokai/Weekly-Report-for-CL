@@ -10,8 +10,11 @@ import NewStoreOperationStatusContainer from './NewStoreOperationStatusContainer
 import RampUpStoreOperationContainer from './RampUpStoreOperationContainer';
 import NewStoreSupplyContainer from './NewStoreSupplyContainer';
 import CashFlowContinuousLossContainer from './CashFlowContinuousLossContainer';
+import CashFlowContinuousLossTableContainer from './CashFlowContinuousLossTableContainer';
 import ClosingWarningContainer from './ClosingWarningContainer';
 import FilterDropdown from '../../components/Common/FilterDropdown';
+import NewStoreStatisticsContainer from './NewStoreStatisticsContainer';
+
 import { generateNewStoreAnalysis } from '../../services/analysisService';
 
 const CashFlowTab = () => {
@@ -560,6 +563,9 @@ const CashFlowTab = () => {
         </div>
       )}
 
+      {/* 新店数量统计 */}
+      <NewStoreStatisticsContainer />
+
       {/* 详细数据表格 - 使用 DataContainer 保持统一风格 */}
       <DataContainer 
         title="新店与重装目标完成情况详情"
@@ -592,13 +598,19 @@ const CashFlowTab = () => {
       <NewStoreOperationStatusContainer />
 
       {/* 爬坡期门店经营情况总结 */}
-      <RampUpStoreOperationContainer />
+      {/* <RampUpStoreOperationContainer /> */}
 
       {/* 现金流持续亏损门店 */}
-      <CashFlowContinuousLossContainer />
+      {/* <CashFlowContinuousLossContainer /> */}
+
+      {/* 现金流持续亏损门店列表 */}
+      <CashFlowContinuousLossTableContainer />
 
       {/* 触发闭店预警门店 (NEW) */}
       <ClosingWarningContainer />
+
+
+      
     </div>
   );
 };

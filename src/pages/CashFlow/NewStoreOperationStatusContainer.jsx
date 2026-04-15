@@ -4,12 +4,160 @@ import useTableSorting from '../../components/Common/useTableSorting';
 import FilterDropdown from '../../components/Common/FilterDropdown';
 import Pagination from '../../components/Common/Pagination';
 
+// 爬坡期门店详情弹窗
+const RampUpDetailModal = ({ store, onClose }) => {
+  const { data: allData, loading } = useFetchData('getRampUpStoreOperationStatus', []);
+
+  // 过滤出该门店所有月份数据
+  const storeData = React.useMemo(() => {
+    if (!allData || !store) return [];
+    return allData
+      .filter(item => item.store_code === store.store_code)
+      .sort((a, b) => (a.month || '').localeCompare(b.month || ''));
+  }, [allData, store]);
+
+  const columns = [
+    { key: 'month', label: '月份' },
+    { key: 'city_name', label: '城市' },
+    { key: 'store_name', label: '门店名称' },
+    { key: 'store_code', label: '门店编码' },
+    { key: 'city_store_order', label: '城市门店排序' },
+    { key: 'opening_date', label: '开业日期' },
+    { key: 'city_manager_name', label: '城市经理' },
+    { key: 'tech_vice_president_name', label: '技术副总' },
+    { key: 'ramp_up_period_months', label: '爬坡期长度' },
+    { key: 'current_ramp_up_month_index', label: '当前爬坡期' },
+    { key: 'cash_flow_budget_total', label: '现金流目标值' },
+    { key: 'cash_flow_actual_to_date', label: '爬坡期现金流实际值' },
+    { key: 'cash_flow_variance', label: '现金流差异' },
+    { key: 'marketing_budget_total', label: '营销费预算' },
+    { key: 'marketing_actual_total', label: '营销费合计' },
+    { key: 'marketing_usage_diff', label: '营销费差异' },
+    { key: 'ad_fee_actual', label: '广告费' },
+    { key: 'group_buy_discount_actual', label: '团购优惠' },
+    { key: 'offline_ad_fee_actual', label: '线下广告' },
+    { key: 'new_guest_discount_actual', label: '新客优惠' },
+    { key: 'exhibition_fee_actual', label: '布展' },
+    { key: 'masseur_commission_actual', label: '推拿师提成' },
+    { key: 'incentive_budget_total', label: '激励费预算' },
+    { key: 'incentive_actual_total', label: '激励费实际' },
+    { key: 'incentive_usage_ratio_display', label: '激励费使用率' },
+    { key: 'incentive_variance', label: '激励费差异' },
+  ];
+
+  const formatCurrency = (val) => {
+    if (val === null || val === undefined) return '-';
+    return Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return dateStr.split('T')[0];
+  };
+
+  // 货币类字段
+  const currencyKeys = new Set([
+    'cash_flow_budget_total', 'cash_flow_actual_to_date', 'cash_flow_variance',
+    'marketing_budget_total', 'marketing_actual_total', 'marketing_usage_diff',
+    'ad_fee_actual', 'group_buy_discount_actual', 'offline_ad_fee_actual',
+    'new_guest_discount_actual', 'exhibition_fee_actual', 'masseur_commission_actual',
+    'incentive_budget_total', 'incentive_actual_total', 'incentive_variance',
+  ]);
+  // 负数红色字段
+  const negRedKeys = new Set(['cash_flow_variance', 'marketing_usage_diff']);
+  // 正数红色字段
+  const posRedKeys = new Set(['incentive_variance']);
+
+  const getCellClass = (key, val) => {
+    const n = Number(val);
+    if (negRedKeys.has(key) && n < 0) return 'text-red-600 font-bold';
+    if (posRedKeys.has(key) && n > 0) return 'text-red-600 font-bold';
+    return '';
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div
+        className="bg-white rounded-xl shadow-2xl w-[96vw] max-w-[1400px] max-h-[90vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* 标题栏 */}
+        <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 rounded-t-xl flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="text-lg font-bold text-[#a40035]">爬坡期门店经营情况总结</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {store.store_name}（{store.store_code}）· 共 {storeData.length} 个月
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* 表格区域 */}
+        <div className="overflow-auto flex-1 p-4">
+          <table className="w-full text-sm text-left text-gray-500">
+            <thead className="text-xs text-gray-700 bg-gray-50 border-b sticky top-0 z-10">
+              <tr>
+                {columns.map(col => (
+                  <th key={col.key} className="px-4 py-3 whitespace-nowrap font-semibold">
+                    {col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={columns.length} className="px-6 py-8 text-center text-gray-400">加载中...</td></tr>
+              ) : storeData.length === 0 ? (
+                <tr><td colSpan={columns.length} className="px-6 py-8 text-center text-gray-400">暂无爬坡期数据</td></tr>
+              ) : (
+                storeData.map((item, idx) => (
+                  <tr key={idx} className="border-b hover:bg-gray-50/50 even:bg-gray-50/30">
+                    {columns.map(col => {
+                      const val = item[col.key];
+                      let display;
+                      if (col.key === 'opening_date') {
+                        display = formatDate(val);
+                      } else if (currencyKeys.has(col.key)) {
+                        display = formatCurrency(val);
+                      } else {
+                        display = val ?? '-';
+                      }
+                      return (
+                        <td
+                          key={col.key}
+                          className={`px-4 py-3 whitespace-nowrap ${currencyKeys.has(col.key) ? 'text-right font-mono' : ''} ${getCellClass(col.key, val)}`}
+                        >
+                          {display}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const NewStoreOperationStatusContainer = () => {
   const { data, loading, error, fetchData } = useFetchData('getNewStoreOperationStatus', []);
   
   // 筛选状态
   const [selectedCity, setSelectedCity] = React.useState(null);
   const [selectedMonth, setSelectedMonth] = React.useState(null);
+
+  // 弹窗状态
+  const [modalStore, setModalStore] = React.useState(null);
 
   // 分页状态
   const PAGE_SIZE = 10;
@@ -174,7 +322,14 @@ const NewStoreOperationStatusContainer = () => {
                     pagedData.map((item, index) => (
                         <tr key={index} className="bg-white border-b hover:bg-gray-50/50">
                             <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item['city_name']}</td>
-                            <td className="px-6 py-4 text-gray-900 whitespace-nowrap">{item['store_name']}</td>
+                            <td className="px-6 py-4 text-gray-900 whitespace-nowrap">
+                              <button
+                                className="text-[#a40035] hover:underline font-medium text-left"
+                                onClick={() => setModalStore(item)}
+                              >
+                                {item['store_name']}
+                              </button>
+                            </td>
                             <td className="px-6 py-4 text-gray-500 text-xs">{item['store_code']}</td>
                             <td className="px-6 py-4 text-center">{item['city_store_order'] ?? '-'}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{formatDate(item['opening_date'])}</td>
@@ -219,6 +374,11 @@ const NewStoreOperationStatusContainer = () => {
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
       />
+
+      {/* 爬坡期门店详情弹窗 */}
+      {modalStore && (
+        <RampUpDetailModal store={modalStore} onClose={() => setModalStore(null)} />
+      )}
     </div>
   );
 };

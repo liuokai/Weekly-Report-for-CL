@@ -45,7 +45,7 @@ module.exports = {
     port: 8000,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3002',
         secure: false,
         changeOrigin: true,
         timeout: 300000, // 5 minutes timeout

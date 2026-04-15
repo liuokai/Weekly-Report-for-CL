@@ -266,8 +266,12 @@ const queryRegistry = {
     description: '按月输出预算、实际、剩余与滚动的现金流等汇总'
   },
   getCashFlowContinuousLoss: {
+    sql: loadSql('cash_flow_continuous_loss_legacy.sql'),
+    description: '获取现金流持续亏损门店列表（季度粒度，旧版）'
+  },
+  getCashFlowContinuousLossMonthly: {
     sql: loadSql('cash_flow_continuous_loss.sql'),
-    description: '获取现金流持续亏损门店列表'
+    description: '获取现金流持续亏损门店月度明细列表'
   },
   getCashFlowCapitalSafetyLine: {
     sql: loadSql('cash_flow_capital_safety_line.sql'),
@@ -293,6 +297,11 @@ const queryRegistry = {
   getHeadquartersProfitMonthly: {
     sql: loadSql('profit_monthly.sql'),
     description: '总部月度利润统计（含收入、人工成本、固定成本及利润）'
+  },
+  // 新店数量统计（年度维度，按城市分列）
+  getNewStoreStatisticsYear: {
+    sql: loadSql('cash_flow_dws_new_store_statistics_year.sql'),
+    description: '新店数量统计（年度维度，含各城市新开、闭店、净增、年末门店数、目标对照）'
   },
 };
 
