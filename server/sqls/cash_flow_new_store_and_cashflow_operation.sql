@@ -1,3 +1,4 @@
+      
 -- 新店投资与现金流运营情况 
 
 -- ==========================================================
@@ -14,9 +15,10 @@ WITH current_info AS (
 new_store_info as (
     select
         store_code,
-        city_name,
+        b.statistics_city_name as city_name,
         date_format(opening_time, '%Y-%m') as opening_month
-    from dwd_store_info
+    from dwd_store_info a
+    left join dm_city b on a.city_code = b.city_code
     where date(store_info_record_time) = days_sub(curdate(), 1)
       and date(opening_time) >= '2026-01-01'
       and is_invalid_store = '否'
@@ -28,7 +30,7 @@ city_initial_balance as (
     select '上海市', 840000 union all
     select '广州市', 1190000 union all
     select '深圳市', 3970000 union all
-    select '成都市', 31660000 union all
+    select '四川省', 31660000 union all
     select '重庆市', 7770000 union all
     select '杭州市', 270000 union all
     select '南京市', 50000 union all
@@ -132,3 +134,5 @@ order by
     month,
     (case when city_name = '合计' then 1 else 0 end),
     city_name;
+
+    

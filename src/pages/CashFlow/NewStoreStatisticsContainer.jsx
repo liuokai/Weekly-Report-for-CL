@@ -66,6 +66,14 @@ const NewStoreStatisticsContainer = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
+              <colgroup>
+                <col style={{ width: '60px' }} />
+                {cities.flatMap(city =>
+                  subCols.map(col => (
+                    <col key={`${city}_${col.key}`} style={{ width: '52px' }} />
+                  ))
+                )}
+              </colgroup>
               <thead>
                 {/* 第一行：时间 + 城市分组 */}
                 <tr className="bg-gray-100 text-gray-600 text-center">

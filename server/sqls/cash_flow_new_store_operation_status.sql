@@ -1,4 +1,3 @@
-      
 -- 新店经营情况总结
 SELECT r.city_code                                                              AS city_codee,                    -- 城市编码
        r.city_name                                                              AS city_name,                     -- 城市
@@ -12,7 +11,7 @@ SELECT r.city_code                                                              
        MAX(r.ramp_up_month_count)                                               AS current_ramp_up_month_index,   -- 当前爬坡期月数（取最大值）
 
        -- 1. 现金流数据（求和聚合）
-       ROUND(SUM(NVL(b.cash_flow_budget, 0)), 2)                                AS cash_flow_budget_total,        -- 现金流目标值（求和）
+       ROUND(SUM(NVL(r.cash_flow_target, 0)), 2)                                AS cash_flow_budget_total,        -- 现金流目标值（求和）
        ROUND(SUM(NVL(a.net_cash_flow, 0)), 2)                                   AS cash_flow_actual_to_date,      -- 爬坡期现金流实际值（求和）
        ROUND(SUM(NVL(a.net_cash_flow, 0)) - SUM(NVL(b.cash_flow_budget, 0)), 2) AS cash_flow_variance,            -- 现金流差异（求和后计算）
 
@@ -78,7 +77,7 @@ FROM data_warehouse.dws_new_store_commission_monthly r
 
 -- 所有筛选条件集中管理
 WHERE r.opening_date >= '2025-01-01'
-  AND r.month >= '2026-01'
+  AND r.month >= '2025-01'
   AND r.ramp_up_period >= r.ramp_up_month_count
   AND r.ramp_up_month_count > 0
   AND (a.month IS NULL OR a.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'))
@@ -89,5 +88,3 @@ GROUP BY r.city_code,r.city_name,r.store_name,r.store_code,r.opening_date,m.city
 
 ORDER BY r.city_code ASC NULLS LAST, r.store_code ASC NULLS LAST
 ;
-
-    
