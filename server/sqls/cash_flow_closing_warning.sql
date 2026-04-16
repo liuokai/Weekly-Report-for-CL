@@ -131,6 +131,7 @@ SELECT res.quarter                                                      as quart
        CONCAT(ROUND(nvl(res.cost_ratio_prev_last_quarter, 0) * 100, 1),
               '%')                                                      as cost_ratio_prev_last_quarter,    -- 原字段：上上季度成本占比
        -- 资产与现金流指标
+       touzhi.total_investment_amt                                           as total_investment_amt,              -- 原字段：总投资
        res.total_depreciation                                           as total_depreciation,              -- 原字段：总折旧
        res.cum_net_cash_flow_mgmt                                     as cum_net_cash_flow_mgmt,        -- 原字段：累计经营现金流
        res.cum_net_cash_flow_mgmt  -res.total_depreciation                                   as cumulative_cash_flow_mgmt,        -- 原字段：差异=累计经营现金流-总折旧
@@ -162,6 +163,7 @@ FROM calculated_results res
          LEFT JOIN tmp_manager_store_mapping m ON res.store_code = m.store_code
          LEFT JOIN dm_city dc ON res.city_code = dc.city_code
          left join ramp_up_end_quarter rq on rq.store_code = res.store_code
+left join data_warehouse.dws_store_initial_investment as touzhi on res.store_code = touzhi.store_code
 WHERE
     -- 动态筛选：始终取数据集中最新的一个季度
     res.quarter= CONCAT( YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)), '-Q', QUARTER(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)))

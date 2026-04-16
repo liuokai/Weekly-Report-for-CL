@@ -20,10 +20,10 @@ const NewStoreStatisticsContainer = () => {
 
   // 其余单列
   const singleCols = [
-    { key: '闭店',       label: '闭店' },
-    { key: '年末门店数',  label: '年末数' },
-    { key: '净增',       label: '净增' },
-    { key: '对照目标',   label: '目标对照' },
+    { key: '闭店',      label: '闭店' },
+    { key: '年末门店数', label: '年末数' },
+    { key: '净增',      label: '净增' },
+    { key: '对照目标',  label: '目标对照' },
   ];
 
   // 所有子列（用于数据行渲染）
@@ -45,122 +45,104 @@ const NewStoreStatisticsContainer = () => {
   }, [data]);
 
   // 目标对照列着色
-  const getTargetCompareStyle = (val) => {
+  const getCompareClass = (val) => {
     const n = Number(val);
-    if (n > 0) return { color: '#16a34a', fontWeight: 600 };
-    if (n < 0) return { color: '#a40035', fontWeight: 600 };
-    return {};
-  };
-
-  const cellStyle = {
-    padding: '6px 8px',
-    textAlign: 'center',
-    fontSize: '12px',
-    borderRight: '1px solid #e5e7eb',
-    borderBottom: '1px solid #e5e7eb',
-    whiteSpace: 'nowrap',
-  };
-  const headerCellStyle = {
-    ...cellStyle,
-    background: '#f3f4f6',
-    color: '#111827',
-    fontWeight: 700,
-  };
-  const groupHeaderStyle = {
-    ...headerCellStyle,
-    borderBottom: '1px solid #d1d5db',
+    if (n > 0) return 'text-green-600 font-semibold';
+    if (n < 0) return 'text-[#a40035] font-semibold';
+    return '';
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 mb-6">
-      <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 rounded-t-lg">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
+      <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5">
         <h2 className="text-lg font-bold text-[#a40035]">新店数量统计</h2>
       </div>
-      <div className="p-6 pt-5 overflow-x-auto">
+      <div className="p-4">
         {loading ? (
-          <div className="flex items-center justify-center py-8 text-gray-400 text-sm">加载中...</div>
+          <div className="text-center py-8 text-gray-400">加载中...</div>
         ) : !data || data.length === 0 ? (
-          <div className="flex items-center justify-center py-8 text-gray-400 text-sm">暂无数据</div>
+          <div className="text-center py-8 text-gray-400">暂无数据</div>
         ) : (
-          <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'auto' }}>
-            <thead>
-              {/* 第一行：时间 + 城市分组 */}
-              <tr>
-                <th rowSpan={3} style={{ ...headerCellStyle, minWidth: 64, verticalAlign: 'middle' }}>时间</th>
-                {cities.map(city => (
-                  <th key={city} colSpan={subCols.length} style={{ ...groupHeaderStyle, textAlign: 'center' }}>
-                    {city}
-                  </th>
-                ))}
-              </tr>
-              {/* 第二行：新开（跨2列）+ 其余列（rowSpan=2） */}
-              <tr>
-                {cities.map(city => (
-                  <React.Fragment key={city}>
-                    <th colSpan={2} style={{ ...groupHeaderStyle, textAlign: 'center' }}>新开</th>
-                    {singleCols.map(col => (
-                      <th key={`${city}_${col.key}`} rowSpan={2} style={{ ...headerCellStyle, minWidth: 44, verticalAlign: 'middle' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                {/* 第一行：时间 + 城市分组 */}
+                <tr className="bg-gray-100 text-gray-700 text-center">
+                  <th rowSpan={3} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">时间</th>
+                  {cities.map(city => (
+                    <th key={city} colSpan={subCols.length} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">
+                      {city}
+                    </th>
+                  ))}
+                </tr>
+                {/* 第二行：新开（跨2列）+ 其余列（rowSpan=2） */}
+                <tr className="bg-gray-100 text-gray-700 text-center">
+                  {cities.map(city => (
+                    <React.Fragment key={city}>
+                      <th colSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">新开</th>
+                      {singleCols.map(col => (
+                        <th key={`${city}_${col.key}`} rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">
+                          {col.label}
+                        </th>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tr>
+                {/* 第三行：目标 / 实际 */}
+                <tr className="bg-gray-100 text-gray-700 text-center">
+                  {cities.map(city =>
+                    newOpenCols.map(col => (
+                      <th key={`${city}_${col.key}`} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">
                         {col.label}
                       </th>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </tr>
-              {/* 第三行：目标 / 实际 */}
-              <tr>
-                {cities.map(city =>
-                  newOpenCols.map(col => (
-                    <th key={`${city}_${col.key}`} style={{ ...headerCellStyle, minWidth: 44 }}>
-                      {col.label}
-                    </th>
-                  ))
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, idx) => {
-                const year = row['年度'];
-                const isCurrentYear = String(year) === String(currentYear);
-                const rowBg = isCurrentYear ? '#fff7ed' : (idx % 2 === 0 ? '#fff' : '#fafafa');
-                return (
-                  <tr key={year} style={{ background: rowBg, outline: isCurrentYear ? '2px solid #fb923c' : 'none', outlineOffset: '-1px' }}>
-                    <td style={{ ...cellStyle, fontWeight: isCurrentYear ? 700 : 400, color: isCurrentYear ? '#ea580c' : '#374151' }}>
-                      {year}年
-                    </td>
-                    {cities.map(city =>
-                      subCols.map(col => {
-                        const fieldKey = `${city}_${col.key}`;
-                        const val = row[fieldKey];
-                        const isCompare = col.key === '对照目标';
-                        const displayVal = (val === null || val === undefined || val === '') ? '-' : val;
-                        return (
-                          <td key={fieldKey} style={{ ...cellStyle, ...(isCompare ? getTargetCompareStyle(val) : {}) }}>
-                            {displayVal}
-                          </td>
-                        );
-                      })
-                    )}
-                  </tr>
-                );
-              })}
-              {/* 合计行 */}
-              <tr style={{ background: '#f3f4f6', fontWeight: 700 }}>
-                <td style={{ ...cellStyle, fontWeight: 700, color: '#111827' }}>合计</td>
-                {cities.map(city =>
-                  subCols.map(col => {
-                    const fieldKey = `${city}_${col.key}`;
-                    const val = summaryRow[fieldKey];
-                    const isCompare = col.key === '对照目标';
-                    return (
-                      <td key={fieldKey} style={{ ...cellStyle, fontWeight: 700, ...(isCompare ? getTargetCompareStyle(val) : {}) }}>
-                        {val || '-'}
+                    ))
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((row, idx) => {
+                  const year = row['年度'];
+                  const isCurrentYear = String(year) === String(currentYear);
+                  return (
+                    <tr key={year} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                      <td className={`border border-gray-200 px-3 py-2 text-center whitespace-nowrap ${isCurrentYear ? 'font-bold text-gray-900' : 'text-gray-900'}`}>
+                        {year}年
                       </td>
-                    );
-                  })
-                )}
-              </tr>
-            </tbody>
-          </table>
+                      {cities.map(city =>
+                        subCols.map(col => {
+                          const fieldKey = `${city}_${col.key}`;
+                          const val = row[fieldKey];
+                          const isCompare = col.key === '对照目标';
+                          const displayVal = (val === null || val === undefined || val === '') ? '-' : val;
+                          return (
+                            <td key={fieldKey} className={`border border-gray-200 px-3 py-2 text-center whitespace-nowrap ${isCompare ? getCompareClass(val) : 'text-gray-900'}`}>
+                              {displayVal}
+                            </td>
+                          );
+                        })
+                      )}
+                    </tr>
+                  );
+                })}
+                {/* 合计行 */}
+                <tr className="bg-gray-100 font-semibold">
+                  <td className="border border-gray-300 px-3 py-2 text-center whitespace-nowrap text-gray-900">合计</td>
+                  {cities.map(city =>
+                    subCols.map(col => {
+                      const fieldKey = `${city}_${col.key}`;
+                      const val = summaryRow[fieldKey];
+                      const isCompare = col.key === '对照目标';
+                      return (
+                        <td key={fieldKey} className={`border border-gray-300 px-3 py-2 text-center whitespace-nowrap ${isCompare ? getCompareClass(val) : 'text-gray-900'}`}>
+                          {val || '-'}
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

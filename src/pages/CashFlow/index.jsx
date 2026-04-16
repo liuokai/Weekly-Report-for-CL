@@ -12,8 +12,10 @@ import NewStoreSupplyContainer from './NewStoreSupplyContainer';
 import CashFlowContinuousLossContainer from './CashFlowContinuousLossContainer';
 import CashFlowContinuousLossTableContainer from './CashFlowContinuousLossTableContainer';
 import ClosingWarningContainer from './ClosingWarningContainer';
+import ClosingWarningTableContainer from './ClosingWarningTableContainer';
 import FilterDropdown from '../../components/Common/FilterDropdown';
 import NewStoreStatisticsContainer from './NewStoreStatisticsContainer';
+import CityFlowSummaryContainer from './CityFlowSummaryContainer';
 
 import { generateNewStoreAnalysis } from '../../services/analysisService';
 
@@ -591,6 +593,9 @@ const CashFlowTab = () => {
       {/* 2026年城市新店投资与现金流预算执行情况 (NEW) */}
       <CityBudgetExecutionContainer />
 
+      {/* 城市现金流总结 */}
+      <CityFlowSummaryContainer />
+
       {/* 新店供应总结 */}
       <NewStoreSupplyContainer />
 
@@ -607,7 +612,10 @@ const CashFlowTab = () => {
       <CashFlowContinuousLossTableContainer />
 
       {/* 触发闭店预警门店 (NEW) */}
-      <ClosingWarningContainer />
+      {/* <ClosingWarningContainer /> */}
+
+      {/* 触发闭店预警门店列表 */}
+      <ClosingWarningTableContainer />
 
 
       

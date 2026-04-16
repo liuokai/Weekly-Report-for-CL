@@ -1,7 +1,7 @@
 -- 现金流持续亏损门店月度明细（用于列表表格展示）
 -- 返回符合持续亏损条件的门店，按月度展示现金流数据
 
-SELECT b.statistics_city_name                  AS city_name,        -- 城市名称
+SELECT b.statistics_city_name                   AS city_name,        -- 城市名称
        a.store_code                             AS store_code,       -- 门店编码
        a.store_name                             AS store_name,       -- 门店名称
        YEAR(a.opening_date)                     AS opening_year,     -- 开业年份

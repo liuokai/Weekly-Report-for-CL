@@ -303,6 +303,11 @@ const queryRegistry = {
     sql: loadSql('cash_flow_dws_new_store_statistics_year.sql'),
     description: '新店数量统计（年度维度，含各城市新开、闭店、净增、年末门店数、目标对照）'
   },
+  // 城市现金流总结（年度维度，按城市分列经营现金流、新店投资、年度结余）
+  getCityFlowSummary: {
+    sql: loadSql('cash_flow_summary_urban_city.sql'),
+    description: '城市现金流总结（年度维度，含各城市经营现金流、新店投资、年度结余）'
+  },
 };
 
 module.exports = queryRegistry;
