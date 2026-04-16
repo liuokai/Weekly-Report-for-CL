@@ -116,7 +116,7 @@ const CityBudgetExecutionContainer = () => {
       dataIndex: 'city_name',
       width: '120px',
       fixed: 'left',
-      render: (text) => <span className="font-medium text-gray-900">{text}</span>
+      render: (text) => <span className="text-gray-700">{text}</span>
     },
     {
       key: 'lastYearBalance',
@@ -125,7 +125,7 @@ const CityBudgetExecutionContainer = () => {
       align: 'right',
       width: '180px',
       render: (val) => (
-        <span className={`${val >= 0 ? 'text-gray-700' : 'text-red-600'}`}>
+        <span className={`${val >= 0 ? 'text-gray-700' : 'text-[#a40035]'}`}>
           {formatMoney(val)}
         </span>
       )
@@ -153,7 +153,7 @@ const CityBudgetExecutionContainer = () => {
       align: 'right',
       width: '180px',
       render: (val) => (
-        <span className={`${val >= 0 ? 'text-gray-700' : 'text-red-600'}`}>
+        <span className={`${val >= 0 ? 'text-gray-700' : 'text-[#a40035]'}`}>
           {formatMoney(val)}
         </span>
       )
@@ -164,7 +164,7 @@ const CityBudgetExecutionContainer = () => {
       dataIndex: 'cash_flow_achievement_ratio_display',
       align: 'right',
       width: '120px',
-      render: (val) => <span className="font-medium text-gray-900">{val}</span>
+      render: (val) => <span className="text-gray-700">{val}</span>
     },
     {
       key: 'balance',
@@ -173,7 +173,7 @@ const CityBudgetExecutionContainer = () => {
       align: 'right',
       width: '180px',
       render: (val) => (
-        <span className={`font-bold ${val >= 0 ? 'text-gray-700' : 'text-red-700'}`}>
+        <span className={`${val >= 0 ? 'text-gray-700' : 'text-[#a40035]'}`}>
           {formatMoney(val)}
         </span>
       )
@@ -243,7 +243,7 @@ const CityBudgetExecutionContainer = () => {
           sortConfig={sortConfig}
           summaryRow={summaryRow}
           summaryPosition="bottom"
-          summaryClassName="bg-gray-100 font-bold"
+          summaryClassName="bg-gray-100"
         />
       )}
     </DataContainer>

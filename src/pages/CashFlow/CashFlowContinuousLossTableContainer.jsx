@@ -31,7 +31,7 @@ const CashFlowContinuousLossTableContainer = () => {
   const moneyClass = (val, isTotal = false) => {
     if (isTotal) {
       const num = Number(val);
-      if (!isNaN(num) && num < -30000) return 'text-[#a40035] font-semibold';
+      if (!isNaN(num) && num < -30000) return 'text-[#a40035]';
     }
     return 'text-gray-900';
   };
@@ -183,18 +183,18 @@ const CashFlowContinuousLossTableContainer = () => {
             <table className="w-full text-sm border-collapse">
               <thead>
                 {/* 第一行：固定列 + 季度分组 */}
-                <tr className="bg-gray-100 text-gray-700 text-center">
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">城市</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">编码</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">店名</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">开业年份</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">开业时间</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">预警类型</th>
+                <tr className="bg-gray-100 text-gray-600 text-center">
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">城市</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">门店编码</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">门店名称</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">开业年份</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">开业时间</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">预警类型</th>
                   {quarterGroups.map(qg => (
                     <th
                       key={qg.quarter}
                       colSpan={qg.months.length + 1}
-                      className="border border-gray-300 px-3 py-2 font-semibold bg-[#a40035]/10 text-[#a40035] whitespace-nowrap"
+                      className="border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600 whitespace-nowrap"
                     >
                       {qg.label}
                     </th>
@@ -206,7 +206,7 @@ const CashFlowContinuousLossTableContainer = () => {
                     [...qg.months, { label: '合计', key: `${qg.quarter}_total` }].map(m => (
                       <th
                         key={m.key}
-                        className={`border border-gray-300 px-3 py-2 font-medium whitespace-nowrap ${m.label === '合计' ? 'bg-[#a40035]/5 font-semibold text-[#a40035]' : ''}`}
+                        className={`border border-gray-300 px-3 py-2 text-xs font-medium whitespace-nowrap ${m.label === '合计' ? 'bg-gray-100 font-semibold text-gray-600' : ''}`}
                       >
                         {m.label}
                       </th>
@@ -217,12 +217,12 @@ const CashFlowContinuousLossTableContainer = () => {
               <tbody>
                 {filteredRows.map((row, idx) => (
                   <tr key={row.store_code} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap">{row.city_name}</td>
-                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap font-mono text-xs">{row.store_code}</td>
-                    <td className="border border-gray-200 px-3 py-2 whitespace-nowrap">{row.store_name}</td>
-                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap">{row.opening_year}</td>
-                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap">{fmtDate(row.opening_date)}</td>
-                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap">{row.store_type || '-'}</td>
+                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{row.city_name}</td>
+                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-sm text-gray-700">{row.store_code}</td>
+                    <td className="border border-gray-200 px-3 py-2 whitespace-nowrap text-gray-700">{row.store_name}</td>
+                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{row.opening_year}</td>
+                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{fmtDate(row.opening_date)}</td>
+                    <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{row.store_type || '-'}</td>
                     {quarterGroups.map(qg => {
                       const qData = row.quarterData[qg.quarter];
                       return [
@@ -237,7 +237,7 @@ const CashFlowContinuousLossTableContainer = () => {
                           );
                         }),
                         // 季度合计列
-                        <td key={`${qg.quarter}_total`} className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap bg-[#a40035]/5">
+                        <td key={`${qg.quarter}_total`} className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">
                           {qData?.total !== undefined && qData?.total !== null ? (
                             <span className={moneyClass(qData.total, true)}>{fmtMoney(qData.total)}</span>
                           ) : ''}

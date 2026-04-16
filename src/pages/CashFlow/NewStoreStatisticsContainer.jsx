@@ -10,7 +10,9 @@ const NewStoreStatisticsContainer = () => {
   const { data, loading } = useFetchData('getNewStoreStatisticsYear');
 
   // 城市列表
-  const cities = ['合计', '上海', '北京', '南京', '四川', '宁波', '广州', '杭州', '深圳', '重庆'];
+  const cities = ['合计', '四川','重庆','深圳','杭州','南京','宁波','广州','上海','北京'];
+
+  
 
   // 新开子列（目标 + 实际）
   const newOpenCols = [
@@ -47,9 +49,8 @@ const NewStoreStatisticsContainer = () => {
   // 目标对照列着色
   const getCompareClass = (val) => {
     const n = Number(val);
-    if (n > 0) return 'text-green-600 font-semibold';
-    if (n < 0) return 'text-[#a40035] font-semibold';
-    return '';
+    if (n < 0) return 'text-[#a40035]';
+    return 'text-gray-700';
   };
 
   return (
@@ -67,21 +68,21 @@ const NewStoreStatisticsContainer = () => {
             <table className="w-full text-sm border-collapse">
               <thead>
                 {/* 第一行：时间 + 城市分组 */}
-                <tr className="bg-gray-100 text-gray-700 text-center">
-                  <th rowSpan={3} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">时间</th>
+                <tr className="bg-gray-100 text-gray-600 text-center">
+                  <th rowSpan={3} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">时间</th>
                   {cities.map(city => (
-                    <th key={city} colSpan={subCols.length} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">
+                    <th key={city} colSpan={subCols.length} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
                       {city}
                     </th>
                   ))}
                 </tr>
                 {/* 第二行：新开（跨2列）+ 其余列（rowSpan=2） */}
-                <tr className="bg-gray-100 text-gray-700 text-center">
+                <tr className="bg-gray-100 text-gray-600 text-center">
                   {cities.map(city => (
                     <React.Fragment key={city}>
-                      <th colSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">新开</th>
+                      <th colSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">新开</th>
                       {singleCols.map(col => (
-                        <th key={`${city}_${col.key}`} rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">
+                        <th key={`${city}_${col.key}`} rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">
                           {col.label}
                         </th>
                       ))}
@@ -89,10 +90,10 @@ const NewStoreStatisticsContainer = () => {
                   ))}
                 </tr>
                 {/* 第三行：目标 / 实际 */}
-                <tr className="bg-gray-100 text-gray-700 text-center">
+                <tr className="bg-gray-100 text-gray-600 text-center">
                   {cities.map(city =>
                     newOpenCols.map(col => (
-                      <th key={`${city}_${col.key}`} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">
+                      <th key={`${city}_${col.key}`} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
                         {col.label}
                       </th>
                     ))
@@ -100,12 +101,12 @@ const NewStoreStatisticsContainer = () => {
                 </tr>
               </thead>
               <tbody>
-                {data.map((row, idx) => {
+                {[...data].sort((a, b) => Number(a['年度']) - Number(b['年度'])).map((row, idx) => {
                   const year = row['年度'];
                   const isCurrentYear = String(year) === String(currentYear);
                   return (
                     <tr key={year} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                      <td className={`border border-gray-200 px-3 py-2 text-center whitespace-nowrap ${isCurrentYear ? 'font-bold text-gray-900' : 'text-gray-900'}`}>
+                      <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">
                         {year}年
                       </td>
                       {cities.map(city =>
@@ -115,7 +116,7 @@ const NewStoreStatisticsContainer = () => {
                           const isCompare = col.key === '对照目标';
                           const displayVal = (val === null || val === undefined || val === '') ? '-' : val;
                           return (
-                            <td key={fieldKey} className={`border border-gray-200 px-3 py-2 text-center whitespace-nowrap ${isCompare ? getCompareClass(val) : 'text-gray-900'}`}>
+                            <td key={fieldKey} className={`border border-gray-200 px-3 py-2 text-center whitespace-nowrap ${isCompare ? getCompareClass(val) : 'text-gray-700'}`}>
                               {displayVal}
                             </td>
                           );
@@ -126,14 +127,14 @@ const NewStoreStatisticsContainer = () => {
                 })}
                 {/* 合计行 */}
                 <tr className="bg-gray-100 font-semibold">
-                  <td className="border border-gray-300 px-3 py-2 text-center whitespace-nowrap text-gray-900">合计</td>
+                  <td className="border border-gray-300 px-3 py-2 text-center whitespace-nowrap text-gray-700">合计</td>
                   {cities.map(city =>
                     subCols.map(col => {
                       const fieldKey = `${city}_${col.key}`;
                       const val = summaryRow[fieldKey];
                       const isCompare = col.key === '对照目标';
                       return (
-                        <td key={fieldKey} className={`border border-gray-300 px-3 py-2 text-center whitespace-nowrap ${isCompare ? getCompareClass(val) : 'text-gray-900'}`}>
+                        <td key={fieldKey} className={`border border-gray-300 px-3 py-2 text-center whitespace-nowrap ${isCompare ? getCompareClass(val) : 'text-gray-700'}`}>
                           {val || '-'}
                         </td>
                       );

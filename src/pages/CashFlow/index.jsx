@@ -580,7 +580,7 @@ const CashFlowTab = () => {
           onSort={handleSort}
           sortConfig={sortConfig}
           summaryRow={summaryRow}
-          maxHeight={selectedMonth || selectedCity ? undefined : "500px"} // 当未筛选时，限制表格高度并启用内部滚动
+          summaryPosition="bottom"
         />
       </DataContainer>
 

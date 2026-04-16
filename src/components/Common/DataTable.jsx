@@ -11,7 +11,7 @@ const DataTable = ({
   summaryRow,
   summaryPosition = 'top', // 'top' | 'bottom'
   summaryClassName = 'bg-white font-bold shadow-sm',
-  maxHeight // 新增：支持自定义最大高度，启用内部滚动
+  maxHeight // 支持自定义最大高度，启用内部滚动
 }) => {
   if (!data || data.length === 0) {
     if (hideNoDataMessage) return null;
@@ -25,23 +25,25 @@ const DataTable = ({
 
   return (
     <div className="overflow-x-auto" style={containerStyle}>
-      <table className="min-w-full divide-y divide-gray-200">
+      <table className="min-w-full divide-y divide-gray-200 table-fixed">
+        <colgroup>
+          {columns.map(column => (
+            <col key={column.key} style={{ width: column.width || `${Math.floor(100 / columns.length)}%` }} />
+          ))}
+        </colgroup>
         <thead className={theadClass}>
           <tr>
             {columns.map(column => (
               (() => {
-                const align = column.align || 'left';
-                const thAlignClass = align === 'right' ? 'text-right' : 'text-left';
-                const thBase = `px-6 py-3 ${thAlignClass} text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap group`;
+                const thBase = `px-3 py-2 text-center text-xs font-semibold text-gray-600 whitespace-nowrap group`;
                 const thInteractive = onSort ? 'cursor-pointer hover:bg-gray-100 select-none' : '';
-                const headerFlexClass = `flex items-center space-x-1 ${align === 'right' ? 'justify-end' : ''}`;
                 return (
               <th 
                 key={column.key} 
                 className={`${thBase} ${thInteractive}`}
                 onClick={() => onSort && onSort(column.key)}
               >
-                <div className={headerFlexClass}>
+                <div className="flex items-center justify-center space-x-1">
                   <span>{column.title}</span>
                   {sortConfig && sortConfig.key === column.key && (
                     <span className="text-[#a40035]">
@@ -64,7 +66,7 @@ const DataTable = ({
               {columns.map(column => (
                 <td
                   key={column.key}
-                  className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${column.align === 'right' ? 'text-right' : 'text-left'}`}
+                  className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center"
                 >
                   {column.render ? column.render(summaryRow[column.dataIndex], summaryRow, -1) : (summaryRow[column.dataIndex] || '-')}
                 </td>
@@ -78,7 +80,7 @@ const DataTable = ({
               {columns.map(column => (
                 <td
                   key={column.key}
-                  className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500 ${column.align === 'right' ? 'text-right' : 'text-left'}`}
+                  className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center"
                 >
                   {column.render ? column.render(row[column.dataIndex], row, index) : (row[column.dataIndex] || '-')}
                 </td>
@@ -92,7 +94,7 @@ const DataTable = ({
               {columns.map(column => (
                 <td
                   key={column.key}
-                  className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${column.align === 'right' ? 'text-right' : 'text-left'}`}
+                  className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center"
                 >
                   {column.render ? column.render(summaryRow[column.dataIndex], summaryRow, -1) : (summaryRow[column.dataIndex] || '-')}
                 </td>

@@ -64,14 +64,11 @@ const RampUpDetailModal = ({ store, onClose }) => {
     'incentive_budget_total', 'incentive_actual_total', 'incentive_variance',
   ]);
   // 负数红色字段
-  const negRedKeys = new Set(['cash_flow_variance', 'marketing_usage_diff']);
-  // 正数红色字段
-  const posRedKeys = new Set(['incentive_variance']);
+  const negRedKeys = new Set(['cash_flow_variance', 'marketing_usage_diff', 'incentive_variance']);
 
   const getCellClass = (key, val) => {
     const n = Number(val);
-    if (negRedKeys.has(key) && n < 0) return 'text-red-600 font-bold';
-    if (posRedKeys.has(key) && n > 0) return 'text-red-600 font-bold';
+    if (negRedKeys.has(key) && n < 0) return 'text-[#a40035]';
     return '';
   };
 
@@ -101,11 +98,11 @@ const RampUpDetailModal = ({ store, onClose }) => {
 
         {/* 表格区域 */}
         <div className="overflow-auto flex-1 p-4">
-          <table className="w-full text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 bg-gray-50 border-b sticky top-0 z-10">
+          <table className="w-full text-sm text-left text-gray-700">
+            <thead className="text-xs text-gray-600 bg-gray-50 border-b sticky top-0 z-10">
               <tr>
                 {columns.map(col => (
-                  <th key={col.key} className="px-4 py-3 whitespace-nowrap font-semibold">
+                  <th key={col.key} className="px-3 py-2 whitespace-nowrap font-semibold">
                     {col.label}
                   </th>
                 ))}
@@ -132,7 +129,7 @@ const RampUpDetailModal = ({ store, onClose }) => {
                       return (
                         <td
                           key={col.key}
-                          className={`px-4 py-3 whitespace-nowrap ${currencyKeys.has(col.key) ? 'text-right font-mono' : ''} ${getCellClass(col.key, val)}`}
+                          className={`px-3 py-2 whitespace-nowrap ${currencyKeys.has(col.key) ? 'text-right' : ''} ${getCellClass(col.key, val)}`}
                         >
                           {display}
                         </td>
@@ -286,14 +283,14 @@ const NewStoreOperationStatusContainer = () => {
       </div>
       
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+        <table className="w-full text-sm text-left text-gray-700">
+            <thead className="text-xs text-gray-600 bg-gray-50 border-b">
                 <tr>
                     {columns.map((col) => (
                         <th 
                             key={col.key} 
                             scope="col" 
-                            className="px-6 py-3 cursor-pointer hover:bg-gray-100 whitespace-nowrap group"
+                            className="px-3 py-2 cursor-pointer hover:bg-gray-100 whitespace-nowrap font-semibold group"
                             onClick={() => handleSort(col.key)}
                         >
                             <div className="flex items-center gap-1">
@@ -321,42 +318,42 @@ const NewStoreOperationStatusContainer = () => {
                 ) : (
                     pagedData.map((item, index) => (
                         <tr key={index} className="bg-white border-b hover:bg-gray-50/50">
-                            <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item['city_name']}</td>
-                            <td className="px-6 py-4 text-gray-900 whitespace-nowrap">
+                            <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{item['city_name']}</td>
+                            <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
                               <button
-                                className="text-[#a40035] hover:underline font-medium text-left"
+                                className="text-[#a40035] hover:underline text-left"
                                 onClick={() => setModalStore(item)}
                               >
                                 {item['store_name']}
                               </button>
                             </td>
-                            <td className="px-6 py-4 text-gray-500 text-xs">{item['store_code']}</td>
-                            <td className="px-6 py-4 text-center">{item['city_store_order'] ?? '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{formatDate(item['opening_date'])}</td>
-                            <td className="px-6 py-4">{item['city_manager_name'] || '-'}</td>
-                            <td className="px-6 py-4">{item['tech_vice_president_name'] || '-'}</td>
-                            <td className="px-6 py-4 text-center">{item['ramp_up_period_months']}</td>
-                            <td className="px-6 py-4 text-center">{item['current_ramp_up_month_index']}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['cash_flow_budget_total'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['cash_flow_actual_to_date'])}</td>
-                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['cash_flow_variance'] < 0 ? 'text-red-600' : ''}`}>
+                            <td className="px-3 py-2 text-gray-700">{item['store_code']}</td>
+                            <td className="px-3 py-2 text-center text-gray-700">{item['city_store_order'] ?? '-'}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-gray-700">{formatDate(item['opening_date'])}</td>
+                            <td className="px-3 py-2 text-gray-700">{item['city_manager_name'] || '-'}</td>
+                            <td className="px-3 py-2 text-gray-700">{item['tech_vice_president_name'] || '-'}</td>
+                            <td className="px-3 py-2 text-center text-gray-700">{item['ramp_up_period_months']}</td>
+                            <td className="px-3 py-2 text-center text-gray-700">{item['current_ramp_up_month_index']}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['cash_flow_budget_total'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['cash_flow_actual_to_date'])}</td>
+                            <td className={`px-3 py-2 text-right ${item['cash_flow_variance'] < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
                                 {formatCurrency(item['cash_flow_variance'])}
                             </td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['marketing_budget_total'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['marketing_actual_total'])}</td>
-                            <td className={`px-6 py-4 text-right font-mono ${item['marketing_usage_diff'] < 0 ? 'text-red-600' : ''}`}>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['marketing_budget_total'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['marketing_actual_total'])}</td>
+                            <td className={`px-3 py-2 text-right ${item['marketing_usage_diff'] < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
                                 {formatCurrency(item['marketing_usage_diff'])}
                             </td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['ad_fee_actual'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['group_buy_discount_actual'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['offline_ad_fee_actual'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['new_guest_discount_actual'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['exhibition_fee_actual'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['masseur_commission_actual'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['incentive_budget_total'])}</td>
-                            <td className="px-6 py-4 text-right font-mono">{formatCurrency(item['incentive_actual_total'])}</td>
-                            <td className="px-6 py-4 text-right font-mono text-gray-500">{item['incentive_usage_ratio_display'] || '-'}</td>
-                            <td className={`px-6 py-4 text-right font-mono font-bold ${item['incentive_variance'] > 0 ? 'text-red-600' : ''}`}>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['ad_fee_actual'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['group_buy_discount_actual'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['offline_ad_fee_actual'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['new_guest_discount_actual'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['exhibition_fee_actual'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['masseur_commission_actual'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['incentive_budget_total'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(item['incentive_actual_total'])}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{item['incentive_usage_ratio_display'] || '-'}</td>
+                            <td className={`px-3 py-2 text-right ${item['incentive_variance'] < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
                                 {formatCurrency(item['incentive_variance'])}
                             </td>
                         </tr>

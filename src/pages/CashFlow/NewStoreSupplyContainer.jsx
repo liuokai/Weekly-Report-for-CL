@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import useFetchData from '../../hooks/useFetchData';
 
 /**
@@ -42,14 +42,15 @@ const NewStoreSupplyContainer = () => {
 
     return (
       <tr key={isSummary ? 'summary' : row.city} className={rowClass}>
-        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-900">{row.city || '-'}</td>
-        <td className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap text-gray-900">{fmt(row.avg_area_per_store)}</td>
-        <td className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap text-gray-900">{fmt(row.avg_bed_per_store)}</td>
-        <td className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap text-gray-900">{row.space_utilization_rate || '-'}</td>
-        <td className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap text-gray-900">{fmt(row.avg_investment_per_store)}</td>
-        <td className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap text-gray-900">{fmt(row.avg_construction_period)}</td>
+        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{row.city || '-'}</td>
+        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{fmt(row.store_count)}</td>
+        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{fmt(row.avg_area_per_store)}</td>
+        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{fmt(row.avg_bed_per_store)}</td>
+        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{row.space_utilization_rate || '-'}</td>
+        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{fmt(row.avg_investment_per_store)}</td>
+        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">{fmt(row.avg_construction_period)}</td>
         {costYears.map(year => (
-          <td key={year} className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap text-gray-900">
+          <td key={year} className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">
             {fmt(row[`cost_per_bed_${year}`], 2)}
           </td>
         ))}
@@ -77,21 +78,22 @@ const NewStoreSupplyContainer = () => {
             <table className="w-full text-sm border-collapse">
               <thead>
                 {/* 第一行：固定列（rowSpan=2）+ 单床位装修成本分组 */}
-                <tr className="bg-gray-100 text-gray-700 text-center">
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">城市</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">店均面积</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">店均床位</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">空间利用率</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">店均投资</th>
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">店均工期</th>
-                  <th colSpan={4} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap bg-orange-50 text-orange-700">
+                <tr className="bg-gray-100 text-gray-600 text-center">
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">城市</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">门店数</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">店均面积</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">店均床位</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">空间利用率</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">店均投资</th>
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">店均工期</th>
+                  <th colSpan={4} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
                     单床位装修成本
                   </th>
                 </tr>
                 {/* 第二行：年份子列 */}
-                <tr className="bg-gray-100 text-gray-700 text-center">
+                <tr className="bg-gray-100 text-gray-600 text-center">
                   {costYears.map(year => (
-                    <th key={year} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap bg-orange-50 text-orange-700">
+                    <th key={year} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
                       {year}年
                     </th>
                   ))}

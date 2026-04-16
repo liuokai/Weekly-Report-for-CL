@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React, { useMemo } from 'react';
 import useFetchData from '../../hooks/useFetchData';
 
 /**
@@ -29,11 +29,22 @@ const CityFlowSummaryContainer = () => {
   // 年度结余着色
   const getSurplusClass = (val) => {
     const n = Number(val);
-    if (isNaN(n) || val === null || val === undefined || val === '') return 'text-gray-900';
-    if (n > 0) return 'text-green-600 font-semibold';
-    if (n < 0) return 'text-[#a40035] font-semibold';
-    return 'text-gray-900';
+    if (!isNaN(n) && n < 0) return 'text-[#a40035]';
+    return 'text-gray-700';
   };
+
+  // 计算合计行
+  const summaryRow = useMemo(() => {
+    if (!data || data.length === 0) return null;
+    const result = {};
+    cities.forEach(city => {
+      subCols.forEach(col => {
+        const key = `${city}_${col.key}`;
+        result[key] = data.reduce((sum, row) => sum + (Number(row[key]) || 0), 0);
+      });
+    });
+    return result;
+  }, [data]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -51,19 +62,19 @@ const CityFlowSummaryContainer = () => {
             <table className="w-full text-sm border-collapse">
               <thead>
                 {/* 第一行：年度 + 城市分组 */}
-                <tr className="bg-gray-100 text-gray-700 text-center">
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap align-middle">年度</th>
+                <tr className="bg-gray-100 text-gray-600 text-center">
+                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">年度</th>
                   {cities.map(city => (
-                    <th key={city} colSpan={subCols.length} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">
+                    <th key={city} colSpan={subCols.length} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
                       {city === '总' ? '合计' : city}
                     </th>
                   ))}
                 </tr>
                 {/* 第二行：子列标题 */}
-                <tr className="bg-gray-100 text-gray-700 text-center">
+                <tr className="bg-gray-100 text-gray-600 text-center">
                   {cities.map(city =>
                     subCols.map(col => (
-                      <th key={`${city}_${col.key}`} className="border border-gray-300 px-3 py-2 font-semibold whitespace-nowrap">
+                      <th key={`${city}_${col.key}`} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
                         {col.label}
                       </th>
                     ))
@@ -71,11 +82,11 @@ const CityFlowSummaryContainer = () => {
                 </tr>
               </thead>
               <tbody>
-                {data.map((row, idx) => {
+                {[...data].sort((a, b) => Number(a['年度']) - Number(b['年度'])).map((row, idx) => {
                   const year = row['年度'];
                   return (
                     <tr key={year} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                      <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-900">
+                      <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">
                         {year}年
                       </td>
                       {cities.map(city =>
@@ -84,7 +95,7 @@ const CityFlowSummaryContainer = () => {
                           const val = row[fieldKey];
                           const isSurplus = col.key === '年度结余';
                           return (
-                            <td key={fieldKey} className={`border border-gray-200 px-3 py-2 text-right whitespace-nowrap ${isSurplus ? getSurplusClass(val) : 'text-gray-900'}`}>
+                            <td key={fieldKey} className={`border border-gray-200 px-3 py-2 text-center whitespace-nowrap ${isSurplus ? getSurplusClass(val) : 'text-gray-700'}`}>
                               {formatWan(val)}
                             </td>
                           );
@@ -94,6 +105,25 @@ const CityFlowSummaryContainer = () => {
                   );
                 })}
               </tbody>
+              {summaryRow && (
+                <tfoot>
+                  <tr className="bg-gray-100 font-semibold">
+                    <td className="border border-gray-300 px-3 py-2 text-center whitespace-nowrap text-gray-700">合计</td>
+                    {cities.map(city =>
+                      subCols.map(col => {
+                        const fieldKey = `${city}_${col.key}`;
+                        const val = summaryRow[fieldKey];
+                        const isSurplus = col.key === '年度结余';
+                        return (
+                          <td key={fieldKey} className={`border border-gray-300 px-3 py-2 text-center whitespace-nowrap ${isSurplus ? getSurplusClass(val) : 'text-gray-700'}`}>
+                            {formatWan(val)}
+                          </td>
+                        );
+                      })
+                    )}
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         )}

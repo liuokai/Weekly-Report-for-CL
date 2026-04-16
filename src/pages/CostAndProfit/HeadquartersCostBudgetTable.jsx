@@ -111,7 +111,7 @@ const HeadquartersCostBudgetTable = () => {
   const renderCompletionRate = (actual, budget) => {
     const rate = calcCompletionRate(actual, budget);
     if (rate === null) return <span className="text-gray-400">-</span>;
-    const color = rate >= 100 ? 'text-gray-800' : rate >= 80 ? 'text-gray-800' : 'text-red-500';
+    const color = rate >= 100 ? 'text-gray-700' : rate >= 80 ? 'text-gray-700' : 'text-red-500';
     return <span className={`font-mono ${color}`}>{formatPercent(rate)}</span>;
   };
 
@@ -119,7 +119,7 @@ const HeadquartersCostBudgetTable = () => {
    * 渲染时间进度单元格（全局统一，直接展示）
    */
   const renderTimeProgress = () => (
-    <span className="font-mono text-gray-800">{formatPercent(timeProgress)}</span>
+    <span className="font-mono text-gray-700">{formatPercent(timeProgress)}</span>
   );
 
   /**
@@ -131,7 +131,7 @@ const HeadquartersCostBudgetTable = () => {
     if (rate === null) return <span className="text-gray-400">-</span>;
     const reached = rate >= timeProgress;
     return reached
-      ? <span className="text-gray-800 font-semibold">达标</span>
+      ? <span className="text-gray-700 font-semibold">达标</span>
       : <span className="text-red-500 font-semibold">未达标</span>;
   };
   return (
@@ -147,14 +147,14 @@ const HeadquartersCostBudgetTable = () => {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-100 border-b border-gray-300">
-              <th className="px-4 py-3 text-center font-bold text-gray-800 border-r border-gray-300 w-[120px]">标题/分类</th>
-              <th className="px-4 py-3 text-center font-bold text-gray-800 border-r border-gray-300 w-[180px]">项目</th>
-              <th className="px-4 py-3 text-center font-bold text-gray-800 border-r border-gray-300 w-[140px]">预算值</th>
-              <th className="px-4 py-3 text-center font-bold text-gray-800 border-r border-gray-300 w-[140px]">实际值</th>
-              <th className="px-4 py-3 text-center font-bold text-gray-800 border-r border-gray-300 w-[100px]">完成率</th>
-              <th className="px-4 py-3 text-center font-bold text-gray-800 border-r border-gray-300 w-[100px]">时间进度</th>
-              <th className="px-4 py-3 text-center font-bold text-gray-800 border-r border-gray-300 w-[100px]">是否达标</th>
-              <th className="px-4 py-3 text-center font-bold text-gray-800 w-[100px]">比例</th>
+              <th className="px-4 py-3 text-xs text-center font-bold text-gray-600 border-r border-gray-300 w-[120px]">标题/分类</th>
+              <th className="px-4 py-3 text-xs text-center font-bold text-gray-600 border-r border-gray-300 w-[180px]">项目</th>
+              <th className="px-4 py-3 text-xs text-center font-bold text-gray-600 border-r border-gray-300 w-[140px]">预算值</th>
+              <th className="px-4 py-3 text-xs text-center font-bold text-gray-600 border-r border-gray-300 w-[140px]">实际值</th>
+              <th className="px-4 py-3 text-xs text-center font-bold text-gray-600 border-r border-gray-300 w-[100px]">完成率</th>
+              <th className="px-4 py-3 text-xs text-center font-bold text-gray-600 border-r border-gray-300 w-[100px]">时间进度</th>
+              <th className="px-4 py-3 text-xs text-center font-bold text-gray-600 border-r border-gray-300 w-[100px]">是否达标</th>
+              <th className="px-4 py-3 text-xs text-center font-bold text-gray-600 w-[100px]">比例</th>
             </tr>
           </thead>
           <tbody>
@@ -162,46 +162,46 @@ const HeadquartersCostBudgetTable = () => {
             <tr className="border-b border-gray-200">
               <td rowSpan={4} className="px-4 py-4 text-center font-semibold text-gray-700 border-r border-gray-300 bg-gray-50">收入</td>
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">服务费收入</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(REVENUE_BUDGET.management_income)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.management_income)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(REVENUE_BUDGET.management_income)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.management_income)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.management_income, REVENUE_BUDGET.management_income)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.management_income, REVENUE_BUDGET.management_income)}</td>
-              <td className="px-4 py-4 text-center text-gray-500">-</td>
+              <td className="px-4 py-4 text-center text-gray-700">-</td>
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">租金收入</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(REVENUE_BUDGET.rental_income)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.rental_income)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(REVENUE_BUDGET.rental_income)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.rental_income)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.rental_income, REVENUE_BUDGET.rental_income)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.rental_income, REVENUE_BUDGET.rental_income)}</td>
-              <td className="px-4 py-4 text-center text-gray-500">-</td>
+              <td className="px-4 py-4 text-center text-gray-700">-</td>
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">商品销售收入</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(REVENUE_BUDGET.goods_sales_income)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.goods_sales_income)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(REVENUE_BUDGET.goods_sales_income)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.goods_sales_income)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.goods_sales_income, REVENUE_BUDGET.goods_sales_income)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.goods_sales_income, REVENUE_BUDGET.goods_sales_income)}</td>
-              <td className="px-4 py-4 text-center text-gray-500">-</td>
+              <td className="px-4 py-4 text-center text-gray-700">-</td>
             </tr>
             <tr className="border-b-2 border-gray-300 bg-gray-50">
-              <td className="px-4 py-4 font-bold text-gray-800 border-r border-gray-300">小计</td>
-              <td className="px-4 py-4 text-right font-mono font-bold text-gray-600 border-r border-gray-300">{formatNumber(REVENUE_BUDGET.total_income)}</td>
+              <td className="px-4 py-4 font-bold text-gray-700 border-r border-gray-300">小计</td>
+              <td className="px-4 py-4 text-right font-mono font-bold text-gray-700 border-r border-gray-300">{formatNumber(REVENUE_BUDGET.total_income)}</td>
               <td className="px-4 py-4 text-right font-mono font-bold text-[#a40035] border-r border-gray-300">{formatNumber(totals.total_income)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.total_income, REVENUE_BUDGET.total_income)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.total_income, REVENUE_BUDGET.total_income)}</td>
-              <td className="px-4 py-4 text-center text-gray-500">-</td>
+              <td className="px-4 py-4 text-center text-gray-700">-</td>
             </tr>
             {/* 人工成本部分 */}
             <tr className="border-b border-gray-200">
               <td rowSpan={5} className="px-4 py-4 text-center font-semibold text-gray-700 border-r border-gray-300 bg-gray-50">人工成本</td>
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">人工成本-投融资管理</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(LABOR_BUDGET.investment_financing_budget)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.investment_financing_budget)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(LABOR_BUDGET.investment_financing_budget)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.investment_financing_budget)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.investment_financing_budget, LABOR_BUDGET.investment_financing_budget)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.investment_financing_budget, LABOR_BUDGET.investment_financing_budget)}</td>
@@ -209,8 +209,8 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">人工成本-推拿之家</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(LABOR_BUDGET.massage_home_budget)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.massage_home_budget)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(LABOR_BUDGET.massage_home_budget)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.massage_home_budget)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.massage_home_budget, LABOR_BUDGET.massage_home_budget)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.massage_home_budget, LABOR_BUDGET.massage_home_budget)}</td>
@@ -218,8 +218,8 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">人工成本-用户中心</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(LABOR_BUDGET.user_center_budget)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.user_center_budget)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(LABOR_BUDGET.user_center_budget)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.user_center_budget)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.user_center_budget, LABOR_BUDGET.user_center_budget)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.user_center_budget, LABOR_BUDGET.user_center_budget)}</td>
@@ -227,16 +227,16 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">人工成本-IT中心</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(LABOR_BUDGET.digital_platform_budget)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.digital_platform_budget)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(LABOR_BUDGET.digital_platform_budget)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.digital_platform_budget)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.digital_platform_budget, LABOR_BUDGET.digital_platform_budget)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.digital_platform_budget, LABOR_BUDGET.digital_platform_budget)}</td>
               <td className="px-4 py-4 text-center font-mono text-gray-600">{formatPercent(calcRatio(totals.digital_platform_budget))}</td>
             </tr>
             <tr className="border-b-2 border-gray-300 bg-gray-50">
-              <td className="px-4 py-4 font-bold text-gray-800 border-r border-gray-300">小计</td>
-              <td className="px-4 py-4 text-right font-mono font-bold text-gray-600 border-r border-gray-300">{formatNumber(LABOR_BUDGET.labor_cost)}</td>
+              <td className="px-4 py-4 font-bold text-gray-700 border-r border-gray-300">小计</td>
+              <td className="px-4 py-4 text-right font-mono font-bold text-gray-700 border-r border-gray-300">{formatNumber(LABOR_BUDGET.labor_cost)}</td>
               <td className="px-4 py-4 text-right font-mono font-bold text-[#a40035] border-r border-gray-300">{formatNumber(totals.labor_cost)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.labor_cost, LABOR_BUDGET.labor_cost)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
@@ -247,8 +247,8 @@ const HeadquartersCostBudgetTable = () => {
             <tr className="border-b border-gray-200">
               <td rowSpan={10} className="px-4 py-4 text-center font-semibold text-gray-700 border-r border-gray-300 bg-gray-50">固定成本</td>
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">房租费</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.rent_fee)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.rent_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.rent_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.rent_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.rent_fee, FIXED_BUDGET.rent_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.rent_fee, FIXED_BUDGET.rent_fee)}</td>
@@ -256,8 +256,8 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">折旧费</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.depreciation_fee)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.depreciation_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.depreciation_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.depreciation_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.depreciation_fee, FIXED_BUDGET.depreciation_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.depreciation_fee, FIXED_BUDGET.depreciation_fee)}</td>
@@ -265,17 +265,17 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">研发培训费</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.rd_training_fee)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">-</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.rd_training_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">-</td>
               <td className="px-4 py-4 text-center border-r border-gray-300"><span className="text-gray-400">-</span></td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300"><span className="text-gray-400">-</span></td>
-              <td className="px-4 py-4 text-center text-gray-500">-</td>
+              <td className="px-4 py-4 text-center text-gray-700">-</td>
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">招聘渠道费</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.recruitment_channel_fee)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.recruitment_channel_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.recruitment_channel_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.recruitment_channel_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.recruitment_channel_fee, FIXED_BUDGET.recruitment_channel_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.recruitment_channel_fee, FIXED_BUDGET.recruitment_channel_fee)}</td>
@@ -283,8 +283,8 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">办公费</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.office_fee)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.office_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.office_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.office_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.office_fee, FIXED_BUDGET.office_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.office_fee, FIXED_BUDGET.office_fee)}</td>
@@ -292,8 +292,8 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">水电费</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.utilities_fee)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.utilities_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.utilities_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.utilities_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.utilities_fee, FIXED_BUDGET.utilities_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.utilities_fee, FIXED_BUDGET.utilities_fee)}</td>
@@ -301,8 +301,8 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">服务器租赁</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.server_leasing_fee)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.server_leasing_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.server_leasing_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.server_leasing_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.server_leasing_fee, FIXED_BUDGET.server_leasing_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.server_leasing_fee, FIXED_BUDGET.server_leasing_fee)}</td>
@@ -310,8 +310,8 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">手续费</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.handling_fee)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.handling_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.handling_fee)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.handling_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.handling_fee, FIXED_BUDGET.handling_fee)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.handling_fee, FIXED_BUDGET.handling_fee)}</td>
@@ -319,16 +319,16 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             <tr className="border-b border-gray-200">
               <td className="px-4 py-4 text-gray-700 border-r border-gray-300">税金</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.tax_and_surcharge)}</td>
-              <td className="px-4 py-4 text-right font-mono text-gray-800 border-r border-gray-300">{formatNumber(totals.tax_and_surcharge)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.tax_and_surcharge)}</td>
+              <td className="px-4 py-4 text-right font-mono text-gray-700 border-r border-gray-300">{formatNumber(totals.tax_and_surcharge)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.tax_and_surcharge, FIXED_BUDGET.tax_and_surcharge)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.tax_and_surcharge, FIXED_BUDGET.tax_and_surcharge)}</td>
               <td className="px-4 py-4 text-center font-mono text-gray-600">{formatPercent(calcRatio(totals.tax_and_surcharge))}</td>
             </tr>
             <tr className="border-b-2 border-gray-300 bg-gray-50">
-              <td className="px-4 py-4 font-bold text-gray-800 border-r border-gray-300">小计</td>
-              <td className="px-4 py-4 text-right font-mono font-bold text-gray-600 border-r border-gray-300">{formatNumber(FIXED_BUDGET.fixed_cost)}</td>
+              <td className="px-4 py-4 font-bold text-gray-700 border-r border-gray-300">小计</td>
+              <td className="px-4 py-4 text-right font-mono font-bold text-gray-700 border-r border-gray-300">{formatNumber(FIXED_BUDGET.fixed_cost)}</td>
               <td className="px-4 py-4 text-right font-mono font-bold text-[#a40035] border-r border-gray-300">{formatNumber(totals.fixed_cost)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.fixed_cost, FIXED_BUDGET.fixed_cost)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
@@ -337,19 +337,19 @@ const HeadquartersCostBudgetTable = () => {
             </tr>
             {/* 支出合计 */}
             <tr className="border-b-2 border-gray-300 bg-gray-100">
-              <td colSpan={2} className="px-4 py-4 text-center font-bold text-gray-800 border-r border-gray-300">支出合计</td>
-              <td className="px-4 py-4 text-right font-mono font-bold text-gray-600 border-r border-gray-300">{formatNumber(SUMMARY_BUDGET.totalExpenditure)}</td>
+              <td colSpan={2} className="px-4 py-4 text-center font-bold text-gray-700 border-r border-gray-300">支出合计</td>
+              <td className="px-4 py-4 text-right font-mono font-bold text-gray-700 border-r border-gray-300">{formatNumber(SUMMARY_BUDGET.totalExpenditure)}</td>
               <td className="px-4 py-4 text-right font-mono font-bold text-[#a40035] text-base border-r border-gray-300">{formatNumber(totals.total_cost)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderCompletionRate(totals.total_cost, SUMMARY_BUDGET.totalExpenditure)}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderTimeProgress()}</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">{renderReachStandard(totals.total_cost, SUMMARY_BUDGET.totalExpenditure)}</td>
-              <td className="px-4 py-4 text-center text-gray-500">-</td>
+              <td className="px-4 py-4 text-center text-gray-700">-</td>
             </tr>
 
             {/* 总部利润 */}
             <tr className="border-b-2 border-gray-300 bg-red-50">
-              <td colSpan={2} className="px-4 py-4 text-center font-bold text-gray-800 border-r border-gray-300">总部利润</td>
-              <td className="px-4 py-4 text-right font-mono font-bold text-gray-600 border-r border-gray-300">
+              <td colSpan={2} className="px-4 py-4 text-center font-bold text-gray-700 border-r border-gray-300">总部利润</td>
+              <td className="px-4 py-4 text-right font-mono font-bold text-gray-700 border-r border-gray-300">
                 {SUMMARY_BUDGET.headquartersProfit >= 0 ? '' : '-'}{formatNumber(Math.abs(SUMMARY_BUDGET.headquartersProfit))}
               </td>
               <td className="px-4 py-4 text-right font-mono font-bold text-[#a40035] text-base border-r border-gray-300">
@@ -362,13 +362,13 @@ const HeadquartersCostBudgetTable = () => {
               <td className="px-4 py-4 text-center border-r border-gray-300">
                 <span className="text-gray-400">-</span>
               </td>
-              <td className="px-4 py-4 text-center text-gray-500">-</td>
+              <td className="px-4 py-4 text-center text-gray-700">-</td>
             </tr>
 
             {/* 门店利润 */}
             <tr className="border-b-2 border-gray-300 bg-green-50">
-              <td colSpan={2} className="px-4 py-4 text-center font-bold text-gray-800 border-r border-gray-300">门店利润</td>
-              <td className="px-4 py-4 text-right font-mono font-bold text-gray-600 border-r border-gray-300">{formatNumber(SUMMARY_BUDGET.storeProfit)}</td>
+              <td colSpan={2} className="px-4 py-4 text-center font-bold text-gray-700 border-r border-gray-300">门店利润</td>
+              <td className="px-4 py-4 text-right font-mono font-bold text-gray-700 border-r border-gray-300">{formatNumber(SUMMARY_BUDGET.storeProfit)}</td>
               <td className="px-4 py-4 text-right font-mono font-bold text-green-600 text-base border-r border-gray-300">-</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">
                 <span className="text-gray-400">-</span>
@@ -377,13 +377,13 @@ const HeadquartersCostBudgetTable = () => {
               <td className="px-4 py-4 text-center border-r border-gray-300">
                 <span className="text-gray-400">-</span>
               </td>
-              <td className="px-4 py-4 text-center text-gray-500">-</td>
+              <td className="px-4 py-4 text-center text-gray-700">-</td>
             </tr>
 
             {/* 2026年利润合计 */}
             <tr className="border-b-2 border-gray-300 bg-blue-50">
-              <td colSpan={2} className="px-4 py-4 text-center font-bold text-gray-800 border-r border-gray-300">2026年利润合计</td>
-              <td className="px-4 py-4 text-right font-mono font-bold text-gray-600 border-r border-gray-300">{formatNumber(SUMMARY_BUDGET.annualProfit)}</td>
+              <td colSpan={2} className="px-4 py-4 text-center font-bold text-gray-700 border-r border-gray-300">2026年利润合计</td>
+              <td className="px-4 py-4 text-right font-mono font-bold text-gray-700 border-r border-gray-300">{formatNumber(SUMMARY_BUDGET.annualProfit)}</td>
               <td className="px-4 py-4 text-right font-mono font-bold text-blue-600 text-base border-r border-gray-300">-</td>
               <td className="px-4 py-4 text-center border-r border-gray-300">
                 <span className="text-gray-400">-</span>
@@ -392,7 +392,7 @@ const HeadquartersCostBudgetTable = () => {
               <td className="px-4 py-4 text-center border-r border-gray-300">
                 <span className="text-gray-400">-</span>
               </td>
-              <td className="px-4 py-4 text-center text-gray-500">-</td>
+              <td className="px-4 py-4 text-center text-gray-700">-</td>
             </tr>
           </tbody>
         </table>

@@ -731,8 +731,8 @@ const CostStructureContainer = () => {
       </div>
 
       <div className={`overflow-x-auto ${viewDimension === 'store' ? 'max-h-[800px] overflow-y-auto' : ''}`}>
-        <table className="w-full text-sm text-left text-gray-600 relative">
-          <thead className="bg-gray-50 text-xs text-gray-700 uppercase sticky top-0 z-20 shadow-sm">
+        <table className="w-full text-sm text-left text-gray-700 relative">
+          <thead className="bg-gray-50 text-xs text-gray-600 uppercase sticky top-0 z-20 shadow-sm">
             <tr>
               <th rowSpan={2} className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                 {firstColumnLabel}
@@ -751,7 +751,7 @@ const CostStructureContainer = () => {
             <tr>
               {headerGroups.map((group, idx) => (
                 group.isGroup && group.subHeaders.map((sub, subIdx) => (
-                  <th key={`${idx}-${subIdx}`} className="px-6 py-2 font-medium whitespace-nowrap min-w-[100px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-500">
+                  <th key={`${idx}-${subIdx}`} className="px-6 py-2 font-medium whitespace-nowrap min-w-[100px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
                     {sub.label}
                   </th>
                 ))
@@ -767,7 +767,7 @@ const CostStructureContainer = () => {
                 `}
               >
                 <td className={`px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300
-                  ${row.isSummary ? 'bg-red-50 text-[#a40035]' : 'bg-white text-gray-900'}
+                  ${row.isSummary ? 'bg-red-50 text-[#a40035]' : 'bg-white text-gray-700'}
                   shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]
                 `}>
                   {row[firstColumnHeader]}
