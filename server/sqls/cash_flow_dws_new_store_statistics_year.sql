@@ -87,7 +87,7 @@ GROUP BY year
 UNION ALL
 
 -- 月度数据（直接嵌套子查询，城市顺序已调整）
-SELECT t.year_month                                                                                AS '时间',
+SELECT t.year_month                                                                                AS '年度',
 
        -- 合计
        SUM(t.new_store_target)                                                                     AS '合计_新店目标',
@@ -190,6 +190,6 @@ FROM (
                   b.statistics_city_name) t
 GROUP BY t.year_month
 
-ORDER BY `时间`;
+ORDER BY `年度`;
 
 

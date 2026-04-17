@@ -141,9 +141,10 @@ const NewStoreStatisticsContainer = () => {
                       const fieldKey = `${city}_${col.key}`;
                       const val = summaryRow[fieldKey];
                       const isCompare = col.key === '对照目标';
+                      const isYearEnd = col.key === '年末门店数';
                       return (
                         <td key={fieldKey} className={`border border-gray-300 px-3 py-2 text-center whitespace-nowrap ${isCompare ? getCompareClass(val) : 'text-gray-700'}`}>
-                          {val || '-'}
+                          {isYearEnd ? '' : (val || '-')}
                         </td>
                       );
                     })
