@@ -13,7 +13,7 @@ SELECT r.city_code                                                              
        -- 1. 现金流数据（求和聚合）
        ROUND(SUM(NVL(r.cash_flow_target, 0)), 2)                                AS cash_flow_budget_total,        -- 现金流目标值（求和）
        ROUND(SUM(NVL(a.net_cash_flow, 0)), 2)                                   AS cash_flow_actual_to_date,      -- 爬坡期现金流实际值（求和）
-       ROUND(SUM(NVL(a.net_cash_flow, 0)) - SUM(NVL(r.cash_flow_budget, 0)), 2) AS cash_flow_variance,            -- 现金流差异（求和后计算）
+       ROUND(SUM(NVL(a.net_cash_flow, 0)) - SUM(NVL(r.cash_flow_target, 0)), 2) AS cash_flow_variance,            -- 现金流差异（求和后计算）
 
        -- 2. 营销费用相关（求和聚合）
        ROUND(SUM(NVL(c.marketing_est, 0)), 2)                                   AS marketing_budget_total,        -- 营销费预算（求和）
