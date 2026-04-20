@@ -8,6 +8,26 @@ const WeeklyReport = () => {
   // Tab导航状态管理
   const [activeTab, setActiveTab] = useState(0);
   const [isPrefetching, setIsPrefetching] = useState(true);
+  const [isFlushing, setIsFlushing] = useState(false);
+
+  // 清除缓存
+  const handleFlushCache = async () => {
+    setIsFlushing(true);
+    try {
+      // 1. 清后端缓存
+      await fetch('/api/cache/flush', { method: 'POST' });
+      // 2. 清前端 localStorage 缓存
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('cl_weekly_cache_')) {
+          localStorage.removeItem(key);
+        }
+      });
+      window.location.reload();
+    } catch (e) {
+      alert('清除缓存失败：' + e.message);
+      setIsFlushing(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -57,9 +77,25 @@ const WeeklyReport = () => {
             </h1>
             
             {/* 更新时间 */}
-            <p className="text-white/90 text-sm md:text-base">
-              更新时间：{getCurrentDate()}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-white/90 text-sm md:text-base">
+                更新时间：{getCurrentDate()}
+              </p>
+              <button
+                onClick={handleFlushCache}
+                disabled={isFlushing}
+                title="清除缓存并刷新"
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors disabled:opacity-50"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`w-4 h-4 text-white ${isFlushing ? 'animate-spin' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </header>

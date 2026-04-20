@@ -606,6 +606,13 @@ app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
   }
 });
 
+// 清空所有查询缓存
+app.post('/api/cache/flush', (req, res) => {
+  cacheService.flush();
+  console.log('[Cache] 缓存已手动清空');
+  res.json({ status: 'success', message: '缓存已清空' });
+});
+
 // Test Database Connection
 app.get('/health', async (req, res) => {
   try {

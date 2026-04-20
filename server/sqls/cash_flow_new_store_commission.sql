@@ -13,7 +13,7 @@ SELECT r.month                                                         AS month,
        -- 1. 现金流数据
        ROUND(nvl(r.cash_flow_target, 0), 2)                            AS cash_flow_budget_total,        -- 现金流目标值
        ROUND(nvl(a.net_cash_flow, 0), 2)                               AS cash_flow_actual_to_date,      -- 爬坡期现金流实际值
-       ROUND(nvl(a.net_cash_flow, 0) - nvl(b.cash_flow_budget, 0), 2)  AS cash_flow_variance,            -- 现金流差异
+       ROUND(nvl(a.net_cash_flow, 0) - nvl(r.cash_flow_target, 0), 2)  AS cash_flow_variance,            -- 现金流差异
 
        -- 2. 营销费用相关
        ROUND(nvl(c.marketing_est, 0), 2)                               AS marketing_budget_total,        -- 营销费预算
