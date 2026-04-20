@@ -67,14 +67,15 @@ investment_monthly as (
 budget_monthly as (
     SELECT
         month,
-        city_name,
+        statistics_city_name as city_name,
         sum(cash_flow_budget) as monthly_cash_flow_budget
     FROM (
-        SELECT month, city_name, cash_flow_budget FROM data_warehouse.dws_store_revenue_estimate
+        SELECT month, city_code, cash_flow_budget FROM data_warehouse.dws_store_revenue_estimate
         UNION ALL
-        SELECT month, city_name, cash_flow_budget FROM data_warehouse.dws_new_store_revenue_estimate
+        SELECT month, city_code, cash_flow_budget FROM data_warehouse.dws_new_store_revenue_estimate
     ) t
-    GROUP BY month, city_name
+    left join dm_city b on t.city_code = b.city_code
+    GROUP BY month, statistics_city_name
 ),
 
 -- 6. 以实际现金流主表为核心进行关联
