@@ -91,7 +91,8 @@ const CashFlowContinuousLossTableContainer = () => {
           store_name: r['store_name'],
           opening_date: openingDate,
           opening_year: openingDate ? String(openingDate).split('T')[0].slice(0, 4) : '-',
-          store_type: r['store_type'],
+          store_type: null, // 取最后季度最后月的值
+          _latestMonthKey: '',
           quarterData: {},
         };
       }
@@ -103,16 +104,23 @@ const CashFlowContinuousLossTableContainer = () => {
       // 月度净现金流
       if (month) {
         storeMap[code].quarterData[quarter].months[month] = r['monthly_cashflow'];
+        // 记录最后季度最后月的 store_type
+        const monthKey = `${quarter}_${month}`;
+        if (monthKey > storeMap[code]._latestMonthKey) {
+          storeMap[code]._latestMonthKey = monthKey;
+          storeMap[code].store_type = r['store_type'];
+        }
       }
       // 季度合计（每行都有，值相同，直接覆盖）
       storeMap[code].quarterData[quarter].total = r['qtr_total_cash'];
     });
 
-    // 按城市、门店编码排序
+    // 按最后一个季度合计升序排序
+    const lastQuarter = recentQuarters[recentQuarters.length - 1];
     const storeRows = Object.values(storeMap).sort((a, b) => {
-      const cityCompare = (a.city_name || '').localeCompare(b.city_name || '', 'zh-CN');
-      if (cityCompare !== 0) return cityCompare;
-      return (a.store_code || '').localeCompare(b.store_code || '');
+      const aTotal = a.quarterData[lastQuarter]?.total ?? Infinity;
+      const bTotal = b.quarterData[lastQuarter]?.total ?? Infinity;
+      return Number(aTotal) - Number(bTotal);
     });
 
     return { quarterGroups, storeRows };

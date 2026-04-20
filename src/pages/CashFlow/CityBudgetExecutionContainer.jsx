@@ -103,10 +103,10 @@ const CityBudgetExecutionContainer = () => {
     return { tableData: dataRows, summaryRow: summary };
   }, [rawData, selectedMonth, cityCapitalBalanceTargets]);
 
-  // 格式化金额
+  // 格式化金额（万元，保留两位小数）
   const formatMoney = (val) => {
     if (val === null || val === undefined) return '-';
-    return Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (Number(val) / 10000).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const columns = [
@@ -233,7 +233,9 @@ const CityBudgetExecutionContainer = () => {
       {loading ? (
         <div className="text-center py-8 text-gray-500">加载中...</div>
       ) : (
-        <DataTable
+        <>
+          <div className="text-xs text-gray-400 text-left mb-1">单位：万元</div>
+          <DataTable
           columns={columns}
           data={sortedData}
           getKey={(item) => item['city_name']}
@@ -245,6 +247,7 @@ const CityBudgetExecutionContainer = () => {
           summaryPosition="bottom"
           summaryClassName="bg-gray-100"
         />
+        </>
       )}
     </DataContainer>
   );
