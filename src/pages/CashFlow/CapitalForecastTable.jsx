@@ -10,6 +10,12 @@ import DataContainer from '../../components/Common/DataContainer';
  *         预计2026年资金安全线、预计自有资金可用金额、
  *         预计2026年开店支出（已发生/待发生/合计）、预计2026年实际结余资金
  */
+// SQL 返回的城市名 → businessTargets 配置中的城市 key 映射
+const CITY_NAME_MAP = {
+  '成都市': '四川省',
+};
+const normCity = (name) => CITY_NAME_MAP[name] || name;
+
 const CapitalForecastTable = () => {
   const cityTargets2025 = BusinessTargets.capitalBalance?.target2025?.cityTargets || {};
   const cityList = ['总部', ...Object.keys(cityTargets2025)];
@@ -26,7 +32,7 @@ const CapitalForecastTable = () => {
     if (!Array.isArray(cashFlowMonthlyData)) return result;
     for (const row of cashFlowMonthlyData) {
       if (!row.month || !row.month.startsWith(currentYear)) continue;
-      const city = row.city_name || '__unknown__';
+      const city = normCity(row.city_name || '__unknown__');
       if (!result[city]) result[city] = { occurred: 0, pending: 0, rolling: 0, budget: 0 };
       result[city].occurred += Number(row.total_cash_flow_actual || 0);
       result[city].pending  += Number(row.remaining_cash_flow_budget || 0);
@@ -43,7 +49,7 @@ const CapitalForecastTable = () => {
     for (const row of newStoreProcessData) {
       if (row.city_name === '月度合计') continue;
       if (!row.month || !row.month.startsWith(currentYear)) continue;
-      const city = row.city_name || '__unknown__';
+      const city = normCity(row.city_name || '__unknown__');
       if (!result[city]) result[city] = { occurred: 0, pending: 0 };
       result[city].occurred += Number(row.sum_new_funds || 0);
       result[city].pending  += Number(row.sum_expected_funds || 0);
@@ -56,7 +62,7 @@ const CapitalForecastTable = () => {
     const result = {};
     if (!Array.isArray(safetyLineData)) return result;
     for (const row of safetyLineData) {
-      result[row.city_name] = Number(row.total_funds || 0);
+      result[normCity(row.city_name)] = Number(row.total_funds || 0);
     }
     return result;
   }, [safetyLineData]);

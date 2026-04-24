@@ -1,3 +1,4 @@
+      
 -- 新店经营情况总结
 SELECT r.city_code                                                              AS city_codee,                    -- 城市编码
        r.city_name                                                              AS city_name,                     -- 城市
@@ -80,11 +81,19 @@ WHERE r.opening_date >= '2025-01-01'
   AND r.month >= '2025-01'
   AND r.ramp_up_period >= r.ramp_up_month_count
   AND r.ramp_up_month_count > 0
-  AND (a.month IS NULL OR a.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'))
-  AND (c.month IS NULL OR c.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'))
+  AND (a.month IS NULL OR a.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m'))
+  AND (c.month IS NULL OR c.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m'))
+and DATE_FORMAT(
+        CASE
+            WHEN DAY(r.opening_date) <= 15 THEN DATE_ADD(DATE_SUB(r.opening_date, INTERVAL 1 MONTH), INTERVAL r.ramp_up_period MONTH)
+            ELSE DATE_ADD(r.opening_date, INTERVAL r.ramp_up_period MONTH)
+        END, '%Y-%m'
+    )>=DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')
 
 -- 核心：按指定8个字段分组
 GROUP BY r.city_code,r.city_name,r.store_name,r.store_code,r.opening_date,m.city_manager_name,m.technology_vice_name,r.ramp_up_period
 
 ORDER BY r.city_code ASC NULLS LAST, r.store_code ASC NULLS LAST
 ;
+
+    

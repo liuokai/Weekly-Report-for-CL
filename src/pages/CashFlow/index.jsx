@@ -7,6 +7,8 @@ import CapitalForecastContainer from './CapitalForecastContainer';
 import CapitalForecastTable from './CapitalForecastTable';
 import CityBudgetExecutionContainer from './CityBudgetExecutionContainer';
 import NewStoreOperationStatusContainer from './NewStoreOperationStatusContainer';
+import RampUpStoreOperationStatusContainer from './RampUpStoreOperationStatusContainer';
+import StoreCashFlowMonitorContainer from './StoreCashFlowMonitorContainer';
 import RampUpStoreOperationContainer from './RampUpStoreOperationContainer';
 import NewStoreSupplyContainer from './NewStoreSupplyContainer';
 import CashFlowContinuousLossContainer from './CashFlowContinuousLossContainer';
@@ -601,6 +603,15 @@ const CashFlowTab = () => {
 
       {/* 新店经营情况总结 */}
       <NewStoreOperationStatusContainer />
+
+      {/* 爬坡期门店经营情况总结（独立列表） */}
+      <RampUpStoreOperationStatusContainer />
+
+      {/* 单店现金流完成情况监视 */}
+      <StoreCashFlowMonitorContainer />
+
+
+      
 
       {/* 爬坡期门店经营情况总结 */}
       {/* <RampUpStoreOperationContainer /> */}
