@@ -607,9 +607,7 @@ const CashFlowTab = () => {
       {/* 爬坡期门店经营情况总结（独立列表） */}
       <RampUpStoreOperationStatusContainer />
 
-      {/* 单店现金流完成情况监视 */}
-      <StoreCashFlowMonitorContainer />
-
+      
 
       
 
@@ -627,6 +625,10 @@ const CashFlowTab = () => {
 
       {/* 触发闭店预警门店列表 */}
       <ClosingWarningTableContainer />
+
+      {/* 单店现金流完成情况监视 */}
+      <StoreCashFlowMonitorContainer />
+
 
 
       
