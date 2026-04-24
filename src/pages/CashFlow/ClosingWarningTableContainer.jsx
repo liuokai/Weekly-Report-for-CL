@@ -35,6 +35,12 @@ const ClosingWarningTableContainer = () => {
     return 'text-gray-900';
   };
 
+  const parsePercent = (val) => {
+    if (val === null || val === undefined || val === '') return Number.NEGATIVE_INFINITY;
+    const num = parseFloat(String(val).replace('%', ''));
+    return Number.isNaN(num) ? Number.NEGATIVE_INFINITY : num;
+  };
+
   const rows = useMemo(() => {
     if (!data || data.length === 0) return [];
     return data;
@@ -60,6 +66,9 @@ const ClosingWarningTableContainer = () => {
         return true;
       })
       .sort((a, b) => {
+        const ratioDiff = parsePercent(b.cumulative_cash_flow_loss_ratio) - parsePercent(a.cumulative_cash_flow_loss_ratio);
+        if (ratioDiff !== 0) return ratioDiff;
+
         const aCode = String(a.store_code || '');
         const bCode = String(b.store_code || '');
         return aCode.localeCompare(bCode, 'zh-CN', { numeric: true });

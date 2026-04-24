@@ -38,6 +38,8 @@ WITH base_data AS (
                                                   from data_warehouse.dwd_store_info) as aa
                                             where rn = 1
                                             and opening_time >='2026-01-01 00:00:00'
+                                            and is_invalid_store = '否'
+                                            and opening_time < date(now())
                                             ) as store
                                            on store.store_code = aa.store_code
                         GROUP BY 1, 2) bb ON bb.year = aa.year AND bb.city_code = aa.city_code)
