@@ -1,3 +1,4 @@
+      
 
 -- 闭店预警门店列表
 
@@ -86,6 +87,18 @@ WITH quarterly_store_metrics AS (
                                                            WHEN DAYOFMONTH(opening_date) > 15 THEN ramp_up_period + 1
                                                            ELSE ramp_up_period END) - 1 MONTH
                                     ) AS ramp_up_end_date,
+                                    -- 1. 爬坡期结束季度
+                                    CONCAT(YEAR(DATE_ADD(opening_date,
+                                                     INTERVAL (CASE
+                                                                   WHEN DAYOFMONTH(opening_date) > 15 THEN ramp_up_period + 1
+                                                                   ELSE ramp_up_period END) - 1 MONTH
+                                            )), '-Q',
+                                       QUARTER(DATE_ADD(opening_date,
+                                                        INTERVAL (CASE
+                                                                      WHEN DAYOFMONTH(opening_date) > 15 THEN ramp_up_period + 1
+                                                                      ELSE ramp_up_period END) - 1 MONTH
+                                                 ))
+                                    ) AS ramp_up_end_date_quarter,
                                     -- 2. 🔥 修正版：手动拼接季度，避免 %q 兼容问题
                                     CONCAT(YEAR(DATE_ADD(opening_date,
                                                          INTERVAL (CASE
@@ -167,7 +180,10 @@ left join data_warehouse.dws_store_initial_investment as touzhi on res.store_cod
 WHERE
     -- 动态筛选：始终取数据集中最新的一个季度
     res.quarter= CONCAT( YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)), '-Q', QUARTER(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)))
+  and res.quarter>rq.ramp_up_end_date_quarter
     and  ((res.cost_ratio > 1 AND res.cost_ratio_last_quarter > 1 AND res.cost_ratio_prev_last_quarter > 1 and res.quarter >= rq.ramp_up_end_quarter)
         OR (res.cum_net_cash_flow_mgmt < 0 ))
 ORDER BY res.cumulative_cash_flow_loss_ratio
             ;
+
+    

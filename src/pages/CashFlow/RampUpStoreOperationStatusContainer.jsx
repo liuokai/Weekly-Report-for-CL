@@ -242,7 +242,7 @@ const RampUpStoreOperationStatusContainer = () => {
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
       <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#a40035] flex items-center gap-2">
-          爬坡期门店经营情况总结
+          新店经营情况总结(费用预算)
           <span className="ml-2 text-sm font-normal bg-[#a40035]/10 text-[#a40035] px-2 py-0.5 rounded-full">
             {loading ? '...' : `${filteredData?.length ?? data?.length ?? 0} 家`}
           </span>

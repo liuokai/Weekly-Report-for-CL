@@ -53,11 +53,17 @@ const ClosingWarningTableContainer = () => {
 
   // 过滤后的行
   const filteredRows = useMemo(() => {
-    return rows.filter(r => {
-      if (selectedCity && r.city_name !== selectedCity) return false;
-      if (selectedStore && r.store_name !== selectedStore) return false;
-      return true;
-    });
+    return rows
+      .filter(r => {
+        if (selectedCity && r.city_name !== selectedCity) return false;
+        if (selectedStore && r.store_name !== selectedStore) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const aCode = String(a.store_code || '');
+        const bCode = String(b.store_code || '');
+        return aCode.localeCompare(bCode, 'zh-CN', { numeric: true });
+      });
   }, [rows, selectedCity, selectedStore]);
 
   // 分页数据

@@ -1,63 +1,60 @@
+      
 -- 现金流持续亏损门店
-with store_cash_flow as (SELECT month                                                                                AS stat_month,
-                                CONCAT(YEAR(STR_TO_DATE(month, '%Y-%m')), 'Q',
-                                       QUARTER(STR_TO_DATE(month, '%Y-%m')))                                         AS quarter_of_month,
-                                store_code,
-                                city_name,
-                                city_code,
-                                store_name,
-                                opening_date,
-                                main_business_income,
-                                net_cash_flow,
-                                SUM(net_cash_flow) OVER (
-                                    PARTITION BY
-                                        store_code,
-                                        CONCAT(YEAR(STR_TO_DATE(month, '%Y-%m')), 'Q',
-                                               QUARTER(STR_TO_DATE(month, '%Y-%m')))
-                                    )                                                                                AS qtr_total_cash,
-                                ROUND(
-                                        SUM(net_cash_flow) OVER (
-                                            PARTITION BY
-                                                store_code,
-                                                CONCAT(YEAR(STR_TO_DATE(month, '%Y-%m')), 'Q',
-                                                       QUARTER(STR_TO_DATE(month, '%Y-%m')))
-                                            ) / COUNT(month) OVER (
-                                            PARTITION BY
-                                                store_code,
-                                                CONCAT(YEAR(STR_TO_DATE(month, '%Y-%m')), 'Q',
-                                                       QUARTER(STR_TO_DATE(month, '%Y-%m')))
-                                            ),
-                                        2
-                                )                                                                                    AS qtr_avg_cash
-                         FROM dws_profit_store_detail_monthly a
-                         WHERE length(store_code) = 6
-                           and main_business_income > 0
-                           and month >=
-                               DATE_FORMAT(DATE_SUB(CURRENT_DATE(), INTERVAL (QUARTER(CURRENT_DATE())) * 3 MONTH),
-                                           '%Y-%m')
-                           AND month < DATE_FORMAT(CURRENT_DATE(), '%Y-%m')),
-     ramp_up_period as (SELECT store_code,
-                               store_name,
-                               opening_date,
-                               ramp_up_period,
-                               DATE_ADD(opening_date,
-                                        INTERVAL (CASE
-                                                      WHEN DAYOFMONTH(opening_date) > 15 THEN ramp_up_period + 1
-                                                      ELSE ramp_up_period END) - 1 MONTH
-                               )                                AS ramp_up_end_date,
-                               CONCAT(YEAR(DATE_ADD(opening_date,
-                                                    INTERVAL (CASE
-                                                                  WHEN DAYOFMONTH(opening_date) > 15
-                                                                      THEN ramp_up_period + 1
-                                                                  ELSE ramp_up_period END) - 1 MONTH
-                                           )), 'Q', QUARTER(DATE_ADD(opening_date,
-                                                                     INTERVAL (CASE
-                                                                                   WHEN DAYOFMONTH(opening_date) > 15
-                                                                                       THEN ramp_up_period + 1
-                                                                                   ELSE ramp_up_period END) - 1 MONTH
-                                                            ))) AS ramp_up_end_quarter
-                        FROM dws_new_store_commission_monthly
-                        GROUP BY store_code, store_name, ramp_up_period, opening_date)
+with store_cash_flow as (
+SELECT month                                                                                AS stat_month,
+CONCAT(YEAR(STR_TO_DATE(month, '%Y-%m')), 'Q',
+       QUARTER(STR_TO_DATE(month, '%Y-%m')))                                         AS quarter_of_month,
+store_code,
+city_name,
+city_code,
+store_name,
+opening_date,
+main_business_income,
+net_cash_flow,
+SUM(net_cash_flow) OVER (
+    PARTITION BY store_code,
+        CONCAT(YEAR(STR_TO_DATE(month, '%Y-%m')), 'Q', QUARTER(STR_TO_DATE(month, '%Y-%m')))
+    )                                                                                AS qtr_total_cash,
+    ROUND(
+        SUM(net_cash_flow) OVER (
+            PARTITION BY store_code,
+                CONCAT(YEAR(STR_TO_DATE(month, '%Y-%m')), 'Q',
+                       QUARTER(STR_TO_DATE(month, '%Y-%m')))
+            ) / COUNT(month) OVER (
+            PARTITION BY store_code,
+                CONCAT(YEAR(STR_TO_DATE(month, '%Y-%m')), 'Q',
+                       QUARTER(STR_TO_DATE(month, '%Y-%m')))
+            ),
+        2
+    )                                                                                    AS qtr_avg_cash
+    FROM dws_profit_store_detail_monthly a
+    WHERE length(store_code) = 6
+    and main_business_income > 0
+    and month >= DATE_FORMAT(DATE_SUB(DATE_SUB(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH) , INTERVAL (MONTH(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH) )-1)%3 MONTH), INTERVAL 3 MONTH), '%Y-%m')
+    AND month < DATE_FORMAT(CURRENT_DATE(), '%Y-%m')),
+ ramp_up_period as (
+ SELECT store_code,
+    store_name,
+    opening_date,
+    ramp_up_period,
+    DATE_ADD(opening_date,
+            INTERVAL (CASE
+                          WHEN DAYOFMONTH(opening_date) > 15 THEN ramp_up_period + 1
+                          ELSE ramp_up_period END) - 1 MONTH
+    )                                AS ramp_up_end_date,
+    CONCAT(YEAR(DATE_ADD(opening_date,
+                        INTERVAL (CASE
+                                      WHEN DAYOFMONTH(opening_date) > 15
+                                          THEN ramp_up_period + 1
+                                      ELSE ramp_up_period END) - 1 MONTH
+               )), 'Q', QUARTER(DATE_ADD(opening_date,
+                                         INTERVAL (CASE
+                                                       WHEN DAYOFMONTH(opening_date) > 15
+                                                           THEN ramp_up_period + 1
+                                                       ELSE ramp_up_period END) - 1 MONTH
+                                ))) AS ramp_up_end_quarter
+    FROM dws_new_store_commission_monthly
+    GROUP BY store_code, store_name, ramp_up_period, opening_date)
 
 
 SELECT a.stat_month           AS 'stat_month',-- '统计月份',
@@ -81,11 +78,17 @@ SELECT a.stat_month           AS 'stat_month',-- '统计月份',
 FROM store_cash_flow a
          left join ramp_up_period b on a.store_code = b.store_code
 WHERE 1 = 1
-  and a.store_code in (select distinct a.store_code
-                       FROM store_cash_flow a
-                                left join ramp_up_period b on a.store_code = b.store_code
-                       WHERE a.qtr_total_cash < -10000
-                         and a.quarter_of_month > b.ramp_up_end_quarter)
--- and  a.qtr_total_cash < -10000
--- and a.quarter_of_month > b.ramp_up_end_quarter
+    and a.store_code in (
+    select distinct a.store_code
+        FROM store_cash_flow a
+                left join ramp_up_period b on a.store_code = b.store_code
+        WHERE a.qtr_total_cash < -10000 -- 均值小于-10000的店铺
+         and a.quarter_of_month > b.ramp_up_end_quarter -- 爬坡期结束之后的季度
+        AND a.quarter_of_month = CONCAT(YEAR(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH)), 'Q', QUARTER(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH)))
+
+        )
+-- and  a.qtr_total_cash < -10000 -- 均值小于-10000的店铺
+-- and a.quarter_of_month > b.ramp_up_end_quarter -- 爬坡期结束之后的季度
 ORDER BY a.store_code, a.stat_month;
+
+    

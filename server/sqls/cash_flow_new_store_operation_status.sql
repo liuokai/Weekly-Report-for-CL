@@ -88,7 +88,7 @@ and DATE_FORMAT(
             WHEN DAY(r.opening_date) <= 15 THEN DATE_ADD(DATE_SUB(r.opening_date, INTERVAL 1 MONTH), INTERVAL r.ramp_up_period MONTH)
             ELSE DATE_ADD(r.opening_date, INTERVAL r.ramp_up_period MONTH)
         END, '%Y-%m'
-    )>=DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')
+    )>=DATE_FORMAT(DATE_SUB(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), INTERVAL (MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) - 1) % 3 MONTH), '%Y-%m')
 
 -- 核心：按指定8个字段分组
 GROUP BY r.city_code,r.city_name,r.store_name,r.store_code,r.opening_date,m.city_manager_name,m.technology_vice_name,r.ramp_up_period
