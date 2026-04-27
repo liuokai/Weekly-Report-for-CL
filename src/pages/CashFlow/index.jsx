@@ -583,6 +583,7 @@ const CashFlowTab = () => {
           sortConfig={sortConfig}
           summaryRow={summaryRow}
           summaryPosition="bottom"
+          bordered
         />
       </DataContainer>
 
@@ -601,13 +602,11 @@ const CashFlowTab = () => {
       {/* 新店供应总结 */}
       <NewStoreSupplyContainer />
 
-      {/* 新店经营情况总结 */}
+      {/* 新店经营情况总结 现金流*/}
       <NewStoreOperationStatusContainer />
 
-      {/* 爬坡期门店经营情况总结（独立列表） */}
+      {/* 新店经营情况总结 费用预算 */}
       <RampUpStoreOperationStatusContainer />
-
-      
 
       
 

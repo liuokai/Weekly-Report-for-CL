@@ -246,6 +246,7 @@ const CityBudgetExecutionContainer = () => {
           summaryRow={summaryRow}
           summaryPosition="bottom"
           summaryClassName="bg-gray-100"
+          bordered
         />
         </>
       )}

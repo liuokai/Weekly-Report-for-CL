@@ -4,10 +4,9 @@ import FilterDropdown from '../../components/Common/FilterDropdown';
 import Pagination from '../../components/Common/Pagination';
 import useTableSorting from '../../components/Common/useTableSorting';
 
-/**
- * 单店现金流完成情况监视
- * 数据来源：getStoreCashFlowCompletionMonitoring（cash_flow_completion_monitoring_store.sql）
- */
+const TABLE_HEADER_CELL_CLASS = 'border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold';
+const TABLE_BODY_CELL_CLASS = 'border border-gray-200 px-3 py-2 text-gray-700';
+
 const StoreCashFlowMonitorContainer = () => {
   const { data, loading, error, fetchData } = useFetchData('getStoreCashFlowCompletionMonitoring', []);
 
@@ -80,7 +79,7 @@ const StoreCashFlowMonitorContainer = () => {
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
       <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#a40035] flex items-center gap-2">
-          单店现金流完成情况监视
+          单店现金流完成情况监控
           <span className="ml-2 text-sm font-normal bg-[#a40035]/10 text-[#a40035] px-2 py-0.5 rounded-full">
             {loading ? '...' : `${filteredData.length} 家`}
           </span>
@@ -109,20 +108,20 @@ const StoreCashFlowMonitorContainer = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-700">
-          <thead className="text-xs text-gray-600 bg-gray-50 border-b">
+        <table className="w-full text-sm text-left text-gray-700 border-collapse border border-gray-300">
+          <thead className="text-xs text-gray-600 bg-gray-100">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className="px-3 py-2 cursor-pointer hover:bg-gray-100 whitespace-nowrap font-semibold group"
+                  className={`${TABLE_HEADER_CELL_CLASS} cursor-pointer hover:bg-gray-100 group`}
                   onClick={() => handleSort(col.key)}
                 >
                   <div className="relative flex items-center justify-center">
                     <span>{col.label}</span>
                     {sortConfig.key === col.key && (
                       <span className="absolute right-0 text-[#a40035]">
-                        {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
                       </span>
                     )}
                     {sortConfig.key !== col.key && (
@@ -138,13 +137,13 @@ const StoreCashFlowMonitorContainer = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-8 text-center text-gray-400">
+                <td colSpan={columns.length} className="border border-gray-200 px-6 py-8 text-center text-gray-400">
                   加载中...
                 </td>
               </tr>
             ) : filteredData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-8 text-center text-gray-400">
+                <td colSpan={columns.length} className="border border-gray-200 px-6 py-8 text-center text-gray-400">
                   暂无数据
                 </td>
               </tr>
@@ -152,16 +151,16 @@ const StoreCashFlowMonitorContainer = () => {
               pagedData.map((item, idx) => {
                 const completed = isCompleted(item.conclusion);
                 return (
-                  <tr key={idx} className="border-b hover:bg-gray-50/50 even:bg-gray-50/30">
-                    <td className="px-3 py-2 whitespace-nowrap text-center">{item.city_name}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-center">{item.store_code}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-center">{item.store_name}</td>
-                    <td className="px-3 py-2 text-center">{fmtNumber(item.actual_value)}</td>
-                    <td className="px-3 py-2 text-center">{fmtNumber(item.target_value)}</td>
-                    <td className={`px-3 py-2 text-center ${item.diff_value < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
+                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50 hover:bg-gray-50'}>
+                    <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.city_name}</td>
+                    <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.store_code}</td>
+                    <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.store_name}</td>
+                    <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtNumber(item.actual_value)}</td>
+                    <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtNumber(item.target_value)}</td>
+                    <td className={`${TABLE_BODY_CELL_CLASS} text-center ${item.diff_value < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
                       {fmtNumber(item.diff_value)}
                     </td>
-                    <td className="px-3 py-2 text-center">
+                    <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                           completed ? 'bg-transparent text-gray-700' : 'bg-red-100 text-[#a40035]'
@@ -170,7 +169,7 @@ const StoreCashFlowMonitorContainer = () => {
                         {item.conclusion}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-center ${!completed ? 'text-[#a40035]' : 'text-gray-700'}`}>
+                    <td className={`${TABLE_BODY_CELL_CLASS} text-center ${!completed ? 'text-[#a40035]' : 'text-gray-700'}`}>
                       {fmtPercent(item.completion_ratio)}
                     </td>
                   </tr>
