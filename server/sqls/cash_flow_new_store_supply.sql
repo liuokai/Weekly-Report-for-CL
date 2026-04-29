@@ -3,8 +3,10 @@
 WITH query_bed_depreciation AS (
     -- 床位、折旧、单床位成本（含合计行）
     SELECT
-        statistics_city_name,
-        IFNULL(statistics_city_name, '合计') AS city_name_for_display,
+        CASE
+            WHEN GROUPING(dt.statistics_city_name) = 1 THEN '合计'
+            ELSE COALESCE(dt.statistics_city_name, '未配置城市')
+        END AS city_name_for_display,
         SUM(CASE WHEN YEAR(t.opening_time) = 2026 THEN t.bed_count ELSE 0 END) AS bed_count_2026, -- 2026年床位数
         SUM(CASE WHEN YEAR(t.opening_time) = 2025 THEN t.bed_count ELSE 0 END) AS bed_count_2025, -- 2025年床位数
         SUM(CASE WHEN YEAR(t.opening_time) = 2024 THEN t.bed_count ELSE 0 END) AS bed_count_2024, -- 2024年床位数
@@ -36,8 +38,10 @@ WITH query_bed_depreciation AS (
 query_store_area AS (
     -- 门店面积、床位数、利用率（含合计行）
     SELECT
-        statistics_city_name,
-        IFNULL(statistics_city_name, '合计') AS city_name,
+        CASE
+            WHEN GROUPING(statistics_city_name) = 1 THEN '合计'
+            ELSE COALESCE(statistics_city_name, '未配置城市')
+        END AS city_name,
         COUNT(store_code) AS store_count, -- 门店数量
         ROUND(SUM(suite_area) / COUNT(store_code), 0) AS avg_area_per_store, -- 店均面积
         ROUND(SUM(total_investment_amt) / COUNT(total_investment_amt), 2) AS avg_investment_per_store, -- 店均投资
@@ -88,11 +92,11 @@ SELECT
     q1.cost_per_bed_2023 AS cost_per_bed_2023 -- 2023年单床位装修成本
 FROM query_bed_depreciation q1
 FULL OUTER JOIN query_store_area q2
-    ON COALESCE(q1.statistics_city_name, '合计') = COALESCE(q2.statistics_city_name, '合计')
+    ON q1.city_name_for_display = q2.city_name
 ORDER BY
-    -- 严格按指定顺序：四川、重庆、深圳、杭州、南京、宁波、广州、上海、北京、合计
+    -- 严格按指定顺序：四川、重庆、深圳、杭州、南京、宁波、广州、上海、北京、未配置城市、合计
     FIELD(COALESCE(q2.city_name, q1.city_name_for_display),
-          '四川省', '重庆市', '深圳市', '杭州市', '南京市', '宁波市', '广州市', '上海市', '北京市', '合计');
+          '四川省', '重庆市', '深圳市', '杭州市', '南京市', '宁波市', '广州市', '上海市', '北京市', '未配置城市', '合计');
 
 
 

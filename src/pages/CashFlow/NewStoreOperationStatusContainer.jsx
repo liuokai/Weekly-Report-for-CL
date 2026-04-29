@@ -4,8 +4,16 @@ import useTableSorting from '../../components/Common/useTableSorting';
 import FilterDropdown from '../../components/Common/FilterDropdown';
 import Pagination from '../../components/Common/Pagination';
 
-const TABLE_HEADER_CELL_CLASS = 'border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold';
+const TABLE_HEADER_CELL_CLASS = 'relative border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-center';
 const TABLE_BODY_CELL_CLASS = 'border border-gray-200 px-3 py-2 text-gray-700';
+
+const getTableMinWidth = (columnWidths) => (
+  Object.values(columnWidths).reduce((total, width) => total + Number.parseInt(width, 10), 0)
+);
+
+const SORT_ASC = '\u2191';
+const SORT_DESC = '\u2193';
+const SORT_IDLE = '\u2195';
 
 const RampUpDetailModal = ({ store, onClose }) => {
   const { data: allData, loading } = useFetchData('getRampUpStoreOperationStatus', []);
@@ -27,7 +35,7 @@ const RampUpDetailModal = ({ store, onClose }) => {
     { key: 'city_manager_name', label: '城市经理' },
     { key: 'tech_vice_president_name', label: '技术副总' },
     { key: 'ramp_up_period_months', label: '爬坡期长度' },
-    { key: 'current_ramp_up_month_index', label: '当前爬坡期' },
+    { key: 'current_ramp_up_month_index', label: '当前爬坡月' },
     { key: 'cash_flow_budget_total', label: '现金流目标值' },
     { key: 'cash_flow_actual_to_date', label: '爬坡期现金流实际值' },
     { key: 'cash_flow_variance', label: '现金流差异' },
@@ -48,7 +56,10 @@ const RampUpDetailModal = ({ store, onClose }) => {
 
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return '-';
-    return Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return Number(value).toLocaleString('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const formatDate = (value) => {
@@ -73,29 +84,29 @@ const RampUpDetailModal = ({ store, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-xl shadow-2xl w-[96vw] max-w-[1400px] max-h-[90vh] flex flex-col"
+        className="flex max-h-[90vh] w-[96vw] max-w-[1400px] flex-col rounded-xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 rounded-t-xl flex items-center justify-between shrink-0">
+        <div className="flex shrink-0 items-center justify-between rounded-t-xl border-b border-gray-100 bg-[#a40035]/5 px-6 py-4">
           <div>
             <h2 className="text-lg font-bold text-[#a40035]">爬坡期门店经营情况明细</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="mt-0.5 text-sm text-gray-500">
               {store.store_name}（{store.store_code}），共 {storeData.length} 个月
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="overflow-auto flex-1 p-4">
-          <table className="w-full text-sm text-left text-gray-700 border-collapse border border-gray-300">
-            <thead className="text-xs text-gray-600 bg-gray-100 sticky top-0 z-10">
+        <div className="flex-1 overflow-auto p-4">
+          <table className="w-full border-collapse border border-gray-300 text-center text-sm text-gray-700">
+            <thead className="sticky top-0 z-10 bg-gray-100 text-xs text-gray-600">
               <tr>
                 {columns.map((col) => (
                   <th key={col.key} className={TABLE_HEADER_CELL_CLASS}>
@@ -119,7 +130,7 @@ const RampUpDetailModal = ({ store, onClose }) => {
                 </tr>
               ) : (
                 storeData.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50/50 even:bg-gray-50/30">
+                  <tr key={idx} className="even:bg-gray-50/30 hover:bg-gray-50/50">
                     {columns.map((col) => {
                       const value = item[col.key];
                       const display = col.key === 'opening_date'
@@ -127,10 +138,11 @@ const RampUpDetailModal = ({ store, onClose }) => {
                         : currencyKeys.has(col.key)
                           ? formatCurrency(value)
                           : (value ?? '-');
+
                       return (
                         <td
                           key={col.key}
-                          className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap ${currencyKeys.has(col.key) ? 'text-right' : ''} ${getCellClass(col.key, value)}`}
+                          className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center ${getCellClass(col.key, value)}`}
                         >
                           {display}
                         </td>
@@ -166,13 +178,32 @@ const NewStoreOperationStatusContainer = () => {
     { key: 'city_manager_name', label: '城市经理', dataIndex: 'city_manager_name' },
     { key: 'tech_vice_president_name', label: '技术副总', dataIndex: 'tech_vice_president_name' },
     { key: 'ramp_up_period_months', label: '爬坡期长度', dataIndex: 'ramp_up_period_months' },
-    { key: 'current_ramp_up_month_index', label: '当前爬坡期', dataIndex: 'current_ramp_up_month_index' },
+    { key: 'current_ramp_up_month_index', label: '当前爬坡月', dataIndex: 'current_ramp_up_month_index' },
     { key: 'cash_flow_budget_total', label: '现金流目标值', dataIndex: 'cash_flow_budget_total' },
     { key: 'cash_flow_actual_to_date', label: '爬坡期现金流实际值', dataIndex: 'cash_flow_actual_to_date' },
     { key: 'cash_flow_variance', label: '现金流差异', dataIndex: 'cash_flow_variance' },
   ];
 
-  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, data || [], { key: 'city_name', direction: 'asc' });
+  const columnWidths = {
+    city_name: '120px',
+    store_name: '180px',
+    store_code: '130px',
+    city_store_order: '140px',
+    opening_date: '130px',
+    city_manager_name: '140px',
+    tech_vice_president_name: '150px',
+    ramp_up_period_months: '120px',
+    current_ramp_up_month_index: '120px',
+    cash_flow_budget_total: '150px',
+    cash_flow_actual_to_date: '170px',
+    cash_flow_variance: '150px',
+  };
+  const tableMinWidth = getTableMinWidth(columnWidths);
+
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, data || [], {
+    key: 'city_name',
+    direction: 'asc',
+  });
 
   const cityList = React.useMemo(() => {
     const cities = [...new Set((data || []).map((item) => item.city_name).filter(Boolean))];
@@ -199,20 +230,23 @@ const NewStoreOperationStatusContainer = () => {
 
     if (sortConfig.key === 'city_name') {
       filtered.sort((a, b) => {
-        const cityA = (a.city_name || '').localeCompare(b.city_name || '', 'zh-CN');
-        if (cityA !== 0) return sortConfig.direction === 'asc' ? cityA : -cityA;
+        const cityCompare = (a.city_name || '').localeCompare(b.city_name || '', 'zh-CN');
+        if (cityCompare !== 0) return sortConfig.direction === 'asc' ? cityCompare : -cityCompare;
         return (a.city_store_order ?? Infinity) - (b.city_store_order ?? Infinity);
       });
     }
 
     return filtered;
-  }, [sortedData, selectedCity, selectedMonth, sortConfig]);
+  }, [selectedCity, selectedMonth, sortConfig, sortedData]);
 
   const pagedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return '-';
-    return Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return Number(value).toLocaleString('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const formatDate = (value) => {
@@ -221,26 +255,26 @@ const NewStoreOperationStatusContainer = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
-      <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-[#a40035] flex items-center gap-2">
+    <div className="mb-6 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-gray-100 bg-[#a40035]/5 px-6 py-4">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-[#a40035]">
           新店经营情况总结（现金流）
-          <span className="ml-2 text-sm font-normal bg-[#a40035]/10 text-[#a40035] px-2 py-0.5 rounded-full">
+          <span className="ml-2 rounded-full bg-[#a40035]/10 px-2 py-0.5 text-sm font-normal text-[#a40035]">
             {loading ? '...' : `${filteredData.length} 家`}
           </span>
         </h2>
         {error && (
-          <button onClick={() => fetchData()} className="text-xs text-[#a40035] hover:text-[#8a002d] underline">
+          <button onClick={() => fetchData()} className="text-xs text-[#a40035] underline hover:text-[#8a002d]">
             重试
           </button>
         )}
-        <div className="flex flex-row relative z-40">
+        <div className="relative z-40 flex flex-row">
           <FilterDropdown
             label="城市"
             value={selectedCity}
             options={cityList}
-            onChange={(val) => {
-              setSelectedCity(val);
+            onChange={(value) => {
+              setSelectedCity(value);
               setCurrentPage(1);
             }}
           />
@@ -248,8 +282,8 @@ const NewStoreOperationStatusContainer = () => {
             label="开业月份"
             value={selectedMonth}
             options={monthList}
-            onChange={(val) => {
-              setSelectedMonth(val);
+            onChange={(value) => {
+              setSelectedMonth(value);
               setCurrentPage(1);
             }}
           />
@@ -257,8 +291,16 @@ const NewStoreOperationStatusContainer = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-700 border-collapse border border-gray-300">
-          <thead className="text-xs text-gray-600 bg-gray-100">
+        <table
+          className="w-full table-fixed border-collapse border border-gray-300 text-left text-sm text-gray-700"
+          style={{ minWidth: `${tableMinWidth}px` }}
+        >
+          <colgroup>
+            {columns.map((col) => (
+              <col key={col.key} style={{ width: columnWidths[col.key] || '120px' }} />
+            ))}
+          </colgroup>
+          <thead className="bg-gray-100 text-xs text-gray-600">
             <tr>
               {columns.map((col) => (
                 <th
@@ -267,15 +309,19 @@ const NewStoreOperationStatusContainer = () => {
                   className={`${TABLE_HEADER_CELL_CLASS} cursor-pointer hover:bg-gray-100 group`}
                   onClick={() => handleSort(col.key)}
                 >
-                  <div className="flex items-center gap-1">
-                    {col.label}
-                    {sortConfig.key === col.key && (
-                      <span className="text-[#a40035]">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                    {(!sortConfig.key || sortConfig.key !== col.key) && (
-                      <span className="text-gray-300 opacity-0 group-hover:opacity-100">↕</span>
-                    )}
+                  <div className="flex w-full items-center justify-center">
+                    <span className="block text-center">{col.label}</span>
                   </div>
+                  {sortConfig.key === col.key && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a40035]">
+                      {sortConfig.direction === 'asc' ? SORT_ASC : SORT_DESC}
+                    </span>
+                  )}
+                  {sortConfig.key !== col.key && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 opacity-0 group-hover:opacity-100">
+                      {SORT_IDLE}
+                    </span>
+                  )}
                 </th>
               ))}
             </tr>
@@ -296,22 +342,22 @@ const NewStoreOperationStatusContainer = () => {
             ) : (
               pagedData.map((item, index) => (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50 hover:bg-gray-50'}>
-                  <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap`}>{item.city_name}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap`}>
-                    <button className="text-[#a40035] hover:underline text-left" onClick={() => setModalStore(item)}>
+                  <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.city_name}</td>
+                  <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>
+                    <button className="text-center text-[#a40035] hover:underline" onClick={() => setModalStore(item)}>
                       {item.store_name}
                     </button>
                   </td>
-                  <td className={TABLE_BODY_CELL_CLASS}>{item.store_code}</td>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.store_code}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.city_store_order ?? '-'}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap`}>{formatDate(item.opening_date)}</td>
-                  <td className={TABLE_BODY_CELL_CLASS}>{item.city_manager_name || '-'}</td>
-                  <td className={TABLE_BODY_CELL_CLASS}>{item.tech_vice_president_name || '-'}</td>
+                  <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{formatDate(item.opening_date)}</td>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.city_manager_name || '-'}</td>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.tech_vice_president_name || '-'}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.ramp_up_period_months}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.current_ramp_up_month_index}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} text-right`}>{formatCurrency(item.cash_flow_budget_total)}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} text-right`}>{formatCurrency(item.cash_flow_actual_to_date)}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} text-right ${item.cash_flow_variance < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.cash_flow_budget_total)}</td>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.cash_flow_actual_to_date)}</td>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center ${item.cash_flow_variance < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
                     {formatCurrency(item.cash_flow_variance)}
                   </td>
                 </tr>

@@ -4,8 +4,16 @@ import FilterDropdown from '../../components/Common/FilterDropdown';
 import Pagination from '../../components/Common/Pagination';
 import useTableSorting from '../../components/Common/useTableSorting';
 
-const TABLE_HEADER_CELL_CLASS = 'border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold';
+const TABLE_HEADER_CELL_CLASS = 'relative border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-center';
 const TABLE_BODY_CELL_CLASS = 'border border-gray-200 px-3 py-2 text-gray-700';
+
+const getTableMinWidth = (columnWidths) => (
+  Object.values(columnWidths).reduce((total, width) => total + Number.parseInt(width, 10), 0)
+);
+
+const SORT_ASC = '\u2191';
+const SORT_DESC = '\u2193';
+const SORT_IDLE = '\u2195';
 
 const StoreCashFlowMonitorContainer = () => {
   const { data, loading, error, fetchData } = useFetchData('getStoreCashFlowCompletionMonitoring', []);
@@ -25,8 +33,20 @@ const StoreCashFlowMonitorContainer = () => {
     { key: 'completion_ratio', label: '完成比例', dataIndex: 'completion_ratio' },
   ];
 
-  const normalizedData = useMemo(() => {
-    return (data || []).map((item) => ({
+  const columnWidths = {
+    city_name: '140px',
+    store_code: '130px',
+    store_name: '180px',
+    actual_value: '140px',
+    target_value: '140px',
+    diff_value: '140px',
+    conclusion: '140px',
+    completion_ratio: '140px',
+  };
+  const tableMinWidth = getTableMinWidth(columnWidths);
+
+  const normalizedData = useMemo(() => (
+    (data || []).map((item) => ({
       ...item,
       actual_value: Number(item.actual_value) || 0,
       target_value: Number(item.target_value) || 0,
@@ -35,26 +55,25 @@ const StoreCashFlowMonitorContainer = () => {
         ? null
         : Number(item.completion_ratio),
       conclusion: item.completion_status || item.conclusion || '-',
-    }));
-  }, [data]);
+    }))
+  ), [data]);
 
-  const { sortedData, sortConfig, handleSort } = useTableSorting(
-    columns,
-    normalizedData,
-    { key: 'city_name', direction: 'asc' }
-  );
+  const { sortedData, sortConfig, handleSort } = useTableSorting(columns, normalizedData, {
+    key: 'city_name',
+    direction: 'asc',
+  });
 
   const cityOptions = useMemo(() => {
     const cities = [...new Set(normalizedData.map((item) => item.city_name).filter(Boolean))];
     return cities.sort();
   }, [normalizedData]);
 
-  const filteredData = useMemo(() => {
-    return sortedData.filter((item) => {
+  const filteredData = useMemo(() => (
+    sortedData.filter((item) => {
       if (selectedCity && item.city_name !== selectedCity) return false;
       return true;
-    });
-  }, [selectedCity, sortedData]);
+    })
+  ), [selectedCity, sortedData]);
 
   const pagedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
@@ -71,16 +90,16 @@ const StoreCashFlowMonitorContainer = () => {
     return `${(value * 100).toFixed(2)}%`;
   };
 
-  const isCompleted = (value) => {
-    return typeof value === 'string' && (value.includes('已完成') || value.includes('超额完成'));
-  };
+  const isCompleted = (value) => (
+    typeof value === 'string' && (value.includes('已完成') || value.includes('超额完成'))
+  );
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
-      <div className="px-6 py-4 border-b border-gray-100 bg-[#a40035]/5 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-[#a40035] flex items-center gap-2">
+    <div className="mb-6 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-gray-100 bg-[#a40035]/5 px-6 py-4">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-[#a40035]">
           单店现金流完成情况监控
-          <span className="ml-2 text-sm font-normal bg-[#a40035]/10 text-[#a40035] px-2 py-0.5 rounded-full">
+          <span className="ml-2 rounded-full bg-[#a40035]/10 px-2 py-0.5 text-sm font-normal text-[#a40035]">
             {loading ? '...' : `${filteredData.length} 家`}
           </span>
         </h2>
@@ -88,12 +107,12 @@ const StoreCashFlowMonitorContainer = () => {
           {error && (
             <button
               onClick={() => fetchData()}
-              className="text-xs text-[#a40035] hover:text-[#8a002d] underline"
+              className="text-xs text-[#a40035] underline hover:text-[#8a002d]"
             >
               重试
             </button>
           )}
-          <div className="flex flex-row relative z-40">
+          <div className="relative z-40 flex flex-row">
             <FilterDropdown
               label="城市"
               value={selectedCity}
@@ -108,8 +127,16 @@ const StoreCashFlowMonitorContainer = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-700 border-collapse border border-gray-300">
-          <thead className="text-xs text-gray-600 bg-gray-100">
+        <table
+          className="w-full table-fixed border-collapse border border-gray-300 text-left text-sm text-gray-700"
+          style={{ minWidth: `${tableMinWidth}px` }}
+        >
+          <colgroup>
+            {columns.map((col) => (
+              <col key={col.key} style={{ width: columnWidths[col.key] || '120px' }} />
+            ))}
+          </colgroup>
+          <thead className="bg-gray-100 text-xs text-gray-600">
             <tr>
               {columns.map((col) => (
                 <th
@@ -117,19 +144,19 @@ const StoreCashFlowMonitorContainer = () => {
                   className={`${TABLE_HEADER_CELL_CLASS} cursor-pointer hover:bg-gray-100 group`}
                   onClick={() => handleSort(col.key)}
                 >
-                  <div className="relative flex items-center justify-center">
-                    <span>{col.label}</span>
-                    {sortConfig.key === col.key && (
-                      <span className="absolute right-0 text-[#a40035]">
-                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                      </span>
-                    )}
-                    {sortConfig.key !== col.key && (
-                      <span className="absolute right-0 text-gray-300 opacity-0 group-hover:opacity-100">
-                        ↕
-                      </span>
-                    )}
+                  <div className="flex w-full items-center justify-center">
+                    <span className="block text-center">{col.label}</span>
                   </div>
+                  {sortConfig.key === col.key && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a40035]">
+                      {sortConfig.direction === 'asc' ? SORT_ASC : SORT_DESC}
+                    </span>
+                  )}
+                  {sortConfig.key !== col.key && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 opacity-0 group-hover:opacity-100">
+                      {SORT_IDLE}
+                    </span>
+                  )}
                 </th>
               ))}
             </tr>
@@ -150,6 +177,7 @@ const StoreCashFlowMonitorContainer = () => {
             ) : (
               pagedData.map((item, idx) => {
                 const completed = isCompleted(item.conclusion);
+
                 return (
                   <tr key={idx} className={idx % 2 === 0 ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50 hover:bg-gray-50'}>
                     <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.city_name}</td>
@@ -162,7 +190,7 @@ const StoreCashFlowMonitorContainer = () => {
                     </td>
                     <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           completed ? 'bg-transparent text-gray-700' : 'bg-red-100 text-[#a40035]'
                         }`}
                       >

@@ -24,8 +24,8 @@ const DataTable = ({
     ? 'min-w-full table-fixed border-collapse border border-gray-300'
     : 'min-w-full divide-y divide-gray-200 table-fixed';
   const headerCellClassName = bordered
-    ? 'px-3 py-2 text-center text-xs font-semibold text-gray-600 whitespace-nowrap group border border-gray-300'
-    : 'px-3 py-2 text-center text-xs font-semibold text-gray-600 whitespace-nowrap group';
+    ? 'relative px-3 py-2 text-center text-xs font-semibold text-gray-600 whitespace-nowrap group border border-gray-300'
+    : 'relative px-3 py-2 text-center text-xs font-semibold text-gray-600 whitespace-nowrap group';
   const bodyCellClassName = bordered
     ? 'px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center border border-gray-200'
     : 'px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center';
@@ -53,20 +53,19 @@ const DataTable = ({
                   className={`${headerCellClassName} ${thInteractive}`}
                   onClick={() => onSort && onSort(column.key)}
                 >
-                  <div className="flex w-full items-center">
-                    <span className="w-4 shrink-0" aria-hidden="true" />
-                    <span className="block flex-1 text-center">{column.title}</span>
-                    <span className="w-4 shrink-0 text-right text-[#a40035]">
-                      {sortConfig && sortConfig.key === column.key
-                        ? (sortConfig.direction === 'asc' ? '\u2191' : '\u2193')
-                        : ''}
-                    </span>
-                    {onSort && (!sortConfig || sortConfig.key !== column.key) && (
-                      <span className="absolute right-0 w-4 text-right text-gray-500 opacity-0 group-hover:opacity-100">
-                        {'\u2195'}
-                      </span>
-                    )}
+                  <div className="flex w-full items-center justify-center">
+                    <span className="block text-center">{column.title}</span>
                   </div>
+                  {sortConfig && sortConfig.key === column.key && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a40035]">
+                      {sortConfig.direction === 'asc' ? '\u2191' : '\u2193'}
+                    </span>
+                  )}
+                  {onSort && (!sortConfig || sortConfig.key !== column.key) && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 opacity-0 group-hover:opacity-100">
+                      {'\u2195'}
+                    </span>
+                  )}
                 </th>
               );
             })}
