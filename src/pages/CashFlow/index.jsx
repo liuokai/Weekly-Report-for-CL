@@ -37,14 +37,18 @@ const CashFlowTab = () => {
   const [selectedCity, setSelectedCity] = useState(null);
 
   useEffect(() => {
-    if (newStoreProcessCumData && newStoreProcessCumData.length > 0 && !analysisText && !isAnalysisLoading) {
+    if (!newStoreProcessCumData || newStoreProcessCumData.length === 0) {
+      setAnalysisText('');
+      setIsAnalysisLoading(false);
+      return;
+    }
       
       // Calculate Global Total Stores (Frontend Logic)
       // 1. Filter out summary rows and get detail rows
       const detailRows = newStoreProcessCumData.filter(r => r.city_name !== '月度合计' && r.city_name !== '月度累计汇总');
       
       // 2. Find rows with store count > 0
-      const validStoreRows = detailRows.filter(r => (Number(r['total_store_count']) || 0) > 0);
+      const validStoreRows = detailRows.filter(r => (Number(r.total_store_count) || 0) > 0);
       
       let currentTotalStores = 0;
       if (validStoreRows.length > 0) {
@@ -55,18 +59,27 @@ const CashFlowTab = () => {
         // 4. Sum stores for that month
         currentTotalStores = detailRows
           .filter(r => r.month === latestValidMonth)
-          .reduce((sum, r) => sum + (Number(r['total_store_count']) || 0), 0);
+          .reduce((sum, r) => sum + (Number(r.total_store_count) || 0), 0);
       }
 
+      let cancelled = false;
+      setAnalysisText('');
       setIsAnalysisLoading(true);
       generateNewStoreAnalysis(newStoreProcessCumData, currentTotalStores)
         .then(text => {
-          setAnalysisText(text);
+          if (!cancelled) {
+            setAnalysisText(text);
+          }
         })
         .finally(() => {
-          setIsAnalysisLoading(false);
+          if (!cancelled) {
+            setIsAnalysisLoading(false);
+          }
         });
-    }
+
+      return () => {
+        cancelled = true;
+      };
   }, [newStoreProcessCumData]);
 
   const analysisView = useMemo(() => {

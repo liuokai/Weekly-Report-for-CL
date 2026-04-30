@@ -67,4 +67,8 @@ async function generateReminder(deepseekClient, metricsData) {
   }
 }
 
-module.exports = { generateReminder };
+function flushReminderCache() {
+  reminderCache.flushAll();
+}
+
+module.exports = { generateReminder, flushReminderCache };

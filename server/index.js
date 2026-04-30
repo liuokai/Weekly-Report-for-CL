@@ -12,9 +12,9 @@ if (typeof fetch === 'undefined') {
   global.fetch = require('node-fetch');
 }
 const OpenAI = require('openai');
-const { generateReminder } = require('./services/reminderGenerator');
-const { generateNewStoreAnalysis } = require('./services/newStoreAnalysisGenerator');
-const { generateCityBudgetSummary } = require('./services/cityBudgetSummaryGenerator');
+const { generateReminder, flushReminderCache } = require('./services/reminderGenerator');
+const { generateNewStoreAnalysis, flushNewStoreAnalysisCache } = require('./services/newStoreAnalysisGenerator');
+const { generateCityBudgetSummary, flushCityBudgetSummaryCache } = require('./services/cityBudgetSummaryGenerator');
 const variableService = require('./services/variableService');
 const difyWorkflows = require('./config/difyWorkflows');
 const cacheService = require('./services/cacheService');
@@ -609,6 +609,9 @@ app.post('/api/analysis/execute-smart-analysis', async (req, res) => {
 // 清空所有查询缓存
 app.post('/api/cache/flush', (req, res) => {
   cacheService.flush();
+  flushReminderCache();
+  flushNewStoreAnalysisCache();
+  flushCityBudgetSummaryCache();
   console.log('[Cache] 缓存已手动清空');
   res.json({ status: 'success', message: '缓存已清空' });
 });

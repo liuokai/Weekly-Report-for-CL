@@ -88,4 +88,8 @@ async function generateCityBudgetSummary(deepseekClient, data) {
   }
 }
 
-module.exports = { generateCityBudgetSummary };
+function flushCityBudgetSummaryCache() {
+  summaryCache.flushAll();
+}
+
+module.exports = { generateCityBudgetSummary, flushCityBudgetSummaryCache };

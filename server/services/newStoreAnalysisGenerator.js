@@ -198,4 +198,8 @@ async function generateNewStoreAnalysis(newStoreData, currentTotalStores) {
   }
 }
 
-module.exports = { generateNewStoreAnalysis };
+function flushNewStoreAnalysisCache() {
+  analysisCache.flushAll();
+}
+
+module.exports = { generateNewStoreAnalysis, flushNewStoreAnalysisCache };
