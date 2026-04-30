@@ -59,7 +59,7 @@ SELECT r.month                                                         AS month,
            END                                                         AS incentive_usage_ratio_display, -- 激励费使用率
 
        -- 激励费差异值
-       ROUND(nvl(c.incentive_actual, 0) - nvl(c.incentive_est, 0), 2)  AS incentive_variance             -- 激励费差异值
+       ROUND(nvl(c.incentive_est , 0) - nvl(c.incentive_actual, 0), 2)  AS incentive_variance             -- 激励费差异值
 
 -- 纯表直接关联，无嵌套子查询
 FROM data_warehouse.dws_new_store_commission_monthly r
@@ -75,6 +75,13 @@ WHERE r.opening_date >= '2025-01-01'
   AND r.ramp_up_month_count > 0
   AND (a.month IS NULL OR a.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'))
   AND (c.month IS NULL OR c.month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m'))
+and DATE_FORMAT(
+        CASE
+            WHEN DAY(r.opening_date) <= 15 THEN DATE_ADD(DATE_SUB(r.opening_date, INTERVAL 1 MONTH), INTERVAL r.ramp_up_period MONTH)
+            ELSE DATE_ADD(r.opening_date, INTERVAL r.ramp_up_period MONTH)
+        END, '%Y-%m'
+    )>=DATE_FORMAT(DATE_SUB(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), INTERVAL (MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) - 1) % 3 MONTH), '%Y-%m')
+
 
 -- 排序优化（NULL值后置）
 ORDER BY r.city_code ASC NULLS LAST,

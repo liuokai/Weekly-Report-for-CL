@@ -178,6 +178,7 @@ const RampUpStoreOperationStatusContainer = () => {
     { key: 'city_manager_name', label: '城市经理', dataIndex: 'city_manager_name' },
     { key: 'tech_vice_president_name', label: '技术副总', dataIndex: 'tech_vice_president_name' },
     { key: 'ramp_up_period_months', label: '爬坡期长度', dataIndex: 'ramp_up_period_months' },
+    { key: 'ramp_up_end_month', label: '爬坡期结束月', dataIndex: 'ramp_up_end_month' },
     { key: 'current_ramp_up_month_index', label: '当前爬坡月', dataIndex: 'current_ramp_up_month_index' },
     { key: 'marketing_budget_total', label: '营销费预算', dataIndex: 'marketing_budget_total' },
     { key: 'marketing_actual_total', label: '营销费合计', dataIndex: 'marketing_actual_total' },
@@ -194,6 +195,10 @@ const RampUpStoreOperationStatusContainer = () => {
     { key: 'incentive_variance', label: '激励费差异', dataIndex: 'incentive_variance' },
   ];
 
+  const fixedColumns = columns.slice(0, 10);
+  const marketingColumns = columns.slice(10, 19);
+  const incentiveColumns = columns.slice(19);
+
   const columnWidths = {
     city_name: '120px',
     store_name: '180px',
@@ -203,6 +208,7 @@ const RampUpStoreOperationStatusContainer = () => {
     city_manager_name: '140px',
     tech_vice_president_name: '150px',
     ramp_up_period_months: '120px',
+    ramp_up_end_month: '130px',
     current_ramp_up_month_index: '120px',
     marketing_budget_total: '150px',
     marketing_actual_total: '150px',
@@ -252,6 +258,12 @@ const RampUpStoreOperationStatusContainer = () => {
     return months.sort().reverse();
   }, [latestData]);
 
+  const previousMonthLabel = React.useMemo(() => {
+    const now = new Date();
+    now.setMonth(now.getMonth() - 1);
+    return `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, '0')}月`;
+  }, []);
+
   const filteredData = React.useMemo(() => {
     const filtered = sortedData.filter((item) => {
       if (selectedCity && item.city_name !== selectedCity) return false;
@@ -291,12 +303,17 @@ const RampUpStoreOperationStatusContainer = () => {
   return (
     <div className="mb-6 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-gray-100 bg-[#a40035]/5 px-6 py-4">
+        <div className="flex flex-col items-start">
         <h2 className="flex items-center gap-2 text-lg font-bold text-[#a40035]">
           新店经营情况总结（费用预算）
           <span className="ml-2 rounded-full bg-[#a40035]/10 px-2 py-0.5 text-sm font-normal text-[#a40035]">
             {loading ? '...' : `${filteredData.length} 家`}
           </span>
         </h2>
+        <p className="mt-1 text-left text-sm text-gray-600">
+          统计本季度还处于爬坡期的门店，只统计其爬坡期数据，数据截止到{previousMonthLabel}
+        </p>
+        </div>
         {error && (
           <button onClick={() => fetchData()} className="text-xs text-[#a40035] underline hover:text-[#8a002d]">
             重试
@@ -334,9 +351,58 @@ const RampUpStoreOperationStatusContainer = () => {
               <col key={col.key} style={{ width: columnWidths[col.key] || '120px' }} />
             ))}
           </colgroup>
-          <thead className="bg-gray-100 text-xs text-gray-600">
-            <tr>
-              {columns.map((col) => (
+          <thead className="text-xs text-gray-600">
+            <tr className="bg-gray-100 text-center">
+              {fixedColumns.map((col) => (
+                <th
+                  key={col.key}
+                  scope="col"
+                  rowSpan={2}
+                  className={`${TABLE_HEADER_CELL_CLASS} cursor-pointer hover:bg-gray-100 group`}
+                  onClick={() => handleSort(col.key)}
+                >
+                  <div className="flex w-full items-center justify-center">
+                    <span className="block text-center">{col.label}</span>
+                  </div>
+                  {sortConfig.key === col.key && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a40035]">
+                      {sortConfig.direction === 'asc' ? SORT_ASC : SORT_DESC}
+                    </span>
+                  )}
+                  {sortConfig.key !== col.key && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 opacity-0 group-hover:opacity-100">
+                      {SORT_IDLE}
+                    </span>
+                  )}
+                </th>
+              ))}
+              <th colSpan={marketingColumns.length} className={TABLE_HEADER_CELL_CLASS}>营销费</th>
+              <th colSpan={incentiveColumns.length} className={TABLE_HEADER_CELL_CLASS}>激励费</th>
+            </tr>
+            <tr className="bg-gray-50 text-center">
+              {marketingColumns.map((col) => (
+                <th
+                  key={col.key}
+                  scope="col"
+                  className={`${TABLE_HEADER_CELL_CLASS} cursor-pointer hover:bg-gray-100 group`}
+                  onClick={() => handleSort(col.key)}
+                >
+                  <div className="flex w-full items-center justify-center">
+                    <span className="block text-center">{col.label}</span>
+                  </div>
+                  {sortConfig.key === col.key && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a40035]">
+                      {sortConfig.direction === 'asc' ? SORT_ASC : SORT_DESC}
+                    </span>
+                  )}
+                  {sortConfig.key !== col.key && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 opacity-0 group-hover:opacity-100">
+                      {SORT_IDLE}
+                    </span>
+                  )}
+                </th>
+              ))}
+              {incentiveColumns.map((col) => (
                 <th
                   key={col.key}
                   scope="col"
@@ -388,6 +454,7 @@ const RampUpStoreOperationStatusContainer = () => {
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.city_manager_name || '-'}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.tech_vice_president_name || '-'}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.ramp_up_period_months}</td>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.ramp_up_end_month || '-'}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.current_ramp_up_month_index}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.marketing_budget_total)}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.marketing_actual_total)}</td>

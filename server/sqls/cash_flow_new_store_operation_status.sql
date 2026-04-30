@@ -1,4 +1,3 @@
-      
 -- 新店经营情况总结
 SELECT r.city_code                                                              AS city_codee,                    -- 城市编码
        r.city_name                                                              AS city_name,                     -- 城市
@@ -10,6 +9,7 @@ SELECT r.city_code                                                              
        MAX(r.city_store_order)                                                  AS city_store_order,              -- 城市门店排序
        r.ramp_up_period                                                         AS ramp_up_period_months,         -- 爬坡期长度(月)
        MAX(r.ramp_up_month_count)                                               AS current_ramp_up_month_index,   -- 当前爬坡期月数（取最大值）
+       DATE_FORMAT(DATE_ADD(r.opening_date, INTERVAL r.ramp_up_period-1 + IF(DAY(r.opening_date) > 15, 1, 0) MONTH), '%Y-%m') AS ramp_up_end_month, --  爬坡期结束月,
 
        -- 1. 现金流数据（求和聚合）
        ROUND(SUM(NVL(r.cash_flow_target, 0)), 2)                                AS cash_flow_budget_total,        -- 现金流目标值（求和）
@@ -67,7 +67,7 @@ SELECT r.city_code                                                              
            END                                                                  AS incentive_usage_ratio_display, -- 激励费使用率（sum分子/sum分母）
 
        -- 激励费差异值：sum(实际) - sum(预算)
-       ROUND(SUM(NVL(c.incentive_actual, 0)) - SUM(NVL(c.incentive_est, 0)), 2) AS incentive_variance             -- 激励费差异值（求和后计算）
+       ROUND(SUM(NVL(c.incentive_est , 0)) - SUM(NVL(c.incentive_actual, 0)), 2) AS incentive_variance             -- 激励费差异值（求和后计算）
 
 -- 纯表直接关联，无嵌套子查询
 FROM data_warehouse.dws_new_store_commission_monthly r
@@ -95,5 +95,3 @@ GROUP BY r.city_code,r.city_name,r.store_name,r.store_code,r.opening_date,m.city
 
 ORDER BY r.city_code ASC NULLS LAST, r.store_code ASC NULLS LAST
 ;
-
-    

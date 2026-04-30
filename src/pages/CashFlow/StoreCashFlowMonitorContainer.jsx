@@ -26,6 +26,10 @@ const StoreCashFlowMonitorContainer = () => {
     { key: 'city_name', label: '城市名称', dataIndex: 'city_name' },
     { key: 'store_code', label: '门店编码', dataIndex: 'store_code' },
     { key: 'store_name', label: '门店名称', dataIndex: 'store_name' },
+    { key: 'opening_date', label: '开业日期', dataIndex: 'opening_date' },
+    { key: 'ramp_up_period', label: '爬坡期长度', dataIndex: 'ramp_up_period' },
+    { key: 'ramp_up_month_count', label: '当前爬坡期月数', dataIndex: 'ramp_up_month_count' },
+    { key: 'ramp_up_end_month', label: '爬坡期结束月', dataIndex: 'ramp_up_end_month' },
     { key: 'actual_value', label: '实际值', dataIndex: 'actual_value' },
     { key: 'target_value', label: '目标值', dataIndex: 'target_value' },
     { key: 'diff_value', label: '差异值', dataIndex: 'diff_value' },
@@ -37,6 +41,10 @@ const StoreCashFlowMonitorContainer = () => {
     city_name: '140px',
     store_code: '130px',
     store_name: '180px',
+    opening_date: '130px',
+    ramp_up_period: '120px',
+    ramp_up_month_count: '140px',
+    ramp_up_end_month: '130px',
     actual_value: '140px',
     target_value: '140px',
     diff_value: '140px',
@@ -68,6 +76,12 @@ const StoreCashFlowMonitorContainer = () => {
     return cities.sort();
   }, [normalizedData]);
 
+  const previousMonthLabel = useMemo(() => {
+    const now = new Date();
+    now.setMonth(now.getMonth() - 1);
+    return `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, '0')}月`;
+  }, []);
+
   const filteredData = useMemo(() => (
     sortedData.filter((item) => {
       if (selectedCity && item.city_name !== selectedCity) return false;
@@ -90,6 +104,15 @@ const StoreCashFlowMonitorContainer = () => {
     return `${(value * 100).toFixed(2)}%`;
   };
 
+  const fmtDate = (value) => {
+    if (!value) return '-';
+    return String(value).split('T')[0];
+  };
+
+  const fmtText = (value) => (
+    value === null || value === undefined || value === '' ? '-' : value
+  );
+
   const isCompleted = (value) => (
     typeof value === 'string' && (value.includes('已完成') || value.includes('超额完成'))
   );
@@ -97,12 +120,17 @@ const StoreCashFlowMonitorContainer = () => {
   return (
     <div className="mb-6 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-gray-100 bg-[#a40035]/5 px-6 py-4">
-        <h2 className="flex items-center gap-2 text-lg font-bold text-[#a40035]">
-          单店现金流完成情况监控
-          <span className="ml-2 rounded-full bg-[#a40035]/10 px-2 py-0.5 text-sm font-normal text-[#a40035]">
-            {loading ? '...' : `${filteredData.length} 家`}
-          </span>
-        </h2>
+        <div className="flex flex-col items-start">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-[#a40035]">
+            单店现金流完成情况监控
+            <span className="ml-2 rounded-full bg-[#a40035]/10 px-2 py-0.5 text-sm font-normal text-[#a40035]">
+              {loading ? '...' : `${filteredData.length} 家`}
+            </span>
+          </h2>
+          <p className="mt-1 text-left text-sm text-gray-600">
+            统计所有在营门店2026年现金流情况，数据截止到{previousMonthLabel}
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           {error && (
             <button
@@ -183,6 +211,10 @@ const StoreCashFlowMonitorContainer = () => {
                     <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.city_name}</td>
                     <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.store_code}</td>
                     <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.store_name}</td>
+                    <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{fmtDate(item.opening_date)}</td>
+                    <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtText(item.ramp_up_period)}</td>
+                    <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtText(item.ramp_up_month_count)}</td>
+                    <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{fmtText(item.ramp_up_end_month)}</td>
                     <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtNumber(item.actual_value)}</td>
                     <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtNumber(item.target_value)}</td>
                     <td className={`${TABLE_BODY_CELL_CLASS} text-center ${item.diff_value < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>

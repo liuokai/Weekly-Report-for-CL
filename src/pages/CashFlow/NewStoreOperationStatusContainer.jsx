@@ -54,6 +54,12 @@ const RampUpDetailModal = ({ store, onClose }) => {
     { key: 'incentive_variance', label: '激励费差异' },
   ];
 
+  columns.splice(
+    columns.findIndex((col) => col.key === 'current_ramp_up_month_index'),
+    0,
+    { key: 'ramp_up_end_month', label: '爬坡期结束月' }
+  );
+
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return '-';
     return Number(value).toLocaleString('zh-CN', {
@@ -184,6 +190,12 @@ const NewStoreOperationStatusContainer = () => {
     { key: 'cash_flow_variance', label: '现金流差异', dataIndex: 'cash_flow_variance' },
   ];
 
+  columns.splice(
+    columns.findIndex((col) => col.key === 'current_ramp_up_month_index'),
+    0,
+    { key: 'ramp_up_end_month', label: '爬坡期结束月', dataIndex: 'ramp_up_end_month' }
+  );
+
   const columnWidths = {
     city_name: '120px',
     store_name: '180px',
@@ -198,6 +210,7 @@ const NewStoreOperationStatusContainer = () => {
     cash_flow_actual_to_date: '170px',
     cash_flow_variance: '150px',
   };
+  columnWidths.ramp_up_end_month = '130px';
   const tableMinWidth = getTableMinWidth(columnWidths);
 
   const { sortedData, sortConfig, handleSort } = useTableSorting(columns, data || [], {
@@ -217,6 +230,12 @@ const NewStoreOperationStatusContainer = () => {
     }).filter(Boolean))];
     return months.sort().reverse();
   }, [data]);
+
+  const previousMonthLabel = React.useMemo(() => {
+    const now = new Date();
+    now.setMonth(now.getMonth() - 1);
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }, []);
 
   const filteredData = React.useMemo(() => {
     const filtered = sortedData.filter((item) => {
@@ -257,12 +276,17 @@ const NewStoreOperationStatusContainer = () => {
   return (
     <div className="mb-6 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-gray-100 bg-[#a40035]/5 px-6 py-4">
+        <div className="flex flex-col items-start">
         <h2 className="flex items-center gap-2 text-lg font-bold text-[#a40035]">
           新店经营情况总结（现金流）
           <span className="ml-2 rounded-full bg-[#a40035]/10 px-2 py-0.5 text-sm font-normal text-[#a40035]">
             {loading ? '...' : `${filteredData.length} 家`}
           </span>
         </h2>
+        <p className="mt-1 text-left text-sm text-gray-600">
+          统计本季度还处于爬坡期的门店，只统计其爬坡期数据，数据截止到{previousMonthLabel}
+        </p>
+        </div>
         {error && (
           <button onClick={() => fetchData()} className="text-xs text-[#a40035] underline hover:text-[#8a002d]">
             重试
@@ -354,6 +378,7 @@ const NewStoreOperationStatusContainer = () => {
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.city_manager_name || '-'}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.tech_vice_president_name || '-'}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.ramp_up_period_months}</td>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.ramp_up_end_month || '-'}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.current_ramp_up_month_index}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.cash_flow_budget_total)}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.cash_flow_actual_to_date)}</td>

@@ -166,10 +166,10 @@ const CapitalForecastTable = () => {
             <tr className="bg-gray-100">
               <th className={HEADER_CELL_CLASS}>已发生值</th>
               <th className={HEADER_CELL_CLASS}>待发生值</th>
-              <th className={HEADER_CELL_CLASS}>合计</th>
+              <th className={HEADER_CELL_CLASS}>合计(含总部)</th>
               <th className={HEADER_CELL_CLASS}>已发生值</th>
               <th className={HEADER_CELL_CLASS}>待发生值</th>
-              <th className={HEADER_CELL_CLASS}>合计</th>
+              <th className={HEADER_CELL_CLASS}>合计(含总部)</th>
             </tr>
           </thead>
           <tbody>
@@ -178,7 +178,7 @@ const CapitalForecastTable = () => {
                 key={row.city}
                 className={`${row.isHQ ? 'bg-[#a40035]/5' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-gray-50`}
               >
-                <td className={`${BODY_CELL_CLASS} font-medium whitespace-nowrap`}>{row.city}</td>
+                <td className={`${BODY_CELL_CLASS} font-medium whitespace-nowrap`}>{row.isHQ ? '合计(含总部)' : row.city}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.balance2025)}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.operatingOccurred)}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.operatingPending)}</td>

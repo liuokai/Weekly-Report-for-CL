@@ -1,0 +1,446 @@
+Server is running on http://localhost:3002
+[Cache] 缓存已手动清空
+[Query Start] getWeeklyTurnover
+[Query Start] getCityTurnover
+[Query Start] getWeeklyAvgPriceYTD
+[Query Start] getWeeklyAvgPrice
+[Query Start] getCityAnnualAvgPrice
+[Query Start] getAnnualAvgPrice
+[Query End] getCityTurnover - 2058ms - Rows: 18
+[Query Start] getRepurchaseRateAnnual
+[Query End] getAnnualAvgPrice - 2448ms - Rows: 4
+[Query Start] getRepurchaseRateWeekly
+[Query End] getCityAnnualAvgPrice - 2823ms - Rows: 36
+[Query Start] getRepurchaseRateCityWeekly
+[Query End] getRepurchaseRateAnnual - 2373ms - Rows: 3
+[Query Start] getUserVisitCountAnnual
+[Query End] getWeeklyTurnover - 4870ms - Rows: 69
+[Query Start] getUserVisitCountDailyAvgVisitMonthlyTotal
+[Query End] getWeeklyAvgPriceYTD - 4894ms - Rows: 69
+[Query Start] getStaffServiceDurationMonthly
+[Query End] getWeeklyAvgPrice - 5139ms - Rows: 69
+[Query Start] getStaffServiceDurationCityMonthly
+[Query End] getRepurchaseRateWeekly - 4275ms - Rows: 122
+[Query Start] getCashFlowNewStoreProcess
+[Query End] getUserVisitCountAnnual - 2515ms - Rows: 2
+[Query Start] getTurnoverOverview
+[Query End] getRepurchaseRateCityWeekly - 4156ms - Rows: 621
+[Query Start] getUserVisitCountDailyAvgMonthly
+[Query End] getUserVisitCountDailyAvgVisitMonthlyTotal - 2133ms - Rows: 16
+[Query Start] getCashFlowBudgetMonthly
+[Query End] getCashFlowNewStoreProcess - 276ms - Rows: 109
+[Query End] getStaffServiceDurationCityMonthly - 3451ms - Rows: 144
+[Query End] getCashFlowBudgetMonthly - 1646ms - Rows: 108
+[Query End] getUserVisitCountDailyAvgMonthly - 1781ms - Rows: 16
+[Query End] getStaffServiceDurationMonthly - 4103ms - Rows: 16
+[Query End] getTurnoverOverview - 2258ms - Rows: 3
+[Query Start] getNewStoreStatisticsYear
+[Query Start] getCashFlowCapitalSafetyLine
+[Query Start] getCashFlowNewStoreAndOperation
+[Query Start] getCityFlowSummary
+[Query Start] getNewStoreSupplySummary
+[Query Start] getNewStoreOperationStatus
+[Query End] getCashFlowCapitalSafetyLine - 128ms - Rows: 10
+[Query Start] getCashFlowContinuousLossMonthly
+[Query End] getNewStoreStatisticsYear - 185ms - Rows: 8
+[Query Start] getCashFlowClosingWarning
+[Query End] getNewStoreOperationStatus - 226ms - Rows: 24
+[Query Start] getStoreCashFlowCompletionMonitoring
+[Query End] getCashFlowNewStoreAndOperation - 273ms - Rows: 40
+[Query Start] getCashFlowNewStoreProcessCum
+[Query End] getCityFlowSummary - 294ms - Rows: 10
+[Query End] getCashFlowContinuousLossMonthly - 171ms - Rows: 54
+[Query End] getNewStoreSupplySummary - 307ms - Rows: 10
+[Query End] getCashFlowClosingWarning - 246ms - Rows: 24
+[Query End] getCashFlowNewStoreProcessCum - 168ms - Rows: 74
+[Query End] getStoreCashFlowCompletionMonitoring - 217ms - Rows: 201
+Dify new_store_summary request body: {"inputs":{"store_process":"[{\"month\":\"2024-09\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2026-01\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":91},{\"month\":\"2026-01\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-01\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":26},{\"month\":\"2026-01\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-01\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-01\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":2,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-01\",\"city_name\":\"上海市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-01\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-01\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-01\",\"city_name\":\"月度合计\",\"新店目标\":3,\"新店数量\":4,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-01\",\"city_name\":\"月度累计汇总\",\"新店目标\":3,\"新店数量\":4,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-02\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":91},{\"month\":\"2026-02\",\"city_name\":\"重庆市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-02\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":26},{\"month\":\"2026-02\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-02\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-02\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-02\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-02\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-02\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-02\",\"city_name\":\"月度合计\",\"新店目标\":2,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":199},{\"month\":\"2026-02\",\"city_name\":\"月度累计汇总\",\"新店目标\":5,\"新店数量\":4,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-03\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":92},{\"month\":\"2026-03\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":30},{\"month\":\"2026-03\",\"city_name\":\"深圳市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":27},{\"month\":\"2026-03\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-03\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-03\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-03\",\"city_name\":\"上海市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-03\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-03\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-03\",\"city_name\":\"月度合计\",\"新店目标\":4,\"新店数量\":2,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":1,\"重装目标完成情况\":\"如期完成\",\"门店数量\":201},{\"month\":\"2026-03\",\"city_name\":\"月度累计汇总\",\"新店目标\":9,\"新店数量\":6,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":2,\"重装目标完成情况\":\"高于目标\",\"门店数量\":201},{\"month\":\"2026-04\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":92},{\"month\":\"2026-04\",\"city_name\":\"重庆市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-04\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":27},{\"month\":\"2026-04\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":15},{\"month\":\"2026-04\",\"city_name\":\"杭州市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-04\",\"city_name\":\"广州市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-04\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-04\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-04\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-04\",\"city_name\":\"月度合计\",\"新店目标\":5,\"新店数量\":1,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":202},{\"month\":\"2026-04\",\"city_name\":\"月度累计汇总\",\"新店目标\":14,\"新店数量\":7,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":2,\"重装数量\":2,\"重装目标完成情况\":\"如期完成\",\"门店数量\":202}]","current_date":"2026-04-29"},"response_mode":"blocking","user":"changle-user-newstore-analysis"}
+[Cache] 缓存已手动清空
+[Query Start] getWeeklyTurnover
+[Query Start] getCityTurnover
+[Query Start] getWeeklyAvgPriceYTD
+[Query Start] getWeeklyAvgPrice
+[Query Start] getCityAnnualAvgPrice
+[Query Start] getAnnualAvgPrice
+[Query End] getCityTurnover - 1844ms - Rows: 18
+[Query Start] getRepurchaseRateAnnual
+[Query End] getAnnualAvgPrice - 2276ms - Rows: 4
+[Query Start] getRepurchaseRateWeekly
+[Query End] getCityAnnualAvgPrice - 2885ms - Rows: 36
+[Query Start] getRepurchaseRateCityWeekly
+[Query End] getWeeklyTurnover - 4031ms - Rows: 69
+[Query Start] getUserVisitCountAnnual
+[Query End] getWeeklyAvgPriceYTD - 4153ms - Rows: 69
+[Query Start] getUserVisitCountDailyAvgVisitMonthlyTotal
+[Query End] getWeeklyAvgPrice - 4416ms - Rows: 69
+[Query Start] getStaffServiceDurationMonthly
+[Query End] getRepurchaseRateAnnual - 3531ms - Rows: 3
+[Query Start] getStaffServiceDurationCityMonthly
+[Query End] getRepurchaseRateWeekly - 3470ms - Rows: 122
+[Query Start] getCashFlowNewStoreProcess
+[Query End] getUserVisitCountAnnual - 2029ms - Rows: 2
+[Query Start] getTurnoverOverview
+[Query End] getRepurchaseRateCityWeekly - 3346ms - Rows: 621
+[Query Start] getUserVisitCountDailyAvgMonthly
+[Query End] getCashFlowNewStoreProcess - 524ms - Rows: 109
+[Query Start] getCashFlowBudgetMonthly
+[Query End] getUserVisitCountDailyAvgVisitMonthlyTotal - 2700ms - Rows: 16
+[Query End] getStaffServiceDurationCityMonthly - 2571ms - Rows: 144
+[Query End] getUserVisitCountDailyAvgMonthly - 1804ms - Rows: 16
+[Query End] getCashFlowBudgetMonthly - 1756ms - Rows: 108
+[Query End] getStaffServiceDurationMonthly - 3749ms - Rows: 16
+[Query End] getTurnoverOverview - 2483ms - Rows: 3
+Sending request to Dify: {
+  "inputs": {
+    "context_data": "{\n  \"年度营业额统计\": [\n    {\n      \"year\": 2026,\n      \"total_turnover\": \"149727385.09\",\n      \"same_period_turnover\": \"149727385.09\",\n      \"last_year_same_period_turnover\": \"124642722.76\",\n      \"yoy_rate\": \"20.13\"\n    },\n    {\n      \"year\": 2025,\n      \"total_turnover\": \"410667472.14\",\n      \"same_period_turnover\": \"560394857.23\",\n      \"last_year_same_period_turnover\": \"109252904.76\",\n      \"yoy_rate\": \"412.93\"\n    },\n    {\n      \"year\": 2024,\n      \"total_turnover\": \"362260267.50\",\n      \"same_period_turnover\": \"922655124.73\",\n      \"last_year_same_period_turnover\": \"92546463.89\",\n      \"yoy_rate\": \"896.96\"\n    }\n  ],\n  \"static_budget\": {\n    \"total\": 6678.8,\n    \"used\": 0\n  },\n  \"static_turnover_targets\": {\n    \"cityTargets\": {\n      \"上海市\": 49058924,\n      \"北京市\": 62642067,\n      \"南京市\": 10684158,\n      \"宁波市\": 6367601,\n      \"广州市\": 24289558,\n      \"成都市\": 178723320,\n      \"杭州市\": 35470247,\n      \"深圳市\": 87437079,\n      \"重庆市\": 57830597\n    }\n  },\n  \"time_progress\": {\n    \"percent\": 32.5,\n    \"as_of_date\": \"2026-04-29\"\n  }\n}",
+    "user_name": "User"
+  },
+  "response_mode": "blocking",
+  "user": "changle-user-turnover_overview"
+}
+[Query Start] getNewStoreStatisticsYear
+[Query Start] getCashFlowCapitalSafetyLine
+[Query Start] getCashFlowNewStoreAndOperation
+[Query Start] getNewStoreSupplySummary
+[Query Start] getCityFlowSummary
+[Query Start] getNewStoreOperationStatus
+[Query End] getCashFlowCapitalSafetyLine - 159ms - Rows: 10
+[Query Start] getCashFlowContinuousLossMonthly
+[Query End] getNewStoreStatisticsYear - 240ms - Rows: 8
+[Query End] getNewStoreOperationStatus - 253ms - Rows: 24
+[Query End] getNewStoreSupplySummary - 279ms - Rows: 10
+[Query End] getCityFlowSummary - 282ms - Rows: 10
+[Query End] getCashFlowNewStoreAndOperation - 285ms - Rows: 40
+[Query Start] getCashFlowClosingWarning
+[Query Start] getStoreCashFlowCompletionMonitoring
+[Query Start] getCashFlowNewStoreProcessCum
+[Query End] getCashFlowContinuousLossMonthly - 200ms - Rows: 54
+[Query End] getCashFlowNewStoreProcessCum - 164ms - Rows: 74
+[NewStoreAnalysis] Cache hit
+[Query End] getStoreCashFlowCompletionMonitoring - 259ms - Rows: 201
+[Query End] getCashFlowClosingWarning - 269ms - Rows: 24
+[Cache] 缓存已手动清空
+[Query Start] getWeeklyTurnover
+[Query Start] getCityTurnover
+[Query Start] getAnnualAvgPrice
+[Query Start] getWeeklyAvgPrice
+[Query Start] getWeeklyAvgPriceYTD
+[Query Start] getCityAnnualAvgPrice
+[Query End] getCityTurnover - 2243ms - Rows: 18
+[Query Start] getRepurchaseRateAnnual
+[Query End] getAnnualAvgPrice - 2722ms - Rows: 4
+[Query Start] getRepurchaseRateWeekly
+[Query End] getCityAnnualAvgPrice - 2740ms - Rows: 36
+[Query Start] getRepurchaseRateCityWeekly
+[Query End] getWeeklyTurnover - 4467ms - Rows: 69
+[Query Start] getUserVisitCountAnnual
+[Query End] getWeeklyAvgPrice - 4816ms - Rows: 69
+[Query Start] getUserVisitCountDailyAvgVisitMonthlyTotal
+[Query End] getRepurchaseRateAnnual - 2752ms - Rows: 3
+[Query Start] getStaffServiceDurationMonthly
+[Query End] getWeeklyAvgPriceYTD - 5135ms - Rows: 69
+[Query Start] getStaffServiceDurationCityMonthly
+[Query End] getRepurchaseRateWeekly - 3124ms - Rows: 122
+[Query Start] getCashFlowNewStoreProcess
+[Query End] getUserVisitCountDailyAvgVisitMonthlyTotal - 1233ms - Rows: 16
+[Query End] getCashFlowNewStoreProcess - 233ms - Rows: 109
+[Query End] getUserVisitCountAnnual - 1635ms - Rows: 2
+[Query End] getRepurchaseRateCityWeekly - 3392ms - Rows: 621
+[Query Start] getTurnoverOverview
+[Query Start] getUserVisitCountDailyAvgMonthly
+[Query Start] getCashFlowBudgetMonthly
+[Query End] getCashFlowBudgetMonthly - 1465ms - Rows: 108
+[Query End] getStaffServiceDurationCityMonthly - 2488ms - Rows: 144
+[Query End] getUserVisitCountDailyAvgMonthly - 1579ms - Rows: 16
+[Query End] getStaffServiceDurationMonthly - 2742ms - Rows: 16
+[Query End] getTurnoverOverview - 1957ms - Rows: 3
+Sending request to Dify: {
+  "inputs": {
+    "context_data": "{\n  \"年度营业额统计\": [\n    {\n      \"year\": 2026,\n      \"total_turnover\": \"150984481.22\",\n      \"same_period_turnover\": \"150984481.22\",\n      \"last_year_same_period_turnover\": \"125610094.13\",\n      \"yoy_rate\": \"20.20\"\n    },\n    {\n      \"year\": 2025,\n      \"total_turnover\": \"410667472.14\",\n      \"same_period_turnover\": \"561651953.36\",\n      \"last_year_same_period_turnover\": \"110132432.19\",\n      \"yoy_rate\": \"409.98\"\n    },\n    {\n      \"year\": 2024,\n      \"total_turnover\": \"362260267.50\",\n      \"same_period_turnover\": \"923912220.86\",\n      \"last_year_same_period_turnover\": \"93426614.57\",\n      \"yoy_rate\": \"888.92\"\n    }\n  ],\n  \"static_budget\": {\n    \"total\": 6678.8,\n    \"used\": 0\n  },\n  \"static_turnover_targets\": {\n    \"cityTargets\": {\n      \"上海市\": 49133255,\n      \"北京市\": 62775775,\n      \"南京市\": 10488118,\n      \"宁波市\": 6367601,\n      \"广州市\": 24226000,\n      \"成都市\": 178528188,\n      \"杭州市\": 35424714,\n      \"深圳市\": 87437079,\n      \"重庆市\": 57714284\n    }\n  },\n  \"time_progress\": {\n    \"percent\": 32.7,\n    \"as_of_date\": \"2026-04-30\"\n  }\n}",
+    "user_name": "User"
+  },
+  "response_mode": "blocking",
+  "user": "changle-user-turnover_overview"
+}
+[Query Start] getNewStoreStatisticsYear
+[Query Start] getNewStoreOperationStatus
+[Query Start] getCityFlowSummary
+[Query Start] getCashFlowNewStoreAndOperation
+[Query Start] getNewStoreSupplySummary
+[Query Start] getCashFlowCapitalSafetyLine
+[Query End] getNewStoreOperationStatus - 219ms - Rows: 24
+[Query End] getNewStoreStatisticsYear - 227ms - Rows: 8
+[Query End] getCashFlowCapitalSafetyLine - 224ms - Rows: 10
+[Query End] getCashFlowNewStoreAndOperation - 228ms - Rows: 40
+[Query End] getCityFlowSummary - 230ms - Rows: 10
+[Query End] getNewStoreSupplySummary - 230ms - Rows: 10
+[Query Start] getCashFlowContinuousLossMonthly
+[Query Start] getCashFlowClosingWarning
+[Query Start] getStoreCashFlowCompletionMonitoring
+[Query End] getCashFlowContinuousLossMonthly - 199ms - Rows: 54
+[Query End] getStoreCashFlowCompletionMonitoring - 192ms - Rows: 201
+[Query End] getCashFlowClosingWarning - 234ms - Rows: 24
+[Query Start] getCashFlowNewStoreProcessCum
+[Query End] getCashFlowNewStoreProcessCum - 147ms - Rows: 74
+Dify new_store_summary request body: {"inputs":{"store_process":"[{\"month\":\"2024-09\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2026-01\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":91},{\"month\":\"2026-01\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-01\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":26},{\"month\":\"2026-01\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-01\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-01\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":2,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-01\",\"city_name\":\"上海市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-01\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-01\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-01\",\"city_name\":\"月度合计\",\"新店目标\":3,\"新店数量\":4,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-01\",\"city_name\":\"月度累计汇总\",\"新店目标\":3,\"新店数量\":4,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-02\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":91},{\"month\":\"2026-02\",\"city_name\":\"重庆市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-02\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":26},{\"month\":\"2026-02\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-02\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-02\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-02\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-02\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-02\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-02\",\"city_name\":\"月度合计\",\"新店目标\":2,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":199},{\"month\":\"2026-02\",\"city_name\":\"月度累计汇总\",\"新店目标\":5,\"新店数量\":4,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-03\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":92},{\"month\":\"2026-03\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":30},{\"month\":\"2026-03\",\"city_name\":\"深圳市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":27},{\"month\":\"2026-03\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-03\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-03\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-03\",\"city_name\":\"上海市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-03\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-03\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-03\",\"city_name\":\"月度合计\",\"新店目标\":4,\"新店数量\":2,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":1,\"重装目标完成情况\":\"如期完成\",\"门店数量\":201},{\"month\":\"2026-03\",\"city_name\":\"月度累计汇总\",\"新店目标\":9,\"新店数量\":6,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":2,\"重装目标完成情况\":\"高于目标\",\"门店数量\":201},{\"month\":\"2026-04\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":92},{\"month\":\"2026-04\",\"city_name\":\"重庆市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-04\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":1,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":28},{\"month\":\"2026-04\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":15},{\"month\":\"2026-04\",\"city_name\":\"杭州市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-04\",\"city_name\":\"广州市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-04\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-04\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-04\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-04\",\"city_name\":\"月度合计\",\"新店目标\":5,\"新店数量\":2,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":203},{\"month\":\"2026-04\",\"city_name\":\"月度累计汇总\",\"新店目标\":14,\"新店数量\":8,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":2,\"重装数量\":2,\"重装目标完成情况\":\"如期完成\",\"门店数量\":203}]","current_date":"2026-04-30"},"response_mode":"blocking","user":"changle-user-newstore-analysis"}
+[Cache Hit] getWeeklyTurnover
+[Cache Hit] getCityTurnover
+[Cache Hit] getWeeklyAvgPriceYTD
+[Cache Hit] getWeeklyAvgPrice
+[Cache Hit] getCityAnnualAvgPrice
+[Cache Hit] getAnnualAvgPrice
+[Cache Hit] getRepurchaseRateAnnual
+[Cache Hit] getRepurchaseRateWeekly
+[Cache Hit] getRepurchaseRateCityWeekly
+[Cache Hit] getUserVisitCountAnnual
+[Cache Hit] getUserVisitCountDailyAvgVisitMonthlyTotal
+[Cache Hit] getStaffServiceDurationMonthly
+[Cache Hit] getStaffServiceDurationCityMonthly
+[Cache Hit] getCashFlowNewStoreProcess
+[Cache Hit] getTurnoverOverview
+[Cache Hit] getUserVisitCountDailyAvgMonthly
+[Cache Hit] getCashFlowBudgetMonthly
+Sending request to Dify: {
+  "inputs": {
+    "context_data": "{\n  \"年度营业额统计\": [\n    {\n      \"year\": 2026,\n      \"total_turnover\": \"150984481.22\",\n      \"same_period_turnover\": \"150984481.22\",\n      \"last_year_same_period_turnover\": \"125610094.13\",\n      \"yoy_rate\": \"20.20\"\n    },\n    {\n      \"year\": 2025,\n      \"total_turnover\": \"410667472.14\",\n      \"same_period_turnover\": \"561651953.36\",\n      \"last_year_same_period_turnover\": \"110132432.19\",\n      \"yoy_rate\": \"409.98\"\n    },\n    {\n      \"year\": 2024,\n      \"total_turnover\": \"362260267.50\",\n      \"same_period_turnover\": \"923912220.86\",\n      \"last_year_same_period_turnover\": \"93426614.57\",\n      \"yoy_rate\": \"888.92\"\n    }\n  ],\n  \"static_budget\": {\n    \"total\": 6678.8,\n    \"used\": 0\n  },\n  \"static_turnover_targets\": {\n    \"cityTargets\": {\n      \"上海市\": 49133255,\n      \"北京市\": 62775775,\n      \"南京市\": 10488118,\n      \"宁波市\": 6367601,\n      \"广州市\": 24226000,\n      \"成都市\": 178528188,\n      \"杭州市\": 35424714,\n      \"深圳市\": 87437079,\n      \"重庆市\": 57714284\n    }\n  },\n  \"time_progress\": {\n    \"percent\": 32.7,\n    \"as_of_date\": \"2026-04-30\"\n  }\n}",
+    "user_name": "User"
+  },
+  "response_mode": "blocking",
+  "user": "changle-user-turnover_overview"
+}
+[Cache Hit] getNewStoreStatisticsYear
+[Cache Hit] getCashFlowCapitalSafetyLine
+[Cache Hit] getCashFlowNewStoreAndOperation
+[Cache Hit] getCityFlowSummary
+[Cache Hit] getNewStoreSupplySummary
+[Cache Hit] getNewStoreOperationStatus
+[Debug] First row keys: [
+  'city_codee',
+  'city_name',
+  'store_name',
+  'store_code',
+  'opening_date',
+  'city_manager_name',
+  'tech_vice_president_name',
+  'city_store_order',
+  'ramp_up_period_months',
+  'current_ramp_up_month_index',
+  'ramp_up_end_month',
+  'cash_flow_budget_total',
+  'cash_flow_actual_to_date',
+  'cash_flow_variance',
+  'marketing_budget_total',
+  'marketing_actual_total',
+  'marketing_usage_ratio_display',
+  'marketing_usage_diff',
+  'ad_fee_actual',
+  'group_buy_discount_actual',
+  'offline_ad_fee_actual',
+  'new_guest_discount_actual',
+  'exhibition_fee_actual',
+  'masseur_commission_actual',
+  'incentive_budget_total',
+  'incentive_actual_total',
+  'incentive_usage_ratio_display',
+  'incentive_variance'
+]
+[Debug] marketing_usage_diff value: -40486.12
+[Cache Hit] getCashFlowContinuousLossMonthly
+[Cache Hit] getCashFlowClosingWarning
+[Cache Hit] getStoreCashFlowCompletionMonitoring
+[Cache Hit] getCashFlowNewStoreProcessCum
+[NewStoreAnalysis] Cache hit
+[Cache] 缓存已手动清空
+[Query Start] getCityTurnover
+[Query Start] getWeeklyTurnover
+[Query Start] getWeeklyAvgPriceYTD
+[Query Start] getWeeklyAvgPrice
+[Query Start] getAnnualAvgPrice
+[Query Start] getCityAnnualAvgPrice
+[Query End] getCityTurnover - 2541ms - Rows: 18
+[Query Start] getRepurchaseRateAnnual
+[Query End] getAnnualAvgPrice - 3405ms - Rows: 4
+[Query End] getCityAnnualAvgPrice - 3406ms - Rows: 36
+[Query Start] getRepurchaseRateWeekly
+[Query Start] getRepurchaseRateCityWeekly
+[Query End] getWeeklyTurnover - 3695ms - Rows: 69
+[Query Start] getUserVisitCountAnnual
+[Query End] getRepurchaseRateAnnual - 2841ms - Rows: 3
+[Query Start] getUserVisitCountDailyAvgVisitMonthlyTotal
+[Query End] getWeeklyAvgPrice - 5824ms - Rows: 69
+[Query End] getWeeklyAvgPriceYTD - 5827ms - Rows: 69
+[Query Start] getStaffServiceDurationCityMonthly
+[Query Start] getStaffServiceDurationMonthly
+[Query End] getUserVisitCountAnnual - 3589ms - Rows: 2
+[Query Start] getCashFlowNewStoreProcess
+[Query End] getCashFlowNewStoreProcess - 970ms - Rows: 109
+[Query End] getRepurchaseRateCityWeekly - 4891ms - Rows: 621
+[Query Start] getTurnoverOverview
+[Query End] getUserVisitCountDailyAvgVisitMonthlyTotal - 2949ms - Rows: 16
+[Query Start] getUserVisitCountDailyAvgMonthly
+[Query Start] getCashFlowBudgetMonthly
+[Query End] getRepurchaseRateWeekly - 4973ms - Rows: 122
+[Query End] getCashFlowBudgetMonthly - 1540ms - Rows: 108
+[Query End] getStaffServiceDurationCityMonthly - 4176ms - Rows: 144
+[Query End] getUserVisitCountDailyAvgMonthly - 1652ms - Rows: 16
+[Query End] getStaffServiceDurationMonthly - 4251ms - Rows: 16
+[Query End] getTurnoverOverview - 2134ms - Rows: 3
+[Query Start] getCashFlowCapitalSafetyLine
+[Query Start] getCityFlowSummary
+[Query Start] getNewStoreOperationStatus
+[Query Start] getCashFlowNewStoreAndOperation
+[Query Start] getNewStoreStatisticsYear
+[Query Start] getNewStoreSupplySummary
+[Query End] getCashFlowCapitalSafetyLine - 175ms - Rows: 10
+[Query End] getNewStoreSupplySummary - 278ms - Rows: 10
+[Query Start] getCashFlowContinuousLossMonthly
+[Query Start] getCashFlowClosingWarning
+[Query End] getNewStoreStatisticsYear - 440ms - Rows: 8
+[Query End] getCashFlowNewStoreAndOperation - 490ms - Rows: 40
+[Query End] getNewStoreOperationStatus - 498ms - Rows: 24
+[Query End] getCityFlowSummary - 502ms - Rows: 10
+[Query End] getCashFlowContinuousLossMonthly - 178ms - Rows: 54
+[Query Start] getStoreCashFlowCompletionMonitoring
+[Query Start] getCashFlowNewStoreProcessCum
+[Query End] getCashFlowClosingWarning - 246ms - Rows: 24
+[Query End] getCashFlowNewStoreProcessCum - 162ms - Rows: 74
+[Query End] getStoreCashFlowCompletionMonitoring - 221ms - Rows: 201
+Dify new_store_summary request body: {"inputs":{"store_process":"[{\"month\":\"2024-09\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2026-01\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":91},{\"month\":\"2026-01\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-01\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":26},{\"month\":\"2026-01\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-01\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-01\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":2,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-01\",\"city_name\":\"上海市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-01\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-01\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-01\",\"city_name\":\"月度合计\",\"新店目标\":3,\"新店数量\":4,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-01\",\"city_name\":\"月度累计汇总\",\"新店目标\":3,\"新店数量\":4,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-02\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":91},{\"month\":\"2026-02\",\"city_name\":\"重庆市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-02\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":26},{\"month\":\"2026-02\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-02\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-02\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-02\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-02\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-02\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-02\",\"city_name\":\"月度合计\",\"新店目标\":2,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":199},{\"month\":\"2026-02\",\"city_name\":\"月度累计汇总\",\"新店目标\":5,\"新店数量\":4,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-03\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":92},{\"month\":\"2026-03\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":30},{\"month\":\"2026-03\",\"city_name\":\"深圳市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":27},{\"month\":\"2026-03\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-03\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-03\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-03\",\"city_name\":\"上海市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-03\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-03\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-03\",\"city_name\":\"月度合计\",\"新店目标\":4,\"新店数量\":2,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":1,\"重装目标完成情况\":\"如期完成\",\"门店数量\":201},{\"month\":\"2026-03\",\"city_name\":\"月度累计汇总\",\"新店目标\":9,\"新店数量\":6,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":2,\"重装目标完成情况\":\"高于目标\",\"门店数量\":201},{\"month\":\"2026-04\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":92},{\"month\":\"2026-04\",\"city_name\":\"重庆市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-04\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":1,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":28},{\"month\":\"2026-04\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":15},{\"month\":\"2026-04\",\"city_name\":\"杭州市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-04\",\"city_name\":\"广州市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-04\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-04\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-04\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-04\",\"city_name\":\"月度合计\",\"新店目标\":5,\"新店数量\":2,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":203},{\"month\":\"2026-04\",\"city_name\":\"月度累计汇总\",\"新店目标\":14,\"新店数量\":8,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":2,\"重装数量\":2,\"重装目标完成情况\":\"如期完成\",\"门店数量\":203}]","current_date":"2026-04-30"},"response_mode":"blocking","user":"changle-user-newstore-analysis"}
+[Cache] 缓存已手动清空
+[Query Start] getWeeklyTurnover
+[Query Start] getCityTurnover
+[Query Start] getCityAnnualAvgPrice
+[Query Start] getWeeklyAvgPriceYTD
+[Query Start] getWeeklyAvgPrice
+[Query Start] getAnnualAvgPrice
+[Query End] getCityTurnover - 2241ms - Rows: 18
+[Query Start] getRepurchaseRateAnnual
+[Query End] getAnnualAvgPrice - 2809ms - Rows: 4
+[Query Start] getRepurchaseRateWeekly
+[Query End] getCityAnnualAvgPrice - 3239ms - Rows: 36
+[Query Start] getRepurchaseRateCityWeekly
+[Query End] getWeeklyAvgPriceYTD - 3598ms - Rows: 69
+[Query Start] getUserVisitCountAnnual
+[NewStoreAnalysis] Cache hit
+[Query End] getRepurchaseRateAnnual - 3547ms - Rows: 3
+[Query Start] getUserVisitCountDailyAvgVisitMonthlyTotal
+[Query End] getWeeklyTurnover - 5951ms - Rows: 69
+[Query Start] getStaffServiceDurationMonthly
+[Query End] getUserVisitCountAnnual - 2375ms - Rows: 2
+[Query Start] getStaffServiceDurationCityMonthly
+[Query End] getWeeklyAvgPrice - 6023ms - Rows: 69
+[Query Start] getCashFlowNewStoreProcess
+[Query End] getCashFlowNewStoreProcess - 1321ms - Rows: 109
+[Query Start] getTurnoverOverview
+[Query End] getRepurchaseRateWeekly - 4788ms - Rows: 122
+[Query Start] getUserVisitCountDailyAvgMonthly
+[Query End] getRepurchaseRateCityWeekly - 5193ms - Rows: 621
+[Query Start] getCashFlowBudgetMonthly
+[Query End] getUserVisitCountDailyAvgVisitMonthlyTotal - 2873ms - Rows: 16
+[Query End] getUserVisitCountDailyAvgMonthly - 1960ms - Rows: 16
+[Query End] getCashFlowBudgetMonthly - 1141ms - Rows: 108
+[Query End] getStaffServiceDurationCityMonthly - 3890ms - Rows: 144
+[Query End] getStaffServiceDurationMonthly - 4143ms - Rows: 16
+[Query End] getTurnoverOverview - 2833ms - Rows: 3
+[Query Start] getCashFlowNewStoreAndOperation
+[Query Start] getCashFlowCapitalSafetyLine
+[Query Start] getNewStoreStatisticsYear
+[Query Start] getNewStoreOperationStatus
+[Query Start] getCityFlowSummary
+[Query Start] getNewStoreSupplySummary
+[Query End] getCashFlowCapitalSafetyLine - 136ms - Rows: 10
+[Query Start] getCashFlowContinuousLossMonthly
+[Query End] getNewStoreOperationStatus - 179ms - Rows: 24
+[Query Start] getCashFlowClosingWarning
+[Query End] getCashFlowNewStoreAndOperation - 217ms - Rows: 40
+[Query Start] getStoreCashFlowCompletionMonitoring
+[Query End] getCityFlowSummary - 228ms - Rows: 10
+[Query End] getNewStoreStatisticsYear - 239ms - Rows: 8
+[Query Start] getCashFlowNewStoreProcessCum
+[Query End] getNewStoreSupplySummary - 258ms - Rows: 10
+[Query End] getCashFlowContinuousLossMonthly - 171ms - Rows: 54
+[Query End] getCashFlowNewStoreProcessCum - 244ms - Rows: 74
+[Query End] getCashFlowClosingWarning - 299ms - Rows: 24
+[Query End] getStoreCashFlowCompletionMonitoring - 286ms - Rows: 201
+Dify new_store_summary request body: {"inputs":{"store_process":"[{\"month\":\"2024-09\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-09\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2024-11\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-01\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-03\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-05\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-06\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-07\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-09\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"月度合计\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2025-12\",\"city_name\":\"月度累计汇总\",\"新店目标\":0,\"新店数量\":null,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":null,\"重装目标完成情况\":null,\"门店数量\":null},{\"month\":\"2026-01\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":91},{\"month\":\"2026-01\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-01\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":26},{\"month\":\"2026-01\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-01\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-01\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":2,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-01\",\"city_name\":\"上海市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-01\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-01\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-01\",\"city_name\":\"月度合计\",\"新店目标\":3,\"新店数量\":4,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-01\",\"city_name\":\"月度累计汇总\",\"新店目标\":3,\"新店数量\":4,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-02\",\"city_name\":\"成都市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":91},{\"month\":\"2026-02\",\"city_name\":\"重庆市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-02\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":26},{\"month\":\"2026-02\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-02\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-02\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-02\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-02\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-02\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-02\",\"city_name\":\"月度合计\",\"新店目标\":2,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":199},{\"month\":\"2026-02\",\"city_name\":\"月度累计汇总\",\"新店目标\":5,\"新店数量\":4,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":199},{\"month\":\"2026-03\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":1,\"重装目标完成情况\":\"高于目标\",\"门店数量\":92},{\"month\":\"2026-03\",\"city_name\":\"重庆市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":30},{\"month\":\"2026-03\",\"city_name\":\"深圳市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":27},{\"month\":\"2026-03\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":14},{\"month\":\"2026-03\",\"city_name\":\"杭州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-03\",\"city_name\":\"广州市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-03\",\"city_name\":\"上海市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-03\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-03\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-03\",\"city_name\":\"月度合计\",\"新店目标\":4,\"新店数量\":2,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":1,\"重装目标完成情况\":\"如期完成\",\"门店数量\":201},{\"month\":\"2026-03\",\"city_name\":\"月度累计汇总\",\"新店目标\":9,\"新店数量\":6,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":2,\"重装目标完成情况\":\"高于目标\",\"门店数量\":201},{\"month\":\"2026-04\",\"city_name\":\"成都市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":92},{\"month\":\"2026-04\",\"city_name\":\"重庆市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":30},{\"month\":\"2026-04\",\"city_name\":\"深圳市\",\"新店目标\":0,\"新店数量\":1,\"新店目标完成情况\":\"高于目标\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":28},{\"month\":\"2026-04\",\"city_name\":\"北京市\",\"新店目标\":1,\"新店数量\":1,\"新店目标完成情况\":\"如期完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":15},{\"month\":\"2026-04\",\"city_name\":\"杭州市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":11},{\"month\":\"2026-04\",\"city_name\":\"广州市\",\"新店目标\":1,\"新店数量\":0,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":10},{\"month\":\"2026-04\",\"city_name\":\"上海市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":9},{\"month\":\"2026-04\",\"city_name\":\"南京市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":5},{\"month\":\"2026-04\",\"city_name\":\"宁波市\",\"新店目标\":0,\"新店数量\":0,\"新店目标完成情况\":null,\"重装目标\":0,\"重装数量\":0,\"重装目标完成情况\":null,\"门店数量\":3},{\"month\":\"2026-04\",\"city_name\":\"月度合计\",\"新店目标\":5,\"新店数量\":2,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":1,\"重装数量\":0,\"重装目标完成情况\":\"尚未完成\",\"门店数量\":203},{\"month\":\"2026-04\",\"city_name\":\"月度累计汇总\",\"新店目标\":14,\"新店数量\":8,\"新店目标完成情况\":\"尚未完成\",\"重装目标\":2,\"重装数量\":2,\"重装目标完成情况\":\"如期完成\",\"门店数量\":203}]","current_date":"2026-04-30"},"response_mode":"blocking","user":"changle-user-newstore-analysis"}
+[Query Start] getProfitStoreDetailMonthly
+[Query Start] getProfitYearly
+[Query Start] getHeadquartersProfitMonthly
+[Query Start] getProfitTrend
+[Query End] getProfitTrend - 160ms - Rows: 16
+[Query End] getHeadquartersProfitMonthly - 168ms - Rows: 1
+[Query End] getProfitYearly - 195ms - Rows: 2
+[Query End] getProfitStoreDetailMonthly - 578ms - Rows: 845
+[NewStoreAnalysis] Cache hit
+[Cache Hit] getWeeklyTurnover
+[Cache Hit] getCityTurnover
+[Cache Hit] getWeeklyAvgPriceYTD
+[Cache Hit] getWeeklyAvgPrice
+[Cache Hit] getCityAnnualAvgPrice
+[Cache Hit] getAnnualAvgPrice
+[Cache Hit] getRepurchaseRateAnnual
+[Cache Hit] getRepurchaseRateWeekly
+[Cache Hit] getRepurchaseRateCityWeekly
+[Cache Hit] getUserVisitCountAnnual
+[Cache Hit] getUserVisitCountDailyAvgVisitMonthlyTotal
+[Cache Hit] getStaffServiceDurationMonthly
+[Cache Hit] getStaffServiceDurationCityMonthly
+[Cache Hit] getCashFlowNewStoreProcess
+[Cache Hit] getUserVisitCountDailyAvgMonthly
+[Cache Hit] getTurnoverOverview
+[Cache Hit] getCashFlowBudgetMonthly
+Sending request to Dify: {
+  "inputs": {
+    "context_data": "{\n  \"年度营业额统计\": [\n    {\n      \"year\": 2026,\n      \"total_turnover\": \"150981252.22\",\n      \"same_period_turnover\": \"150981252.22\",\n      \"last_year_same_period_turnover\": \"125610094.13\",\n      \"yoy_rate\": \"20.20\"\n    },\n    {\n      \"year\": 2025,\n      \"total_turnover\": \"410667472.14\",\n      \"same_period_turnover\": \"561648724.36\",\n      \"last_year_same_period_turnover\": \"110132432.19\",\n      \"yoy_rate\": \"409.98\"\n    },\n    {\n      \"year\": 2024,\n      \"total_turnover\": \"362260267.50\",\n      \"same_period_turnover\": \"923908991.86\",\n      \"last_year_same_period_turnover\": \"93426614.57\",\n      \"yoy_rate\": \"888.91\"\n    }\n  ],\n  \"static_budget\": {\n    \"total\": 6678.8,\n    \"used\": 0\n  },\n  \"static_turnover_targets\": {\n    \"cityTargets\": {\n      \"上海市\": 49133255,\n      \"北京市\": 62775775,\n      \"南京市\": 10488118,\n      \"宁波市\": 6367601,\n      \"广州市\": 24226000,\n      \"成都市\": 178528188,\n      \"杭州市\": 35424714,\n      \"深圳市\": 87437079,\n      \"重庆市\": 57714284\n    }\n  },\n  \"time_progress\": {\n    \"percent\": 32.7,\n    \"as_of_date\": \"2026-04-30\"\n  }\n}",
+    "user_name": "User"
+  },
+  "response_mode": "blocking",
+  "user": "changle-user-turnover_overview"
+}
+[Cache Hit] getNewStoreStatisticsYear
+[Cache Hit] getCashFlowCapitalSafetyLine
+[Cache Hit] getCityFlowSummary
+[Cache Hit] getCashFlowNewStoreAndOperation
+[Cache Hit] getNewStoreOperationStatus
+[Debug] First row keys: [
+  'city_codee',
+  'city_name',
+  'store_name',
+  'store_code',
+  'opening_date',
+  'city_manager_name',
+  'tech_vice_president_name',
+  'city_store_order',
+  'ramp_up_period_months',
+  'current_ramp_up_month_index',
+  'ramp_up_end_month',
+  'cash_flow_budget_total',
+  'cash_flow_actual_to_date',
+  'cash_flow_variance',
+  'marketing_budget_total',
+  'marketing_actual_total',
+  'marketing_usage_ratio_display',
+  'marketing_usage_diff',
+  'ad_fee_actual',
+  'group_buy_discount_actual',
+  'offline_ad_fee_actual',
+  'new_guest_discount_actual',
+  'exhibition_fee_actual',
+  'masseur_commission_actual',
+  'incentive_budget_total',
+  'incentive_actual_total',
+  'incentive_usage_ratio_display',
+  'incentive_variance'
+]
+[Debug] marketing_usage_diff value: -40486.12
+[Cache Hit] getNewStoreSupplySummary
+[Cache Hit] getCashFlowContinuousLossMonthly
+[Cache Hit] getCashFlowClosingWarning
+[Cache Hit] getStoreCashFlowCompletionMonitoring
+[Cache Hit] getCashFlowNewStoreProcessCum
+[NewStoreAnalysis] Cache hit
+[Query Start] getStaffServiceDurationBelowStandardMonthly
+[Query Start] getStaffServiceDurationBelowStandardCityMonthly
+[Query End] getStaffServiceDurationBelowStandardMonthly - 1542ms - Rows: 16
+[Query End] getStaffServiceDurationBelowStandardCityMonthly - 2021ms - Rows: 144
+[NewStoreAnalysis] Cache hit
