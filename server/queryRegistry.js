@@ -29,6 +29,10 @@ const queryRegistry = {
     sql: loadSql('turnover_overview.sql'),
     description: '营业额概览中的年度累计营业额'
   },
+  getTurnoverOverviewMonthly: {
+    sql: loadSql('turnover_overview_monthly.sql'),
+    description: '2026年门店数据统计（月度汇总）'
+  },
   getWeeklyTurnover: {
     sql: loadSql('turnover_weekly.sql'),
     description: '获取周度营业额'
@@ -264,6 +268,10 @@ const queryRegistry = {
   getCashFlowBudgetMonthly: {
     sql: loadSql('cash_flow_budget.sql'),
     description: '按月输出预算、实际、剩余与滚动的现金流等汇总'
+  },
+  getCashFlowOverviewCityMonthly: {
+    sql: loadSql('cash_flow_overview_city_monthly.sql'),
+    description: '2026年门店实际成本占比情况（城市维度）'
   },
   getCashFlowContinuousLoss: {
     sql: loadSql('cash_flow_continuous_loss_legacy.sql'),

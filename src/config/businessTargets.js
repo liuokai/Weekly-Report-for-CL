@@ -113,7 +113,53 @@ export const BusinessTargets = {
   profit: {
     // 年度利润率目标值 (单位：%)
     annualTargetRate: 6.3,
-    
+    budgetCostRatioTable: {
+      title: '预算成本占比情况',
+      headerGroups: [
+        { title: '总部提取管理费', subHeaders: [{ key: 'hq_fee', label: '总部提取管理费' }] },
+        {
+          title: '人工成本',
+          subHeaders: [
+            { key: 'masseur_cost', label: '推拿师成本' },
+            { key: 'backstage_cost', label: '后台成本' },
+            { key: 'labor_subtotal', label: '小计' }
+          ]
+        },
+        {
+          title: '固定成本',
+          subHeaders: [
+            { key: 'rent_cost', label: '房租成本' },
+            { key: 'depreciation_cost', label: '折旧成本' },
+            { key: 'fixed_subtotal', label: '小计' }
+          ]
+        },
+        {
+          title: '变动成本',
+          subHeaders: [
+            { key: 'material_cost', label: '物资成本' },
+            { key: 'tax_cost', label: '税金' },
+            { key: 'asset_maintenance', label: '资产维护' },
+            { key: 'utility_cost', label: '水电费' },
+            { key: 'other_cost', label: '其他' },
+            { key: 'variable_subtotal', label: '小计' }
+          ]
+        },
+        { title: '利润率', subHeaders: [{ key: 'profit_rate', label: '利润率' }] }
+      ],
+      rows: [
+        { city: '四川', hq_fee: '2.50%', masseur_cost: '44.07%', backstage_cost: '6.45%', labor_subtotal: '50.52%', rent_cost: '16.00%', depreciation_cost: '9.59%', fixed_subtotal: '25.59%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%' },
+        { city: '重庆', hq_fee: '2.50%', masseur_cost: '44.28%', backstage_cost: '6.50%', labor_subtotal: '50.79%', rent_cost: '16.59%', depreciation_cost: '8.74%', fixed_subtotal: '25.33%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%' },
+        { city: '深圳', hq_fee: '2.50%', masseur_cost: '44.68%', backstage_cost: '7.68%', labor_subtotal: '52.36%', rent_cost: '18.93%', depreciation_cost: '4.82%', fixed_subtotal: '23.75%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%' },
+        { city: '杭州', hq_fee: '2.50%', masseur_cost: '45.89%', backstage_cost: '7.76%', labor_subtotal: '53.65%', rent_cost: '16.84%', depreciation_cost: '5.63%', fixed_subtotal: '22.47%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%' },
+        { city: '南京', hq_fee: '2.50%', masseur_cost: '45.63%', backstage_cost: '7.32%', labor_subtotal: '52.95%', rent_cost: '14.94%', depreciation_cost: '8.22%', fixed_subtotal: '23.17%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%' },
+        { city: '宁波', hq_fee: '2.50%', masseur_cost: '45.24%', backstage_cost: '7.46%', labor_subtotal: '52.70%', rent_cost: '16.41%', depreciation_cost: '7.00%', fixed_subtotal: '23.41%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%' },
+        { city: '广州', hq_fee: '2.50%', masseur_cost: '45.81%', backstage_cost: '8.15%', labor_subtotal: '53.96%', rent_cost: '17.48%', depreciation_cost: '4.67%', fixed_subtotal: '22.15%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%' },
+        { city: '上海', hq_fee: '2.50%', masseur_cost: '48.61%', backstage_cost: '8.05%', labor_subtotal: '56.66%', rent_cost: '15.32%', depreciation_cost: '4.14%', fixed_subtotal: '19.46%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%' },
+        { city: '北京', hq_fee: '2.50%', masseur_cost: '48.61%', backstage_cost: '8.27%', labor_subtotal: '56.87%', rent_cost: '13.86%', depreciation_cost: '5.38%', fixed_subtotal: '19.24%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%' },
+        { city: '合计', hq_fee: '2.50%', masseur_cost: '45.42%', backstage_cost: '7.25%', labor_subtotal: '52.68%', rent_cost: '16.39%', depreciation_cost: '6.82%', fixed_subtotal: '23.21%', material_cost: '6.00%', tax_cost: '1.69%', asset_maintenance: '0.50%', utility_cost: '1.20%', other_cost: '600.00', variable_subtotal: '9.39%', profit_rate: '12.00%', isSummary: true }
+      ]
+    },
+     
     // 总部成本预算 (Headquarters Cost Budget)
     headquartersBudget: {
       financial_report: {
