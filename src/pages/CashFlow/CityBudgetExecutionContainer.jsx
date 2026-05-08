@@ -109,6 +109,11 @@ const CityBudgetExecutionContainer = () => {
     return (Number(val) / 10000).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+  const isNegativeDisplayValue = (val) => {
+    if (val === null || val === undefined || val === '') return false;
+    return Number(String(val).replace(/[%\s,]/g, '')) < 0;
+  };
+
   const columns = [
     {
       key: 'city',
@@ -164,7 +169,11 @@ const CityBudgetExecutionContainer = () => {
       dataIndex: 'cash_flow_achievement_ratio_display',
       align: 'right',
       width: '120px',
-      render: (val) => <span className="text-gray-700">{val}</span>
+      render: (val) => (
+        <span className={isNegativeDisplayValue(val) ? 'text-[#a40035]' : 'text-gray-700'}>
+          {val}
+        </span>
+      )
     },
     {
       key: 'balance',

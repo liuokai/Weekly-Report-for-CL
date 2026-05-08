@@ -24,6 +24,12 @@ const SORT_ASC = '\u2191';
 const SORT_DESC = '\u2193';
 const SORT_IDLE = '\u2195';
 
+const toNumericValue = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  const normalized = Number(String(value).replace(/,/g, '').trim());
+  return Number.isNaN(normalized) ? null : normalized;
+};
+
 const StoreCashFlowMonitorContainer = () => {
   const { data, loading, error, fetchData } = useFetchData('getStoreCashFlowCompletionMonitoring', []);
 
@@ -126,6 +132,11 @@ const StoreCashFlowMonitorContainer = () => {
   const isCompleted = (value) => (
     typeof value === 'string' && (value.includes('已完成') || value.includes('超额完成'))
   );
+
+  const isNegativeValue = (value) => {
+    const numericValue = toNumericValue(value);
+    return numericValue !== null && numericValue < 0;
+  };
 
   return (
     <div className="mb-6 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
@@ -249,7 +260,7 @@ const StoreCashFlowMonitorContainer = () => {
                     <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{fmtText(item.ramp_up_end_month)}</td>
                     <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtNumber(item.actual_value)}</td>
                     <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtNumber(item.target_value)}</td>
-                    <td className={`${TABLE_BODY_CELL_CLASS} text-center ${item.diff_value < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
+                    <td className={`${TABLE_BODY_CELL_CLASS} text-center ${isNegativeValue(item.diff_value) ? '!text-[#a40035]' : 'text-gray-700'}`}>
                       {fmtNumber(item.diff_value)}
                     </td>
                     <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>

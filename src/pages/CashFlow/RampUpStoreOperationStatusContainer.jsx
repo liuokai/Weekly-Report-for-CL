@@ -24,6 +24,12 @@ const SORT_ASC = '\u2191';
 const SORT_DESC = '\u2193';
 const SORT_IDLE = '\u2195';
 
+const toNumericValue = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  const normalized = Number(String(value).replace(/,/g, '').trim());
+  return Number.isNaN(normalized) ? null : normalized;
+};
+
 const RampUpDetailModal = ({ store, onClose }) => {
   const { data: allData, loading } = useFetchData('getNewStoreOperationStatus', []);
 
@@ -117,7 +123,8 @@ const RampUpDetailModal = ({ store, onClose }) => {
   const negativeKeys = new Set(['cash_flow_variance', 'marketing_usage_diff', 'incentive_variance']);
 
   const getCellClass = (key, value) => {
-    if (negativeKeys.has(key) && Number(value) < 0) return 'text-[#a40035]';
+    const numericValue = toNumericValue(value);
+    if (negativeKeys.has(key) && numericValue !== null && numericValue < 0) return '!text-[#a40035]';
     return '';
   };
 
@@ -543,7 +550,7 @@ const RampUpStoreOperationStatusContainer = () => {
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.current_ramp_up_month_index}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.marketing_budget_total)}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.marketing_actual_total)}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} text-center ${item.marketing_usage_diff < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center ${toNumericValue(item.marketing_usage_diff) < 0 ? '!text-[#a40035]' : 'text-gray-700'}`}>
                     {formatCurrency(item.marketing_usage_diff)}
                   </td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.ad_fee_actual)}</td>
@@ -555,7 +562,7 @@ const RampUpStoreOperationStatusContainer = () => {
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.incentive_budget_total)}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.incentive_actual_total)}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.incentive_usage_ratio_display || '-'}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} text-center ${item.incentive_variance < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center ${toNumericValue(item.incentive_variance) < 0 ? '!text-[#a40035]' : 'text-gray-700'}`}>
                     {formatCurrency(item.incentive_variance)}
                   </td>
                   </tr>

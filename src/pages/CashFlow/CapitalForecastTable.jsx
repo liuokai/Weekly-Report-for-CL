@@ -12,6 +12,8 @@ const normCity = (name) => CITY_NAME_MAP[name] || name;
 const HEADER_CELL_CLASS = 'border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600';
 const BODY_CELL_CLASS = 'border border-gray-200 px-3 py-2 text-gray-700';
 
+const getNegativeAmountClass = (value) => (Number(value) < 0 ? 'text-[#a40035]' : '');
+
 const CapitalForecastTable = () => {
   const cityTargets2025 = BusinessTargets.capitalBalance?.target2025?.cityTargets || {};
   const cityList = ['总部', ...Object.keys(cityTargets2025)];
@@ -179,16 +181,16 @@ const CapitalForecastTable = () => {
                 className={`${row.isHQ ? 'bg-[#a40035]/5' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-gray-50`}
               >
                 <td className={`${BODY_CELL_CLASS} font-medium whitespace-nowrap`}>{row.isHQ ? '合计(含总部)' : row.city}</td>
-                <td className={BODY_CELL_CLASS}>{formatWan(row.balance2025)}</td>
+                <td className={`${BODY_CELL_CLASS} ${getNegativeAmountClass(row.balance2025)}`}>{formatWan(row.balance2025)}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.operatingOccurred)}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.operatingPending)}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.operatingTotal)}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.safetyLine)}</td>
-                <td className={BODY_CELL_CLASS}>{formatWan(row.availableFunds)}</td>
+                <td className={`${BODY_CELL_CLASS} ${getNegativeAmountClass(row.availableFunds)}`}>{formatWan(row.availableFunds)}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.openOccurred)}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.openPending)}</td>
                 <td className={BODY_CELL_CLASS}>{formatWan(row.openTotal)}</td>
-                <td className={BODY_CELL_CLASS}>{formatWan(row.finalBalance)}</td>
+                <td className={`${BODY_CELL_CLASS} ${getNegativeAmountClass(row.finalBalance)}`}>{formatWan(row.finalBalance)}</td>
               </tr>
             ))}
           </tbody>

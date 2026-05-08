@@ -24,6 +24,12 @@ const SORT_ASC = '\u2191';
 const SORT_DESC = '\u2193';
 const SORT_IDLE = '\u2195';
 
+const toNumericValue = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  const normalized = Number(String(value).replace(/,/g, '').trim());
+  return Number.isNaN(normalized) ? null : normalized;
+};
+
 const RampUpDetailModal = ({ store, onClose }) => {
   const { data: allData, loading } = useFetchData('getRampUpStoreOperationStatus', []);
 
@@ -124,7 +130,8 @@ const RampUpDetailModal = ({ store, onClose }) => {
   const negativeKeys = new Set(['cash_flow_variance', 'marketing_usage_diff', 'incentive_variance']);
 
   const getCellClass = (key, value) => {
-    if (negativeKeys.has(key) && Number(value) < 0) return 'text-[#a40035]';
+    const numericValue = toNumericValue(value);
+    if (negativeKeys.has(key) && numericValue !== null && numericValue < 0) return '!text-[#a40035]';
     return '';
   };
 
@@ -468,7 +475,7 @@ const NewStoreOperationStatusContainer = () => {
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.current_ramp_up_month_index}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.cash_flow_budget_total)}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{formatCurrency(item.cash_flow_actual_to_date)}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} text-center ${item.cash_flow_variance < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
+                  <td className={`${TABLE_BODY_CELL_CLASS} text-center ${toNumericValue(item.cash_flow_variance) < 0 ? '!text-[#a40035]' : 'text-gray-700'}`}>
                     {formatCurrency(item.cash_flow_variance)}
                   </td>
                   </tr>
