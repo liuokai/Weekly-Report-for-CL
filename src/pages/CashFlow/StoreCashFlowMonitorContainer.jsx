@@ -4,12 +4,21 @@ import FilterDropdown from '../../components/Common/FilterDropdown';
 import Pagination from '../../components/Common/Pagination';
 import useTableSorting from '../../components/Common/useTableSorting';
 
-const TABLE_HEADER_CELL_CLASS = 'relative border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-center';
-const TABLE_BODY_CELL_CLASS = 'border border-gray-200 px-3 py-2 text-gray-700';
+const TABLE_HEADER_CELL_CLASS = 'relative border-r border-b border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-center last:border-r-0';
+const TABLE_BODY_CELL_CLASS = 'border-r border-b border-gray-200 px-3 py-2 text-gray-700 last:border-r-0';
 
 const getTableMinWidth = (columnWidths) => (
   Object.values(columnWidths).reduce((total, width) => total + Number.parseInt(width, 10), 0)
 );
+
+const getStickyLeftOffsets = (columns, columnWidths, count) => {
+  let offset = 0;
+  return columns.slice(0, count).reduce((acc, col) => {
+    acc[col.key] = offset;
+    offset += Number.parseInt(columnWidths[col.key] || '120px', 10);
+    return acc;
+  }, {});
+};
 
 const SORT_ASC = '\u2191';
 const SORT_DESC = '\u2193';
@@ -52,6 +61,7 @@ const StoreCashFlowMonitorContainer = () => {
     completion_ratio: '140px',
   };
   const tableMinWidth = getTableMinWidth(columnWidths);
+  const stickyOffsets = getStickyLeftOffsets(columns, columnWidths, 4);
 
   const normalizedData = useMemo(() => (
     (data || []).map((item) => ({
@@ -156,7 +166,7 @@ const StoreCashFlowMonitorContainer = () => {
 
       <div className="overflow-x-auto">
         <table
-          className="w-full table-fixed border-collapse border border-gray-300 text-left text-sm text-gray-700"
+          className="w-full table-fixed border-separate border-spacing-0 border-l border-t border-gray-300 text-left text-sm text-gray-700"
           style={{ minWidth: `${tableMinWidth}px` }}
         >
           <colgroup>
@@ -169,7 +179,8 @@ const StoreCashFlowMonitorContainer = () => {
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`${TABLE_HEADER_CELL_CLASS} cursor-pointer hover:bg-gray-100 group`}
+                  className={`${TABLE_HEADER_CELL_CLASS} cursor-pointer hover:bg-gray-100 group ${stickyOffsets[col.key] !== undefined ? 'sticky bg-gray-100 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''}`}
+                  style={stickyOffsets[col.key] !== undefined ? { left: `${stickyOffsets[col.key]}px` } : undefined}
                   onClick={() => handleSort(col.key)}
                 >
                   <div className="flex w-full items-center justify-center">
@@ -205,13 +216,34 @@ const StoreCashFlowMonitorContainer = () => {
             ) : (
               pagedData.map((item, idx) => {
                 const completed = isCompleted(item.conclusion);
+                const rowBgClass = idx % 2 === 0 ? 'bg-white' : 'bg-gray-50';
 
                 return (
-                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50 hover:bg-gray-50'}>
-                    <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.city_name}</td>
-                    <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.store_code}</td>
-                    <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.store_name}</td>
-                    <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{fmtDate(item.opening_date)}</td>
+                  <tr key={idx} className={`group ${rowBgClass} hover:bg-gray-50`}>
+                    <td
+                      className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center sticky z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${rowBgClass} group-hover:bg-gray-50`}
+                      style={{ left: `${stickyOffsets.city_name}px` }}
+                    >
+                      {item.city_name}
+                    </td>
+                    <td
+                      className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center sticky z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${rowBgClass} group-hover:bg-gray-50`}
+                      style={{ left: `${stickyOffsets.store_code}px` }}
+                    >
+                      {item.store_code}
+                    </td>
+                    <td
+                      className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center sticky z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${rowBgClass} group-hover:bg-gray-50`}
+                      style={{ left: `${stickyOffsets.store_name}px` }}
+                    >
+                      {item.store_name}
+                    </td>
+                    <td
+                      className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center sticky z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${rowBgClass} group-hover:bg-gray-50`}
+                      style={{ left: `${stickyOffsets.opening_date}px` }}
+                    >
+                      {fmtDate(item.opening_date)}
+                    </td>
                     <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtText(item.ramp_up_period)}</td>
                     <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{fmtText(item.ramp_up_month_count)}</td>
                     <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{fmtText(item.ramp_up_end_month)}</td>

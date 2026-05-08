@@ -4,12 +4,21 @@ import useTableSorting from '../../components/Common/useTableSorting';
 import FilterDropdown from '../../components/Common/FilterDropdown';
 import Pagination from '../../components/Common/Pagination';
 
-const TABLE_HEADER_CELL_CLASS = 'relative border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-center';
-const TABLE_BODY_CELL_CLASS = 'border border-gray-200 px-3 py-2 text-gray-700';
+const TABLE_HEADER_CELL_CLASS = 'relative border-r border-b border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-center last:border-r-0';
+const TABLE_BODY_CELL_CLASS = 'border-r border-b border-gray-200 px-3 py-2 text-gray-700 last:border-r-0';
 
 const getTableMinWidth = (columnWidths) => (
   Object.values(columnWidths).reduce((total, width) => total + Number.parseInt(width, 10), 0)
 );
+
+const getStickyLeftOffsets = (columns, columnWidths, count) => {
+  let offset = 0;
+  return columns.slice(0, count).reduce((acc, col) => {
+    acc[col.key] = offset;
+    offset += Number.parseInt(columnWidths[col.key] || '120px', 10);
+    return acc;
+  }, {});
+};
 
 const SORT_ASC = '\u2191';
 const SORT_DESC = '\u2193';
@@ -53,6 +62,37 @@ const RampUpDetailModal = ({ store, onClose }) => {
     { key: 'incentive_usage_ratio_display', label: '激励费使用率' },
     { key: 'incentive_variance', label: '激励费差异' },
   ];
+
+  const columnWidths = {
+    month: '120px',
+    city_name: '120px',
+    store_name: '180px',
+    store_code: '130px',
+    city_store_order: '140px',
+    opening_date: '130px',
+    city_manager_name: '140px',
+    tech_vice_president_name: '150px',
+    ramp_up_period_months: '120px',
+    current_ramp_up_month_index: '120px',
+    cash_flow_budget_total: '150px',
+    cash_flow_actual_to_date: '170px',
+    cash_flow_variance: '150px',
+    marketing_budget_total: '150px',
+    marketing_actual_total: '150px',
+    marketing_usage_diff: '150px',
+    ad_fee_actual: '140px',
+    group_buy_discount_actual: '150px',
+    offline_ad_fee_actual: '150px',
+    new_guest_discount_actual: '150px',
+    exhibition_fee_actual: '140px',
+    masseur_commission_actual: '150px',
+    incentive_budget_total: '150px',
+    incentive_actual_total: '150px',
+    incentive_usage_ratio_display: '140px',
+    incentive_variance: '150px',
+  };
+  const tableMinWidth = getTableMinWidth(columnWidths);
+  const stickyOffsets = getStickyLeftOffsets(columns, columnWidths, 5);
 
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return '-';
@@ -105,11 +145,23 @@ const RampUpDetailModal = ({ store, onClose }) => {
         </div>
 
         <div className="flex-1 overflow-auto p-4">
-          <table className="w-full border-collapse border border-gray-300 text-center text-sm text-gray-700">
+          <table
+            className="w-full table-fixed border-separate border-spacing-0 border-l border-t border-gray-300 text-center text-sm text-gray-700"
+            style={{ minWidth: `${tableMinWidth}px` }}
+          >
+            <colgroup>
+              {columns.map((col) => (
+                <col key={col.key} style={{ width: columnWidths[col.key] || '120px' }} />
+              ))}
+            </colgroup>
             <thead className="sticky top-0 z-10 bg-gray-100 text-xs text-gray-600">
               <tr>
-                {columns.map((col) => (
-                  <th key={col.key} className={TABLE_HEADER_CELL_CLASS}>
+                {columns.map((col, colIdx) => (
+                  <th
+                    key={col.key}
+                    className={`${TABLE_HEADER_CELL_CLASS} ${colIdx < 5 ? 'sticky bg-gray-100 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''}`}
+                    style={colIdx < 5 ? { left: `${stickyOffsets[col.key]}px` } : undefined}
+                  >
                     {col.label}
                   </th>
                 ))}
@@ -129,27 +181,32 @@ const RampUpDetailModal = ({ store, onClose }) => {
                   </td>
                 </tr>
               ) : (
-                storeData.map((item, idx) => (
-                  <tr key={idx} className="even:bg-gray-50/30 hover:bg-gray-50/50">
-                    {columns.map((col) => {
-                      const value = item[col.key];
-                      const display = col.key === 'opening_date'
-                        ? formatDate(value)
-                        : currencyKeys.has(col.key)
-                          ? formatCurrency(value)
-                          : (value ?? '-');
+                storeData.map((item, idx) => {
+                  const rowBgClass = idx % 2 === 0 ? 'bg-white' : 'bg-gray-50';
 
-                      return (
-                        <td
-                          key={col.key}
-                          className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center ${getCellClass(col.key, value)}`}
-                        >
-                          {display}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
+                  return (
+                    <tr key={idx} className={`group ${rowBgClass} hover:bg-gray-50`}>
+                      {columns.map((col, colIdx) => {
+                        const value = item[col.key];
+                        const display = col.key === 'opening_date'
+                          ? formatDate(value)
+                          : currencyKeys.has(col.key)
+                            ? formatCurrency(value)
+                            : (value ?? '-');
+
+                        return (
+                          <td
+                            key={col.key}
+                            className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center ${getCellClass(col.key, value)} ${colIdx < 5 ? `sticky z-10 ${rowBgClass} group-hover:bg-gray-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]` : ''}`}
+                            style={colIdx < 5 ? { left: `${stickyOffsets[col.key]}px` } : undefined}
+                          >
+                            {display}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -225,6 +282,7 @@ const RampUpStoreOperationStatusContainer = () => {
     incentive_variance: '150px',
   };
   const tableMinWidth = getTableMinWidth(columnWidths);
+  const stickyOffsets = getStickyLeftOffsets(columns, columnWidths, 5);
 
   const latestData = React.useMemo(() => {
     if (!data || data.length === 0) return [];
@@ -343,7 +401,7 @@ const RampUpStoreOperationStatusContainer = () => {
 
       <div className="overflow-x-auto">
         <table
-          className="w-full table-fixed border-collapse border border-gray-300 text-left text-sm text-gray-700"
+          className="w-full table-fixed border-separate border-spacing-0 border-l border-t border-gray-300 text-left text-sm text-gray-700"
           style={{ minWidth: `${tableMinWidth}px` }}
         >
           <colgroup>
@@ -358,7 +416,8 @@ const RampUpStoreOperationStatusContainer = () => {
                   key={col.key}
                   scope="col"
                   rowSpan={2}
-                  className={`${TABLE_HEADER_CELL_CLASS} cursor-pointer hover:bg-gray-100 group`}
+                  className={`${TABLE_HEADER_CELL_CLASS} cursor-pointer hover:bg-gray-100 group ${stickyOffsets[col.key] !== undefined ? 'sticky bg-gray-100 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''}`}
+                  style={stickyOffsets[col.key] !== undefined ? { left: `${stickyOffsets[col.key]}px` } : undefined}
                   onClick={() => handleSort(col.key)}
                 >
                   <div className="flex w-full items-center justify-center">
@@ -440,17 +499,43 @@ const RampUpStoreOperationStatusContainer = () => {
                 </td>
               </tr>
             ) : (
-              pagedData.map((item, index) => (
-                <tr key={index} className={index % 2 === 0 ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50 hover:bg-gray-50'}>
-                  <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{item.city_name}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>
+              pagedData.map((item, index) => {
+                const rowBgClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+
+                return (
+                  <tr key={index} className={`group ${rowBgClass} hover:bg-gray-50`}>
+                  <td
+                    className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center sticky z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${rowBgClass} group-hover:bg-gray-50`}
+                    style={{ left: `${stickyOffsets.city_name}px` }}
+                  >
+                    {item.city_name}
+                  </td>
+                  <td
+                    className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center sticky z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${rowBgClass} group-hover:bg-gray-50`}
+                    style={{ left: `${stickyOffsets.store_name}px` }}
+                  >
                     <button className="text-center text-[#a40035] hover:underline" onClick={() => setModalStore(item)}>
                       {item.store_name}
                     </button>
                   </td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.store_code}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.city_store_order ?? '-'}</td>
-                  <td className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center`}>{formatDate(item.opening_date)}</td>
+                  <td
+                    className={`${TABLE_BODY_CELL_CLASS} text-center sticky z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${rowBgClass} group-hover:bg-gray-50`}
+                    style={{ left: `${stickyOffsets.store_code}px` }}
+                  >
+                    {item.store_code}
+                  </td>
+                  <td
+                    className={`${TABLE_BODY_CELL_CLASS} text-center sticky z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${rowBgClass} group-hover:bg-gray-50`}
+                    style={{ left: `${stickyOffsets.city_store_order}px` }}
+                  >
+                    {item.city_store_order ?? '-'}
+                  </td>
+                  <td
+                    className={`${TABLE_BODY_CELL_CLASS} whitespace-nowrap text-center sticky z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${rowBgClass} group-hover:bg-gray-50`}
+                    style={{ left: `${stickyOffsets.opening_date}px` }}
+                  >
+                    {formatDate(item.opening_date)}
+                  </td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.city_manager_name || '-'}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.tech_vice_president_name || '-'}</td>
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center`}>{item.ramp_up_period_months}</td>
@@ -473,8 +558,9 @@ const RampUpStoreOperationStatusContainer = () => {
                   <td className={`${TABLE_BODY_CELL_CLASS} text-center ${item.incentive_variance < 0 ? 'text-[#a40035]' : 'text-gray-700'}`}>
                     {formatCurrency(item.incentive_variance)}
                   </td>
-                </tr>
-              ))
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

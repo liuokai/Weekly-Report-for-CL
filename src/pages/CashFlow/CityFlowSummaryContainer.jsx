@@ -59,13 +59,13 @@ const CityFlowSummaryContainer = () => {
           <div className="text-center py-8 text-gray-400">暂无数据</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-separate border-spacing-0 border-l border-t border-gray-300">
               <thead>
                 {/* 第一行：年度 + 城市分组 */}
                 <tr className="bg-gray-100 text-gray-600 text-center">
-                  <th rowSpan={2} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle">年度</th>
+                  <th rowSpan={2} className="border-r border-b border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap align-middle sticky left-0 bg-gray-100 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">年度</th>
                   {cities.map(city => (
-                    <th key={city} colSpan={subCols.length} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
+                    <th key={city} colSpan={subCols.length} className="border-r border-b border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
                       {city === '总' ? '合计' : city}
                     </th>
                   ))}
@@ -74,7 +74,7 @@ const CityFlowSummaryContainer = () => {
                 <tr className="bg-gray-100 text-gray-600 text-center">
                   {cities.map(city =>
                     subCols.map(col => (
-                      <th key={`${city}_${col.key}`} className="border border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
+                      <th key={`${city}_${col.key}`} className="border-r border-b border-gray-300 px-3 py-2 text-xs font-semibold whitespace-nowrap">
                         {col.label}
                       </th>
                     ))
@@ -85,8 +85,8 @@ const CityFlowSummaryContainer = () => {
                 {[...data].sort((a, b) => Number(a['年度']) - Number(b['年度'])).map((row, idx) => {
                   const year = row['年度'];
                   return (
-                    <tr key={year} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                      <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700">
+                    <tr key={year} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className={`border-r border-b border-gray-200 px-3 py-2 text-center whitespace-nowrap text-gray-700 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                         {year}年
                       </td>
                       {cities.map(city =>
@@ -95,7 +95,7 @@ const CityFlowSummaryContainer = () => {
                           const val = row[fieldKey];
                           const isSurplus = col.key === '年度结余';
                           return (
-                            <td key={fieldKey} className={`border border-gray-200 px-3 py-2 text-center whitespace-nowrap ${isSurplus ? getSurplusClass(val) : 'text-gray-700'}`}>
+                            <td key={fieldKey} className={`border-r border-b border-gray-200 px-3 py-2 text-center whitespace-nowrap ${isSurplus ? getSurplusClass(val) : 'text-gray-700'}`}>
                               {formatWan(val)}
                             </td>
                           );
@@ -108,14 +108,14 @@ const CityFlowSummaryContainer = () => {
               {summaryRow && (
                 <tfoot>
                   <tr className="bg-gray-100 font-semibold">
-                    <td className="border border-gray-300 px-3 py-2 text-center whitespace-nowrap text-gray-700">合计</td>
+                    <td className="border-r border-b border-gray-300 px-3 py-2 text-center whitespace-nowrap text-gray-700 sticky left-0 z-10 bg-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">合计</td>
                     {cities.map(city =>
                       subCols.map(col => {
                         const fieldKey = `${city}_${col.key}`;
                         const val = summaryRow[fieldKey];
                         const isSurplus = col.key === '年度结余';
                         return (
-                          <td key={fieldKey} className={`border border-gray-300 px-3 py-2 text-center whitespace-nowrap ${isSurplus ? getSurplusClass(val) : 'text-gray-700'}`}>
+                          <td key={fieldKey} className={`border-r border-b border-gray-300 px-3 py-2 text-center whitespace-nowrap ${isSurplus ? getSurplusClass(val) : 'text-gray-700'}`}>
                             {formatWan(val)}
                           </td>
                         );
