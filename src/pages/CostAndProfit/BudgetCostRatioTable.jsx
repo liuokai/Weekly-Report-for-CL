@@ -15,7 +15,7 @@ const BudgetCostRatioTable = () => {
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
-          <thead className="bg-gray-50 text-xs text-gray-600 uppercase sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-sm text-gray-600 uppercase sticky top-0 z-20 shadow-sm">
             <tr>
               <th rowSpan={2} className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                 城市
@@ -25,7 +25,7 @@ const BudgetCostRatioTable = () => {
                   key={group.title}
                   colSpan={group.subHeaders.length}
                   rowSpan={group.subHeaders.length === 1 ? 2 : 1}
-                  className={`px-6 py-4 font-semibold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 ${
+                  className={`px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 ${
                     group.subHeaders.length > 1 ? 'bg-gray-100' : ''
                   }`}
                 >
@@ -39,7 +39,7 @@ const BudgetCostRatioTable = () => {
                   ? group.subHeaders.map((sub) => (
                       <th
                         key={sub.key}
-                        className="px-6 py-2 font-medium whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600"
+                        className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600"
                       >
                         {sub.label}
                       </th>

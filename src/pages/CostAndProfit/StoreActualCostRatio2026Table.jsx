@@ -174,7 +174,7 @@ const StoreActualCostRatio2026Table = () => {
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
-          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th
                 rowSpan={2}
@@ -187,7 +187,7 @@ const StoreActualCostRatio2026Table = () => {
                   key={group.title}
                   colSpan={group.columns.length}
                   rowSpan={group.isGroup ? 1 : 2}
-                  className={`px-6 py-4 font-semibold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 ${
+                  className={`px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 ${
                     group.isGroup ? 'bg-gray-100' : ''
                   }`}
                 >
@@ -202,7 +202,7 @@ const StoreActualCostRatio2026Table = () => {
                   group.columns.map((column) => (
                     <th
                       key={column.key}
-                      className="px-6 py-2 font-medium whitespace-nowrap min-w-[86px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600"
+                      className="px-6 py-2 font-bold whitespace-nowrap min-w-[86px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600"
                     >
                       {column.title}
                     </th>

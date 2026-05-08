@@ -102,41 +102,41 @@ const ProfitSummaryTable = () => {
       {/* 表格内容 */}
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
-          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th rowSpan={2} className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                 时间
               </th>
-              <th rowSpan={2} className="px-6 py-4 font-semibold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300">
+              <th rowSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300">
                 营业额
               </th>
-              <th colSpan={2} className="px-6 py-4 font-semibold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
+              <th colSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
                 门店利润
               </th>
-              <th colSpan={2} className="px-6 py-4 font-semibold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
+              <th colSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
                 总部利润
               </th>
-              <th colSpan={2} className="px-6 py-4 font-semibold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
+              <th colSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
                 合计
               </th>
             </tr>
             <tr>
-              <th className="px-6 py-2 font-medium whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+              <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
                 金额
               </th>
-              <th className="px-6 py-2 font-medium whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+              <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
                 利润率
               </th>
-              <th className="px-6 py-2 font-medium whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+              <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
                 金额
               </th>
-              <th className="px-6 py-2 font-medium whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+              <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
                 利润率
               </th>
-              <th className="px-6 py-2 font-medium whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+              <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
                 金额
               </th>
-              <th className="px-6 py-2 font-medium whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+              <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
                 利润率
               </th>
             </tr>

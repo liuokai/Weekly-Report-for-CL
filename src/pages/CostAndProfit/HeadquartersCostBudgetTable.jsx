@@ -195,7 +195,7 @@ const HeadquartersCostBudgetTable = () => {
 
       <div className="overflow-x-auto overflow-y-auto max-h-[900px]">
         <table className="w-full text-sm text-gray-700 relative border-collapse">
-          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th
                 rowSpan={2}
@@ -213,7 +213,7 @@ const HeadquartersCostBudgetTable = () => {
                 <th
                   key={column.key}
                   colSpan={2}
-                  className="px-6 py-4 font-semibold whitespace-nowrap text-center align-middle min-w-[220px] border-r border-b border-gray-300 bg-gray-100"
+                  className="px-6 py-4 font-bold whitespace-nowrap text-center align-middle min-w-[220px] border-r border-b border-gray-300 bg-gray-100"
                 >
                   {column.label}
                 </th>
@@ -223,13 +223,13 @@ const HeadquartersCostBudgetTable = () => {
               {monthColumns.flatMap((column) => ([
                 <th
                   key={`${column.key}-amount`}
-                  className="px-6 py-2 font-medium whitespace-nowrap text-center align-middle min-w-[130px] bg-gray-50 border-r border-b border-gray-300 text-gray-600"
+                  className="px-6 py-2 font-bold whitespace-nowrap text-center align-middle min-w-[130px] bg-gray-50 border-r border-b border-gray-300 text-gray-600"
                 >
                   金额
                 </th>,
                 <th
                   key={`${column.key}-ratio`}
-                  className="px-6 py-2 font-medium whitespace-nowrap text-center align-middle min-w-[90px] bg-gray-50 border-r border-b border-gray-300 text-gray-600"
+                  className="px-6 py-2 font-bold whitespace-nowrap text-center align-middle min-w-[90px] bg-gray-50 border-r border-b border-gray-300 text-gray-600"
                 >
                   占比
                 </th>
