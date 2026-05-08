@@ -334,6 +334,10 @@ const queryRegistry = {
     sql: loadSql('cost_rofit_tmp_hq_post_indicator_config.sql'),
     description: '总部岗位及指标汇总（按季度明细）'
   },
+  getHeadquartersPostIndicatorDetail: {
+    sql: loadSql('cost_rofit_profit_payment_order.sql'),
+    description: '总部岗位及指标明细（按申请人工号查询）'
+  },
 };
 
 module.exports = queryRegistry;
