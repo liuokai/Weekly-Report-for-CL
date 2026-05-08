@@ -8,16 +8,17 @@ const { headerGroups: HEADER_GROUPS, rows: BUDGET_ROWS } = BusinessTargets.profi
 const ACTUAL_TO_BUDGET_KEY_MAP = {
   城市: 'city',
   总部提取管理费: 'hq_fee',
-  '人工成本 - 推拿师成本': 'masseur_cost',
-  '人工成本 - 后台成本': 'backstage_cost',
+  '人工成本-推拿师成本': 'masseur_cost',
+  '人工成本-后台成本': 'backstage_cost',
   人工成本小计: 'labor_subtotal',
-  '固定成本 - 房租成本': 'rent_cost',
-  '固定成本 - 折旧成本': 'depreciation_cost',
+  '固定成本-房租成本': 'rent_cost',
+  '固定成本-折旧成本': 'depreciation_cost',
   固定成本小计: 'fixed_subtotal',
-  '变动成本 - 资产维护': 'asset_maintenance',
-  '变动成本 - 税金': 'tax_cost',
-  '变动成本 - 水电费': 'utility_cost',
-  '变动成本 - 其他': 'other_cost',
+  '变动成本-物资成本': 'material_cost',
+  '变动成本-税金': 'tax_cost',
+  '变动成本-资产维护': 'asset_maintenance',
+  '变动成本-水电费': 'utility_cost',
+  '变动成本-其他': 'other_cost',
   变动成本小计: 'variable_subtotal',
   利润率: 'profit_rate'
 };
@@ -34,10 +35,12 @@ const normalizeCityName = (value) => {
 const parsePercent = (value) => {
   if (value == null || value === '') return null;
   if (typeof value === 'number') return value;
-  const normalized = String(value).replace('%', '').trim();
+  const text = String(value).trim();
+  const hasPercentSign = text.includes('%');
+  const normalized = text.replace('%', '').trim();
   const parsed = Number(normalized);
   if (Number.isNaN(parsed)) return null;
-  return parsed / 100;
+  return hasPercentSign ? parsed / 100 : parsed;
 };
 
 const formatDiff = (value) => {
@@ -45,15 +48,37 @@ const formatDiff = (value) => {
   return `${value >= 0 ? '' : '-'}${Math.abs(value * 100).toFixed(2)}%`;
 };
 
+const deriveMaterialCost = (row) => {
+  const subtotal = parsePercent(row.variable_subtotal);
+  const assetMaintenance = parsePercent(row.asset_maintenance) || 0;
+  const taxCost = parsePercent(row.tax_cost) || 0;
+  const utilityCost = parsePercent(row.utility_cost) || 0;
+  const otherCost = parsePercent(row.other_cost) || 0;
+
+  if (subtotal == null) return null;
+  return subtotal - assetMaintenance - taxCost - utilityCost - otherCost;
+};
+
+const normalizeActualRow = (row) => {
+  const normalized = {};
+
+  Object.entries(ACTUAL_TO_BUDGET_KEY_MAP).forEach(([actualKey, budgetKey]) => {
+    normalized[budgetKey] = row[actualKey];
+  });
+
+  if ((normalized.material_cost == null || normalized.material_cost === '') && normalized.variable_subtotal != null) {
+    normalized.material_cost = deriveMaterialCost(normalized);
+  }
+
+  return normalized;
+};
+
 const buildActualLookup = (rows) => {
   const lookup = new Map();
   const normalizedRows = [];
 
   rows.forEach((row) => {
-    const normalized = {};
-    Object.entries(ACTUAL_TO_BUDGET_KEY_MAP).forEach(([actualKey, budgetKey]) => {
-      normalized[budgetKey] = row[actualKey];
-    });
+    const normalized = normalizeActualRow(row);
 
     if (normalized.city) {
       const cityKey = normalizeCityName(normalized.city);
@@ -64,6 +89,7 @@ const buildActualLookup = (rows) => {
 
   if (normalizedRows.length) {
     const summary = { city: '合计' };
+
     HEADER_GROUPS.forEach((group) => {
       group.subHeaders.forEach((sub) => {
         if (EMPTY_CELL_KEYS.has(sub.key)) {
@@ -72,7 +98,12 @@ const buildActualLookup = (rows) => {
         }
 
         const numericRows = normalizedRows
-          .map((row) => parsePercent(row[sub.key]))
+          .map((row) => {
+            if (sub.key === 'material_cost' && (row[sub.key] == null || row[sub.key] === '')) {
+              return deriveMaterialCost(row);
+            }
+            return parsePercent(row[sub.key]);
+          })
           .filter((value) => value != null);
 
         summary[sub.key] = numericRows.length
@@ -110,7 +141,11 @@ const CostRatioComparison2026Table = () => {
             return;
           }
 
-          const actualValue = actualRow ? parsePercent(actualRow[sub.key]) : null;
+          const actualValue = actualRow
+            ? sub.key === 'material_cost'
+              ? (parsePercent(actualRow[sub.key]) ?? deriveMaterialCost(actualRow))
+              : parsePercent(actualRow[sub.key])
+            : null;
           const budgetValue = parsePercent(budgetRow[sub.key]);
 
           if (actualValue == null || budgetValue == null) {
@@ -161,7 +196,7 @@ const CostRatioComparison2026Table = () => {
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
-          <thead className="bg-gray-50 text-xs text-gray-600 uppercase sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th rowSpan={2} className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                 城市
@@ -211,17 +246,15 @@ const CostRatioComparison2026Table = () => {
                   group.subHeaders.map((sub) => {
                     const value = row[sub.key];
                     const isEmpty = value === '';
-                    const isPositive = typeof value === 'number' && value > 0;
-                    const isNegative = typeof value === 'number' && value < 0;
 
                     return (
                       <td
                         key={`${row.city}-${sub.key}`}
                         className={`px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono ${
                           row.isSummary ? 'font-bold' : ''
-                        } ${isPositive ? 'text-red-500' : ''} ${isNegative ? 'text-gray-700' : ''} ${
-                          row.isSummary && !isPositive ? 'text-[#a40035]' : ''
-                        } ${sub.key === 'profit_rate' ? 'font-semibold' : ''}`}
+                        } text-gray-700 ${
+                          sub.key === 'profit_rate' ? 'font-semibold' : ''
+                        }`}
                       >
                         {isEmpty ? '' : formatDiff(value)}
                       </td>

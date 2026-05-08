@@ -325,6 +325,15 @@ const queryRegistry = {
     sql: loadSql('cash_flow_summary_urban_city.sql'),
     description: '城市现金流总结（年度维度，含各城市经营现金流、新店投资、年度结余）'
   },
+  // 利润汇总（2026年门店和总部月度利润汇总）
+  getTurnoverProfitTotalMonthly: {
+    sql: loadSql('turnover_profit_total_monthly.sql'),
+    description: '2026年利润汇总（门店和总部月度利润汇总数据）'
+  },
+  getHeadquartersPostIndicatorConfig: {
+    sql: loadSql('cost_rofit_tmp_hq_post_indicator_config.sql'),
+    description: '总部岗位及指标汇总（按季度明细）'
+  },
 };
 
 module.exports = queryRegistry;

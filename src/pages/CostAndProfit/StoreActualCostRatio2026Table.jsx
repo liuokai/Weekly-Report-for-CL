@@ -5,6 +5,8 @@ const TABLE_TITLE = '2026年门店实际成本占比情况';
 
 const GROUP_ORDER = ['总部提取管理费', '人工成本', '固定成本', '变动成本', '利润率'];
 
+const VARIABLE_COST_COLUMN_ORDER = ['物资成本', '税金', '资产维护', '水电费', '其他', '小计'];
+
 const splitHeaderLabel = (label) => {
   const text = String(label || '');
 
@@ -16,11 +18,11 @@ const splitHeaderLabel = (label) => {
     return { group: null, title: text };
   }
 
-  if (text.includes(' - ')) {
-    const [group, ...rest] = text.split(' - ');
+  if (text.includes('-')) {
+    const [group, ...rest] = text.split('-');
     return {
-      group,
-      title: rest.join(' - ')
+      group: group.trim(),
+      title: rest.join('-').trim()
     };
   }
 
@@ -39,6 +41,21 @@ const splitHeaderLabel = (label) => {
   return { group: null, title: text };
 };
 
+const isNumericValue = (value) =>
+  typeof value === 'number' || (value !== null && value !== '' && !Number.isNaN(Number(value)));
+
+const formatPercent = (value) => `${(Number(value) * 100).toFixed(2)}%`;
+
+const sortGroupColumns = (groupTitle, columns) => {
+  if (groupTitle !== '变动成本') return columns;
+
+  return [...columns].sort((a, b) => {
+    const aIndex = VARIABLE_COST_COLUMN_ORDER.indexOf(a.title);
+    const bIndex = VARIABLE_COST_COLUMN_ORDER.indexOf(b.title);
+    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+  });
+};
+
 const buildHeaderGroups = (columns) => {
   const groupsMap = new Map();
 
@@ -54,17 +71,17 @@ const buildHeaderGroups = (columns) => {
     groupsMap.get(groupKey).columns.push(column);
   });
 
-  return Array.from(groupsMap.values()).sort((a, b) => {
-    const aIndex = GROUP_ORDER.indexOf(a.title);
-    const bIndex = GROUP_ORDER.indexOf(b.title);
-    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-  });
+  return Array.from(groupsMap.values())
+    .map((group) => ({
+      ...group,
+      columns: sortGroupColumns(group.title, group.columns)
+    }))
+    .sort((a, b) => {
+      const aIndex = GROUP_ORDER.indexOf(a.title);
+      const bIndex = GROUP_ORDER.indexOf(b.title);
+      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    });
 };
-
-const isNumericValue = (value) =>
-  typeof value === 'number' || (value !== null && value !== '' && !Number.isNaN(Number(value)));
-
-const formatPercent = (value) => `${(Number(value) * 100).toFixed(2)}%`;
 
 const isHighlightValue = (column, value) => {
   if (!isNumericValue(value)) return false;
@@ -157,11 +174,11 @@ const StoreActualCostRatio2026Table = () => {
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
-          <thead className="bg-gray-50 text-xs text-gray-600 uppercase sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th
                 rowSpan={2}
-                className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[90px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
+                className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-b border-gray-300 min-w-[90px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
               >
                 {firstColumn.title}
               </th>

@@ -13,6 +13,8 @@ import BudgetCostRatioTable from './BudgetCostRatioTable';
 import CostRatioComparison2026Table from './CostRatioComparison2026Table';
 import StoreActualCostRatio2026Table from './StoreActualCostRatio2026Table';
 import StoreDataStatistics2026Table from './StoreDataStatistics2026Table';
+import ProfitSummaryTable from './ProfitSummaryTable';
+import HeadquartersPostIndicatorSummaryTable from './HeadquartersPostIndicatorSummaryTable';
 import useFetchData from '../../hooks/useFetchData';
 import dataLoader from '../../utils/dataLoader';
 
@@ -661,6 +663,7 @@ const CostAndProfitTab = () => {
       {/* 总部成本预算 */}
       {/* Headquarters Cost Budget */}
       <HeadquartersCostBudgetTable />
+      
 
       {/* 2026年门店数据统计 */}
       <StoreDataStatistics2026Table />
@@ -675,6 +678,12 @@ const CostAndProfitTab = () => {
 
       {/* 成本占比对比 */}
       <CostRatioComparison2026Table />
+
+      {/* 利润汇总 */}
+      <ProfitSummaryTable />
+
+      {/* 总部岗位及指标汇总 */}
+      <HeadquartersPostIndicatorSummaryTable />
 
 
 
