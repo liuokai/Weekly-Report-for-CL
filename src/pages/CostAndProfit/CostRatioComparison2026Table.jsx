@@ -186,9 +186,9 @@ const CostRatioComparison2026Table = () => {
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
-          <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
-              <th rowSpan={2} className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+              <th rowSpan={2} className="px-6 py-2 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                 城市
               </th>
               {HEADER_GROUPS.map((group) => (
@@ -196,7 +196,7 @@ const CostRatioComparison2026Table = () => {
                   key={group.title}
                   colSpan={group.subHeaders.length}
                   rowSpan={group.subHeaders.length === 1 ? 2 : 1}
-                  className={`px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 ${
+                  className={`px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 ${
                     group.subHeaders.length > 1 ? 'bg-gray-100' : ''
                   }`}
                 >
@@ -241,7 +241,7 @@ const CostRatioComparison2026Table = () => {
                     return (
                       <td
                         key={`${row.city}-${sub.key}`}
-                        className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono ${
+                        className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 ${
                           row.isSummary ? 'font-bold' : ''
                         } ${isNegative ? 'text-[#a40035]' : 'text-gray-700'} ${
                           sub.key === 'profit_rate' ? 'font-semibold' : ''

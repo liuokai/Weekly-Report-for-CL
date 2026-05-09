@@ -206,17 +206,17 @@ const HeadquartersCostBudgetTable = () => {
 
       <div className="overflow-x-auto overflow-y-auto max-h-[900px]">
         <table className="w-full text-sm text-gray-700 relative border-collapse">
-          <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th
                 rowSpan={2}
-                className="px-6 py-4 font-bold text-center align-middle sticky left-0 bg-gray-50 z-30 border-b border-gray-300 min-w-[120px]" style={{ boxShadow: FROZEN_DIVIDER_SHADOW }}
+                className="px-6 py-2 font-bold text-center align-middle sticky left-0 bg-gray-50 z-30 border-b border-gray-300 min-w-[120px]" style={{ boxShadow: FROZEN_DIVIDER_SHADOW }}
               >
                 中心
               </th>
               <th
                 rowSpan={2}
-                className="px-6 py-4 font-bold text-center align-middle sticky left-[120px] bg-gray-50 z-30 border-b border-gray-300 min-w-[160px]" style={{ boxShadow: FROZEN_DIVIDER_SHADOW }}
+                className="px-6 py-2 font-bold text-center align-middle sticky left-[120px] bg-gray-50 z-30 border-b border-gray-300 min-w-[160px]" style={{ boxShadow: FROZEN_DIVIDER_SHADOW }}
               >
                 科目
               </th>
@@ -224,7 +224,7 @@ const HeadquartersCostBudgetTable = () => {
                 <th
                   key={column.key}
                   colSpan={2}
-                  className="px-6 py-4 font-bold whitespace-nowrap text-center align-middle min-w-[220px] border-r border-b border-gray-300 bg-gray-100"
+                  className="px-6 py-2 font-bold whitespace-nowrap text-center align-middle min-w-[220px] border-r border-b border-gray-300 bg-gray-100"
                 >
                   {column.label}
                 </th>
@@ -281,7 +281,7 @@ const HeadquartersCostBudgetTable = () => {
                       return [
                         <td
                           key={`${section.center}-${item.subject}-${column.key}-amount`}
-                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 font-mono ${
+                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 ${
                              profitNegative ? 'text-[#A40035]' : ''
                            }`}
                         >
@@ -289,7 +289,7 @@ const HeadquartersCostBudgetTable = () => {
                         </td>,
                         <td
                           key={`${section.center}-${item.subject}-${column.key}-ratio`}
-                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 font-mono ${
+                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 ${
                              ratioNegative ? 'text-[#A40035]' : ''
                            }`}
                         >
@@ -309,4 +309,3 @@ const HeadquartersCostBudgetTable = () => {
 };
 
 export default HeadquartersCostBudgetTable;
-

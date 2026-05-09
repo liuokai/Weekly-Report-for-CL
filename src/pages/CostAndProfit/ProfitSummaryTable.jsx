@@ -99,21 +99,21 @@ const ProfitSummaryTable = () => {
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
-          <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
-              <th rowSpan={2} className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+              <th rowSpan={2} className="px-6 py-2 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                 统计月份
               </th>
-              <th rowSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300">
+              <th rowSpan={2} className="px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300">
                 营业额
               </th>
-              <th colSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
+              <th colSpan={2} className="px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
                 门店利润
               </th>
-              <th colSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
+              <th colSpan={2} className="px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
                 总部利润
               </th>
-              <th colSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
+              <th colSpan={2} className="px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
                 合计
               </th>
             </tr>
@@ -141,29 +141,29 @@ const ProfitSummaryTable = () => {
           <tbody>
             {profitData.map((row, index) => (
               <tr key={row.month || index} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-2 font-medium sticky left-0 z-10 border-r border-b border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-white text-black">
+                <td className="px-6 py-2 sticky left-0 z-10 border-r border-b border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-white text-black">
                   {formatMonth(row.month)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(row.main_business_income)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(row.store_total_profit)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatPercent(row.store_profit_margin)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(row.hq_total_profit)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatPercent(row.hq_profit_margin)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono font-semibold text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(row.total_profit)}
                 </td>
                 <td
-                  className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono font-semibold ${
+                  className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 ${
                     isLowTotalProfitMargin(row.total_profit_margin) ? 'text-[#a40035]' : 'text-black'
                   }`}
                 >
@@ -172,30 +172,30 @@ const ProfitSummaryTable = () => {
               </tr>
             ))}
             {summaryRow && (
-              <tr className="bg-red-50 font-bold">
-                <td className="px-6 py-2 font-medium sticky left-0 z-10 border-r border-b border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-red-50 text-black">
+              <tr className="bg-red-50">
+                <td className="px-6 py-2 sticky left-0 z-10 border-r border-b border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-red-50 text-black">
                   {summaryRow.month}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(summaryRow.main_business_income)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(summaryRow.store_total_profit)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatPercent(summaryRow.store_profit_margin)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(summaryRow.hq_total_profit)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatPercent(summaryRow.hq_profit_margin)}
                 </td>
-                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono font-semibold text-black">
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(summaryRow.total_profit)}
                 </td>
                 <td
-                  className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono font-semibold ${
+                  className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 ${
                     isLowTotalProfitMargin(summaryRow.total_profit_margin) ? 'text-[#a40035]' : 'text-black'
                   }`}
                 >

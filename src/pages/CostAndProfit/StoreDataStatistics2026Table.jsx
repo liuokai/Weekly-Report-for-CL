@@ -321,7 +321,7 @@ const StoreDataStatistics2026Table = () => {
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
-          <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th
                 rowSpan={2}
@@ -398,9 +398,7 @@ const StoreDataStatistics2026Table = () => {
                       return (
                         <td
                           key={`${rowIndex}-${column.key}`}
-                          className={`px-6 py-2 whitespace-nowrap text-center align-middle border-b border-gray-300 ${
-                            isNumeric ? 'font-mono' : ''
-                          } text-black ${
+                          className={`px-6 py-2 whitespace-nowrap text-center align-middle border-b border-gray-300 text-black ${
                             isSecondFrozenColumn ? `sticky z-10 ${rowBgClass} border-r-0` : 'border-r border-gray-300'
                           }`}
                           style={
@@ -435,9 +433,7 @@ const StoreDataStatistics2026Table = () => {
                     return (
                       <td
                         key={`summary-${column.key}`}
-                        className={`px-6 py-2 whitespace-nowrap text-center align-middle border-b border-gray-300 ${
-                          isNumeric ? 'font-mono' : ''
-                        } text-black ${
+                        className={`px-6 py-2 whitespace-nowrap text-center align-middle border-b border-gray-300 text-black ${
                           isSecondFrozenColumn ? 'sticky z-10 bg-amber-50 border-r-0' : 'border-r border-gray-300'
                         }`}
                         style={

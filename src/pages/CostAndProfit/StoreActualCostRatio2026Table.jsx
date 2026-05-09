@@ -162,11 +162,11 @@ const StoreActualCostRatio2026Table = () => {
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
-          <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
+          <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th
                 rowSpan={2}
-                className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-b border-gray-300 min-w-[120px] whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
+                className="px-6 py-2 font-bold sticky left-0 bg-gray-50 z-30 border-r border-b border-gray-300 min-w-[120px] whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
               >
                 {firstColumn.title}
               </th>
@@ -175,7 +175,7 @@ const StoreActualCostRatio2026Table = () => {
                   key={group.title}
                   colSpan={group.columns.length}
                   rowSpan={group.isGroup ? 1 : 2}
-                  className={`px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 ${
+                  className={`px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 ${
                     group.isGroup ? 'bg-gray-100' : ''
                   }`}
                 >
@@ -219,7 +219,7 @@ const StoreActualCostRatio2026Table = () => {
                       return (
                         <td
                           key={`${rowIndex}-${column.key}`}
-                          className={`px-6 py-2 border-r border-b border-gray-300 font-mono whitespace-nowrap ${
+                          className={`px-6 py-2 border-r border-b border-gray-300 whitespace-nowrap ${
                             isNegativeProfitRate ? 'text-[#A40035]' : 'text-black'
                           }`}
                         >
