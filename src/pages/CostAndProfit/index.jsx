@@ -680,7 +680,7 @@ const CostAndProfitTab = () => {
       <CostStructureContainer />
 
 
-      {/* 总部成本预算 */}
+      {/* 总部利润汇总 */}
       {/* Headquarters Cost Budget */}
       <HeadquartersCostBudgetTable />
 

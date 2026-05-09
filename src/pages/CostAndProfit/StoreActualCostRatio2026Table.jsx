@@ -4,7 +4,6 @@ import useFetchData from '../../hooks/useFetchData';
 const TABLE_TITLE = '2026年门店实际成本占比情况';
 
 const GROUP_ORDER = ['总部提取管理费', '人工成本', '固定成本', '变动成本', '利润率'];
-
 const VARIABLE_COST_COLUMN_ORDER = ['物资成本', '税金', '资产维护', '水电费', '其他', '小计'];
 
 const splitHeaderLabel = (label) => {
@@ -111,27 +110,14 @@ const StoreActualCostRatio2026Table = () => {
     };
   }, [rows]);
 
-  const summaryRow = useMemo(() => {
-    if (!rows.length || !firstColumn) return null;
-
-    const summary = { [firstColumn.key]: '合计', isSummary: true };
-    headerGroups.forEach((group) => {
-      group.columns.forEach((column) => {
-        const numericRows = rows
-          .map((row) => row[column.key])
-          .filter((value) => isNumericValue(value))
-          .map((value) => Number(value));
-
-        summary[column.key] = numericRows.length
-          ? numericRows.reduce((sum, value) => sum + value, 0) / numericRows.length
-          : null;
-      });
-    });
-
-    return summary;
-  }, [rows, firstColumn, headerGroups]);
-
-  const tableRows = summaryRow ? [...rows, summaryRow] : rows;
+  const tableRows = useMemo(
+    () =>
+      rows.map((row) => ({
+        ...row,
+        isSummary: String(row[firstColumn?.key] || '').trim() === '合计'
+      })),
+    [rows, firstColumn]
+  );
 
   if (loading) {
     return (
@@ -226,7 +212,7 @@ const StoreActualCostRatio2026Table = () => {
                         <td
                           key={`${rowIndex}-${column.key}`}
                           className={`px-6 py-4 border-r border-gray-300 font-mono whitespace-nowrap ${
-                            isNegativeProfitRate ? 'text-red-500' : 'text-black'
+                            isNegativeProfitRate ? 'text-[#A40035]' : 'text-black'
                           }`}
                         >
                           {isNumericValue(value) ? formatPercent(value) : '-'}

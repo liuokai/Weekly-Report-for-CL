@@ -243,7 +243,7 @@ const HeadquartersPostIndicatorSummaryTable = () => {
               </tr>
               <tr>
                 <th rowSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[130px] text-center border-r border-b border-gray-300 bg-gray-50">
-                  预算金额（全年预算）
+                  预算金额
                 </th>
                 <th colSpan={5} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-r border-b border-gray-300 bg-gray-100">
                   费用预算
@@ -311,18 +311,22 @@ const HeadquartersPostIndicatorSummaryTable = () => {
                   <td className="px-6 py-4 text-left border-r border-gray-300 min-w-[260px]">
                     {row.budget_subject || '-'}
                   </td>
-                  <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
+                  <td className="px-6 py-4 text-right whitespace-nowrap border-r border-gray-300 font-mono">
                     {formatAmount(row.budget_amount)}
                   </td>
                   {QUARTER_KEYS.map((quarter) => (
-                    <td key={`${row.job_number}-${quarter}`} className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
+                    <td key={`${row.job_number}-${quarter}`} className="px-6 py-4 text-right whitespace-nowrap border-r border-gray-300 font-mono">
                       {formatAmount(row[quarter], true)}
                     </td>
                   ))}
-                  <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
+                  <td className="px-6 py-4 text-right whitespace-nowrap border-r border-gray-300 font-mono">
                     {formatAmount(row.subtotal, true)}
                   </td>
-                  <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
+                  <td
+                    className={`px-6 py-4 text-right whitespace-nowrap border-r border-gray-300 font-mono ${
+                      row.balance_amount < 0 ? 'text-[#A40035]' : ''
+                    }`}
+                  >
                     {formatAmount(row.balance_amount)}
                   </td>
                 </tr>

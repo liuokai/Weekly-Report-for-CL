@@ -8,7 +8,10 @@ const isRatioColumn = (column) => column?.fullLabel?.includes('比例');
 
 const isPeriodColumn = (column) => column?.fullLabel?.includes('回收期');
 
-const isAmountColumn = (column) => !isRatioColumn(column) && !isPeriodColumn(column);
+const isAmountColumn = (column) =>
+  !isRatioColumn(column) &&
+  !isPeriodColumn(column) &&
+  !isOperatingStoreCountColumn(column);
 
 const getFrozenColumnStyle = (left = 0) => ({
   left: `${left}px`,
@@ -119,6 +122,51 @@ const buildHeaderGroups = (columns) => {
   return groups;
 };
 
+const POST_SERVICE_FEE_ORDER = [
+  '净利润',
+  '净利润比例',
+  '经营净现金流',
+  '经营净现金流比例',
+  '累计经营净现金流',
+  '总折旧',
+  '投资回收期',
+  '人工成本总计',
+  '人工成本总计比例',
+  '固定成本总计',
+  '固定成本总计比例',
+  '变动成本总计',
+  '变动成本总计比例',
+  '税前利润',
+  '税前利润比例',
+  '所得税金额',
+  '所得税金额比例'
+];
+
+const sortDataColumns = (columns) => {
+  const anchorIndex = columns.findIndex((column) => column.fullLabel === '服务费比例');
+  if (anchorIndex === -1) {
+    return columns;
+  }
+
+  const before = columns.slice(0, anchorIndex + 1);
+  const after = columns.slice(anchorIndex + 1);
+  const orderMap = new Map(POST_SERVICE_FEE_ORDER.map((label, index) => [label, index]));
+  const ordered = new Array(POST_SERVICE_FEE_ORDER.length);
+  const remaining = [];
+
+  after.forEach((column) => {
+    const targetIndex = orderMap.get(column.fullLabel);
+    if (targetIndex === undefined) {
+      remaining.push(column);
+      return;
+    }
+
+    ordered[targetIndex] = column;
+  });
+
+  return [...before, ...ordered.filter(Boolean), ...remaining];
+};
+
 const isNumericValue = (value) => typeof value === 'number' || (value !== null && value !== '' && !Number.isNaN(Number(value)));
 
 const formatValue = (value, column) => {
@@ -161,7 +209,7 @@ const formatValue = (value, column) => {
 const StoreDataStatistics2026Table = () => {
   const { data: rowsRaw, loading, error } = useFetchData('getTurnoverOverviewMonthly', [], []);
   const rows = Array.isArray(rowsRaw) ? rowsRaw : [];
-  const statsPeriodLabel = `统计周期：2026-01~${getLastMonthLabel()} （动态给出上月年月）。最近新开门店的总折旧需要人工维护，更新可能不及时。投资回收期=总折旧/当月经营现金流`;
+  const statsPeriodLabel = `统计周期：2026-01~${getLastMonthLabel()} 最近新开门店的总折旧需要人工维护，更新可能不及时。投资回收期=总折旧/当月经营现金流`;
 
   const { firstColumn, secondColumn, dataColumns, headerGroups } = useMemo(() => {
     if (!rows.length) {
@@ -178,11 +226,13 @@ const StoreDataStatistics2026Table = () => {
       };
     });
 
+    const orderedDataColumns = sortDataColumns(columns.slice(1));
+
     return {
       firstColumn: columns[0] || null,
       secondColumn: columns[1] || null,
-      dataColumns: columns.slice(1),
-      headerGroups: buildHeaderGroups(columns.slice(1))
+      dataColumns: orderedDataColumns,
+      headerGroups: buildHeaderGroups(orderedDataColumns)
     };
   }, [rows]);
 
@@ -275,7 +325,7 @@ const StoreDataStatistics2026Table = () => {
             <tr>
               <th
                 rowSpan={2}
-                className="px-6 py-4 font-bold sticky bg-gray-50 z-30 text-center"
+                className="px-6 py-2 font-bold sticky bg-gray-50 z-30 text-center border-b border-gray-300"
                 style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
               >
                 {firstColumn.title}
@@ -285,7 +335,7 @@ const StoreDataStatistics2026Table = () => {
                   key={`${group.title}-${index}`}
                   colSpan={group.columns.length}
                   rowSpan={group.isGroup ? 1 : 2}
-                  className={`px-6 py-4 font-bold whitespace-nowrap min-w-[140px] text-center border-b border-r border-gray-300 ${
+                  className={`px-6 py-2 font-bold whitespace-nowrap min-w-[140px] text-center border-b border-r border-gray-300 ${
                     secondColumn && !group.isGroup && group.columns[0]?.key === secondColumn.key
                       ? `sticky z-30 ${getFrozenHeaderBgClass('bg-gray-50')} border-r-0`
                       : group.isGroup
@@ -309,7 +359,7 @@ const StoreDataStatistics2026Table = () => {
                   group.columns.map((column) => (
                     <th
                       key={column.key}
-                      className={`px-6 py-3 font-bold whitespace-nowrap min-w-[140px] text-center border-r border-gray-300 bg-gray-50 ${
+                      className={`px-6 py-2 font-bold whitespace-nowrap min-w-[140px] text-center border-r border-gray-300 bg-gray-50 ${
                         secondColumn?.key === column.key
                           ? `sticky z-30 ${getFrozenHeaderBgClass('bg-gray-50')} border-r-0`
                           : ''
@@ -326,14 +376,14 @@ const StoreDataStatistics2026Table = () => {
                 )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {rows.map((row, rowIndex) => {
               const rowBgClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
 
               return (
                 <tr key={`${row[firstColumn.key]}-${rowIndex}`} className={`${rowBgClass} hover:bg-gray-50 transition-colors`}>
                   <td
-                    className={`px-6 py-4 font-medium text-center align-middle sticky z-20 text-gray-700 ${rowBgClass}`}
+                    className={`px-6 py-2 font-medium text-center align-middle sticky z-20 text-gray-700 border-b border-gray-300 ${rowBgClass}`}
                     style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
                   >
                     {formatValue(row[firstColumn.key], firstColumn)}
@@ -348,7 +398,7 @@ const StoreDataStatistics2026Table = () => {
                       return (
                         <td
                           key={`${rowIndex}-${column.key}`}
-                          className={`px-6 py-4 whitespace-nowrap text-center align-middle ${
+                          className={`px-6 py-2 whitespace-nowrap text-center align-middle border-b border-gray-300 ${
                             isNumeric ? 'font-mono' : ''
                           } text-black ${
                             isSecondFrozenColumn ? `sticky z-10 ${rowBgClass} border-r-0` : 'border-r border-gray-300'
@@ -370,7 +420,7 @@ const StoreDataStatistics2026Table = () => {
             {summaryRow && (
               <tr className="bg-amber-50 font-semibold">
                 <td
-                  className="px-6 py-4 text-center align-middle sticky z-20 text-gray-800 bg-amber-50"
+                  className="px-6 py-2 text-center align-middle sticky z-20 text-gray-800 bg-amber-50 border-b border-gray-300"
                   style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
                 >
                   {summaryRow[firstColumn.key]}
@@ -385,7 +435,7 @@ const StoreDataStatistics2026Table = () => {
                     return (
                       <td
                         key={`summary-${column.key}`}
-                        className={`px-6 py-4 whitespace-nowrap text-center align-middle ${
+                        className={`px-6 py-2 whitespace-nowrap text-center align-middle border-b border-gray-300 ${
                           isNumeric ? 'font-mono' : ''
                         } text-black ${
                           isSecondFrozenColumn ? 'sticky z-10 bg-amber-50 border-r-0' : 'border-r border-gray-300'

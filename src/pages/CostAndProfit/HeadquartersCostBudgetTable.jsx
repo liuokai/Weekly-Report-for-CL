@@ -1,7 +1,7 @@
 ﻿import React, { useMemo } from 'react';
 import useFetchData from '../../hooks/useFetchData';
 
-const TABLE_TITLE = '总部成本预算';
+const TABLE_TITLE = '总部利润汇总';
 
 
 const FROZEN_DIVIDER_SHADOW = 'inset -1px 0 0 #d1d5db, 2px 0 5px -2px rgba(0,0,0,0.1)';
@@ -114,7 +114,13 @@ const getCellAmount = (row, config) => {
   return toNumber(row[config.amountKey]);
 };
 
-const getCellRatio = (row, config) => {
+const getCellRatio = (row, config, isSummary = false) => {
+  if (isSummary) {
+    const totalIncome = toNumber(row.total_income);
+    if (!totalIncome) return null;
+    return getCellAmount(row, config) / totalIncome;
+  }
+
   if (config.ratioKey) {
     const raw = row[config.ratioKey];
     if (raw == null || raw === '') return null;
@@ -265,7 +271,7 @@ const HeadquartersCostBudgetTable = () => {
                     </td>
                     {monthColumns.flatMap((column) => {
                       const amount = getCellAmount(column.row, item);
-                      const ratio = getCellRatio(column.row, item);
+                      const ratio = getCellRatio(column.row, item, column.isSummary);
                       const zeroAsDash = Boolean(item.zeroAsDash);
                       const amountText = formatAmount(amount, zeroAsDash);
                       const ratioText = formatRatio(ratio, zeroAsDash);
@@ -303,7 +309,6 @@ const HeadquartersCostBudgetTable = () => {
 };
 
 export default HeadquartersCostBudgetTable;
-
 
 
 
