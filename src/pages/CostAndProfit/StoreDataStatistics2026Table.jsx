@@ -320,7 +320,7 @@ const StoreDataStatistics2026Table = () => {
       </div>
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
-        <table className="w-full text-sm text-center text-gray-700 relative">
+        <table className="w-full text-sm text-center text-black relative">
           <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th
@@ -383,7 +383,7 @@ const StoreDataStatistics2026Table = () => {
               return (
                 <tr key={`${row[firstColumn.key]}-${rowIndex}`} className={`${rowBgClass} hover:bg-gray-50 transition-colors`}>
                   <td
-                    className={`px-6 py-2 font-medium text-center align-middle sticky z-20 text-gray-700 border-b border-gray-300 ${rowBgClass}`}
+                    className={`px-6 py-2 font-medium text-center align-middle sticky z-20 text-black border-b border-gray-300 ${rowBgClass}`}
                     style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
                   >
                     {formatValue(row[firstColumn.key], firstColumn)}
@@ -418,7 +418,7 @@ const StoreDataStatistics2026Table = () => {
             {summaryRow && (
               <tr className="bg-amber-50 font-semibold">
                 <td
-                  className="px-6 py-2 text-center align-middle sticky z-20 text-gray-800 bg-amber-50 border-b border-gray-300"
+                  className="px-6 py-2 text-center align-middle sticky z-20 text-black bg-amber-50 border-b border-gray-300"
                   style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
                 >
                   {summaryRow[firstColumn.key]}

@@ -216,7 +216,7 @@ const HeadquartersPostIndicatorSummaryTable = () => {
         </div>
 
         <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
-          <table className="w-full text-sm text-center text-gray-700 relative">
+          <table className="w-full text-sm text-center text-black relative">
             <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
               <tr>
                 <th
@@ -284,28 +284,32 @@ const HeadquartersPostIndicatorSummaryTable = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {tableRows.map((row, index) => (
-                <tr key={`${row.job_number}-${row.name}-${row.budget_subject}-${index}`} className="hover:bg-gray-50 transition-colors">
+              {tableRows.map((row, index) => {
+                const rowBgClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                const rowAfterBgClass = index % 2 === 0 ? 'after:bg-white' : 'after:bg-gray-50';
+
+                return (
+                <tr key={`${row.job_number}-${row.name}-${row.budget_subject}-${index}`} className={`${rowBgClass} hover:bg-gray-50 transition-colors`}>
                   <td
-                    className="relative px-6 py-2 font-medium sticky z-10 whitespace-nowrap bg-white text-gray-700 border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-white after:box-border after:content-['']"
+                    className={`relative px-6 py-2 font-medium sticky z-10 whitespace-nowrap ${rowBgClass} ${rowAfterBgClass} text-black border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:box-border after:content-['']`}
                     style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
                   >
                     {row.event || '-'}
                   </td>
                   <td
-                    className="relative px-6 py-2 text-center whitespace-nowrap sticky z-10 bg-white border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-white after:box-border after:content-['']"
+                    className={`relative px-6 py-2 text-center whitespace-nowrap sticky z-10 ${rowBgClass} ${rowAfterBgClass} border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:box-border after:content-['']`}
                     style={{ ...getFrozenColumnStyle(1), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
                   >
                     {row.task || '-'}
                   </td>
                   <td
-                    className="relative px-6 py-2 text-center whitespace-nowrap sticky z-10 bg-white border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-white after:box-border after:content-['']"
+                    className={`relative px-6 py-2 text-center whitespace-nowrap sticky z-10 ${rowBgClass} ${rowAfterBgClass} border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:box-border after:content-['']`}
                     style={{ ...getFrozenColumnStyle(2), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
                   >
                     {row.post_name || '-'}
                   </td>
                   <td
-                    className="relative px-6 py-2 text-center whitespace-nowrap sticky z-10 bg-white border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-white after:box-border after:content-['']"
+                    className={`relative px-6 py-2 text-center whitespace-nowrap sticky z-10 ${rowBgClass} ${rowAfterBgClass} border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:box-border after:content-['']`}
                     style={{ ...getFrozenColumnStyle(3), boxShadow: FROZEN_DIVIDER_SHADOW }}
                   >
                     {row.job_number ? (
@@ -343,7 +347,7 @@ const HeadquartersPostIndicatorSummaryTable = () => {
                     {formatAmount(row.balance_amount)}
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -383,7 +387,7 @@ const HeadquartersPostIndicatorSummaryTable = () => {
               ) : (
                 <div className="h-full overflow-auto rounded-lg border border-gray-200 bg-white">
                   <table
-                    className="w-full table-fixed border-collapse text-center text-sm text-gray-700"
+                    className="w-full table-fixed border-collapse text-center text-sm text-black"
                     style={{ minWidth: `${VISIBLE_DETAIL_COLUMNS.reduce((sum, column) => sum + Number.parseInt(column.width, 10), 0)}px` }}
                   >
                     <colgroup>

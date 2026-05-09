@@ -86,6 +86,13 @@ const isNegativeProfitRateValue = (column, value) =>
   column.title === '利润率' && isNumericValue(value) && Number(value) < 0;
 
 const StoreActualCostRatio2026Table = () => {
+  const citySortOrder = ['四川', '重庆', '深圳', '杭州', '南京', '宁波', '广州', '上海', '北京', '合计'];
+  const normalizeCityForSort = (value) => {
+    const text = String(value || '').trim();
+    if (text === '合计' || text === '鍚堣') return '合计';
+    return text.replace(/(省|市|鐪亅甯?)$/, '');
+  };
+
   const { data: rowsRaw, loading, error } = useFetchData('getCashFlowOverviewCityMonthly', [], []);
   const rows = Array.isArray(rowsRaw) ? rowsRaw : [];
 
@@ -118,6 +125,13 @@ const StoreActualCostRatio2026Table = () => {
     }));
 
     mappedRows.sort((a, b) => {
+      const aIndex = citySortOrder.indexOf(normalizeCityForSort(a[firstColumn?.key]));
+      const bIndex = citySortOrder.indexOf(normalizeCityForSort(b[firstColumn?.key]));
+
+      if (aIndex !== bIndex) {
+        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+      }
+
       if (a.isSummary === b.isSummary) {
         return a.__originalIndex - b.__originalIndex;
       }
@@ -158,10 +172,11 @@ const StoreActualCostRatio2026Table = () => {
           <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
           {TABLE_TITLE}
         </h3>
+        <div className="mt-2 text-sm text-gray-500 text-left">占比=成本项/门店营业额</div>
       </div>
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
-        <table className="w-full text-sm text-center text-gray-700 relative">
+        <table className="w-full text-sm text-center text-black relative">
           <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th
@@ -201,11 +216,11 @@ const StoreActualCostRatio2026Table = () => {
           <tbody>
             {tableRows.map((row, rowIndex) => {
               const isSummary = row.isSummary;
-              const rowBgClass = isSummary ? 'bg-red-50 font-bold' : 'hover:bg-gray-50 transition-colors';
-              const stickyBgClass = isSummary ? 'bg-red-50 text-black' : 'bg-white text-black';
+              const rowBgClass = isSummary ? 'bg-red-50 font-bold' : rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+              const stickyBgClass = isSummary ? 'bg-red-50 text-black' : `${rowBgClass} text-black`;
 
               return (
-                <tr key={`${row[firstColumn.key]}-${rowIndex}`} className={rowBgClass}>
+                <tr key={`${row[firstColumn.key]}-${rowIndex}`} className={`${rowBgClass} ${isSummary ? '' : 'hover:bg-gray-50 transition-colors'}`}>
                   <td
                     className={`px-6 py-2 font-medium sticky left-0 z-10 border-r border-b border-gray-300 min-w-[120px] whitespace-nowrap ${stickyBgClass} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]`}
                   >
@@ -219,7 +234,7 @@ const StoreActualCostRatio2026Table = () => {
                       return (
                         <td
                           key={`${rowIndex}-${column.key}`}
-                          className={`px-6 py-2 border-r border-b border-gray-300 whitespace-nowrap ${
+                          className={`px-6 py-2 border-r border-b border-gray-300 whitespace-nowrap ${rowBgClass} ${
                             isNegativeProfitRate ? 'text-[#A40035]' : 'text-black'
                           }`}
                         >

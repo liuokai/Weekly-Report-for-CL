@@ -114,9 +114,11 @@ const getCellAmount = (row, config) => {
   return toNumber(row[config.amountKey]);
 };
 
-const getCellRatio = (row, config, isSummary = false) => {
+const getCellRatio = (row, config, options = {}) => {
+  const { isSummary = false, summaryTotalIncome = null } = options;
+
   if (isSummary) {
-    const totalIncome = toNumber(row.total_income);
+    const totalIncome = summaryTotalIncome == null ? toNumber(row.total_income) : toNumber(summaryTotalIncome);
     if (!totalIncome) return null;
     return getCellAmount(row, config) / totalIncome;
   }
@@ -149,6 +151,11 @@ const getCellRatio = (row, config, isSummary = false) => {
 const HeadquartersCostBudgetTable = () => {
   const { data: profitDataRaw, loading, error } = useFetchData('getHeadquartersProfitMonthly', [], []);
   const profitData = Array.isArray(profitDataRaw) ? profitDataRaw : [];
+
+  const summaryTotalIncome = useMemo(
+    () => profitData.reduce((sum, row) => sum + toNumber(row.total_income), 0),
+    [profitData]
+  );
 
   const monthColumns = useMemo(() => {
     const sortedRows = sortByMonth(profitData);
@@ -201,11 +208,13 @@ const HeadquartersCostBudgetTable = () => {
           <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
           {TABLE_TITLE}
         </h3>
+        <div className="mt-2 text-sm text-gray-500 text-left">利润率=利润/门店营业额</div>
         <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div>
       </div>
+      
 
       <div className="overflow-x-auto overflow-y-auto max-h-[900px]">
-        <table className="w-full text-sm text-gray-700 relative border-collapse">
+        <table className="w-full text-sm text-black relative border-collapse">
           <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th
@@ -251,8 +260,9 @@ const HeadquartersCostBudgetTable = () => {
             {SECTION_CONFIG.map((section) =>
               section.rows.map((item, rowIndex) => {
                 const isSubtotal = Boolean(item.isSubtotal || item.isGrandTotal || item.isProfit);
-                const rowClassName = isSubtotal ? 'bg-gray-100 font-bold' : 'hover:bg-gray-50 transition-colors';
-                const stickyBgClass = isSubtotal ? 'bg-gray-100' : 'bg-white';
+                const dataRowBgClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                const rowClassName = isSubtotal ? 'bg-gray-100 font-bold' : `${dataRowBgClass} hover:bg-gray-50 transition-colors`;
+                const stickyBgClass = isSubtotal ? 'bg-gray-100' : dataRowBgClass;
 
                 return (
                   <tr key={`${section.center || 'summary'}-${item.subject}`} className={rowClassName}>
@@ -265,13 +275,16 @@ const HeadquartersCostBudgetTable = () => {
                       </td>
                     )}
                     <td
-                      className={`px-6 py-2 font-medium text-center align-middle sticky left-[120px] z-10 border-r border-b border-gray-300 ${isSubtotal ? 'bg-gray-100' : 'bg-white'}`} style={{ boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
+                      className={`px-6 py-2 font-medium text-center align-middle sticky left-[120px] z-10 border-r border-b border-gray-300 ${isSubtotal ? 'bg-gray-100' : dataRowBgClass}`} style={{ boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
                     >
                       {item.subject}
                     </td>
                     {monthColumns.flatMap((column) => {
                       const amount = getCellAmount(column.row, item);
-                      const ratio = getCellRatio(column.row, item, column.isSummary);
+                      const ratio = getCellRatio(column.row, item, {
+                        isSummary: column.isSummary,
+                        summaryTotalIncome
+                      });
                       const zeroAsDash = Boolean(item.zeroAsDash);
                       const amountText = formatAmount(amount, zeroAsDash);
                       const ratioText = formatRatio(ratio, zeroAsDash);
@@ -281,7 +294,7 @@ const HeadquartersCostBudgetTable = () => {
                       return [
                         <td
                           key={`${section.center}-${item.subject}-${column.key}-amount`}
-                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 ${
+                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 ${isSubtotal ? 'bg-gray-100' : dataRowBgClass} ${
                              profitNegative ? 'text-[#A40035]' : ''
                            }`}
                         >
@@ -289,7 +302,7 @@ const HeadquartersCostBudgetTable = () => {
                         </td>,
                         <td
                           key={`${section.center}-${item.subject}-${column.key}-ratio`}
-                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 ${
+                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 ${isSubtotal ? 'bg-gray-100' : dataRowBgClass} ${
                              ratioNegative ? 'text-[#A40035]' : ''
                            }`}
                         >

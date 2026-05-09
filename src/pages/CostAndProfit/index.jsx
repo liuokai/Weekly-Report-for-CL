@@ -409,6 +409,9 @@ const CostAndProfitTab = () => {
               <DataTable data={rows} columns={storeColumns} />
             </div>
           </div>
+          <p className="hidden">
+            利润值=门店利润+总部利润，利润率=（门店利润+总部利润）/（门店营业额+总部收入）
+          </p>
         </div>
       </div>
     );
@@ -421,6 +424,9 @@ const CostAndProfitTab = () => {
         {/* Header */}
         <div className="px-8 pt-6 pb-4 bg-white">
           <h3 className="text-lg font-bold text-gray-800 border-l-4 border-[#a40035] pl-3">总部+门店年度利润概览</h3>
+          <p className="mt-2 pl-4 text-sm text-gray-500">
+            利润值=门店利润+总部利润，利润率=（门店利润+总部利润）/（门店营业额+总部收入）
+          </p>
         </div>
 
         {/* Layout: Split Top (Left/Right) */}

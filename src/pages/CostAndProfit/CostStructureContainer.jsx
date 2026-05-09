@@ -753,7 +753,7 @@ const CostStructureContainer = () => {
       </div>
 
       <div className={`overflow-x-auto ${viewDimension === 'store' ? 'max-h-[800px] overflow-y-auto' : ''}`}>
-        <table className="w-full text-sm text-left text-gray-700 relative">
+        <table className="w-full text-sm text-left text-black relative">
           <thead className="bg-gray-50 text-xs text-gray-600 uppercase sticky top-0 z-20 shadow-sm">
             <tr>
               <th rowSpan={2} className="px-6 py-2 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
@@ -785,11 +785,11 @@ const CostStructureContainer = () => {
               <tr 
                 key={idx} 
                 className={`
-                  ${row.isSummary ? 'bg-red-50 font-bold sticky bottom-0 z-20 shadow-inner' : 'hover:bg-gray-50 transition-colors'}
+                  ${row.isSummary ? 'bg-red-50 font-bold sticky bottom-0 z-20 shadow-inner' : `${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-50 transition-colors`}
                 `}
               >
                 <td className={`px-6 py-2 font-medium sticky left-0 z-10 border-r border-b border-gray-300
-                  ${row.isSummary ? 'bg-red-50 text-[#A40035]' : 'bg-white text-gray-700'}
+                  ${row.isSummary ? 'bg-red-50 text-[#A40035]' : idx % 2 === 0 ? 'bg-white text-black' : 'bg-gray-50 text-black'}
                   shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]
                 `}>
                   {row[firstColumnHeader]}
@@ -803,6 +803,7 @@ const CostStructureContainer = () => {
                       
                       return (
                         <td key={`${gIdx}-${sIdx}`} className={`px-6 py-2 text-right whitespace-nowrap border-r border-b border-gray-300
+                          ${row.isSummary ? 'bg-red-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
                           ${row.isSummary ? 'text-[#A40035]' : ''}
                           ${isDiff && val < 0 ? 'text-[#A40035]' : ''}
                           ${isDiff && val > 0 ? 'text-green-600' : ''}
@@ -815,6 +816,7 @@ const CostStructureContainer = () => {
                   } else {
                     return (
                       <td key={gIdx} className={`px-6 py-2 text-right whitespace-nowrap border-r border-b border-gray-300
+                        ${row.isSummary ? 'bg-red-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
                         ${row.isSummary ? 'text-[#A40035]' : ''}
                         ${group.key.includes('_variance') && row[group.key] < 0 ? 'text-[#A40035]' : ''}
                         ${group.key.includes('_variance') && row[group.key] > 0 ? 'text-green-600' : ''}

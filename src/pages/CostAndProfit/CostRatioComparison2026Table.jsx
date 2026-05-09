@@ -114,6 +114,13 @@ const buildActualLookup = (rows) => {
 };
 
 const CostRatioComparison2026Table = () => {
+  const citySortOrder = ['四川', '重庆', '深圳', '杭州', '南京', '宁波', '广州', '上海', '北京', '合计'];
+  const normalizeCityForSort = (value) => {
+    const text = String(value || '').trim();
+    if (text === '合计' || text === '鍚堣') return '合计';
+    return text.replace(/(省|市|鐪亅甯?)$/, '');
+  };
+
   const { data: actualRowsRaw, loading, error } = useFetchData('getCashFlowOverviewCityMonthly', [], []);
   const actualRows = Array.isArray(actualRowsRaw) ? actualRowsRaw : [];
 
@@ -122,7 +129,7 @@ const CostRatioComparison2026Table = () => {
 
     const actualLookup = buildActualLookup(actualRows);
 
-    return BUDGET_ROWS.map((budgetRow) => {
+    const rows = BUDGET_ROWS.map((budgetRow) => {
       const actualRow = actualLookup.get(normalizeCityName(budgetRow.city));
       const diffRow = {
         city: budgetRow.city,
@@ -149,6 +156,14 @@ const CostRatioComparison2026Table = () => {
 
       return diffRow;
     });
+
+    rows.sort((a, b) => {
+      const aIndex = citySortOrder.indexOf(normalizeCityForSort(a.city));
+      const bIndex = citySortOrder.indexOf(normalizeCityForSort(b.city));
+      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    });
+
+    return rows;
   }, [actualRows]);
 
   if (loading) {
@@ -182,10 +197,11 @@ const CostRatioComparison2026Table = () => {
           <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
           {TABLE_TITLE}
         </h3>
+          <div className="mt-2 text-sm text-gray-500 text-left">对比值=实际占比-成本占比</div>
       </div>
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
-        <table className="w-full text-sm text-center text-gray-700 relative">
+        <table className="w-full text-sm text-center text-black relative">
           <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th rowSpan={2} className="px-6 py-2 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
@@ -220,14 +236,14 @@ const CostRatioComparison2026Table = () => {
             </tr>
           </thead>
           <tbody>
-            {comparisonRows.map((row) => (
+            {comparisonRows.map((row, rowIndex) => (
               <tr
                 key={row.city}
-                className={row.isSummary ? 'bg-red-50 font-bold' : 'hover:bg-gray-50 transition-colors'}
+                className={row.isSummary ? 'bg-red-50 font-bold' : `${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-50 transition-colors`}
               >
                 <td
                   className={`px-6 py-2 font-medium sticky left-0 z-10 border-r border-b border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${
-                    row.isSummary ? 'bg-red-50 text-[#a40035]' : 'bg-white text-gray-700'
+                    row.isSummary ? 'bg-red-50 text-[#a40035]' : rowIndex % 2 === 0 ? 'bg-white text-black' : 'bg-gray-50 text-black'
                   }`}
                 >
                   {row.city}
@@ -241,9 +257,9 @@ const CostRatioComparison2026Table = () => {
                     return (
                       <td
                         key={`${row.city}-${sub.key}`}
-                        className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 ${
+                        className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 ${row.isSummary ? 'bg-red-50' : rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${
                           row.isSummary ? 'font-bold' : ''
-                        } ${isNegative ? 'text-[#a40035]' : 'text-gray-700'} ${
+                        } ${isNegative ? 'text-[#a40035]' : 'text-black'} ${
                           sub.key === 'profit_rate' ? 'font-semibold' : ''
                         }`}
                       >

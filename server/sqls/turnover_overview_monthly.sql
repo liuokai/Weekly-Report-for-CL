@@ -1,9 +1,9 @@
       
 -- 2026年门店数据统计
-SELECT a.month                                     AS '统计月份',
-       sum(if(a.main_business_income > 0, 1, 0)) as '在营门店数',
-       SUM(main_business_income)                   AS '主营业务收入',
-       SUM(service_fee)                            AS '服务费',
+SELECT a.month                                   AS '统计月份',
+       sum(if(a.main_business_income > 0, 1, 0)) as 在营门店数,
+       SUM(main_business_income)                 AS '主营业务收入',
+       SUM(service_fee)                          AS '服务费',
        CASE WHEN SUM(main_business_income) = 0 THEN 0 ELSE ROUND(SUM(service_fee) / SUM(main_business_income), 4) END AS '服务费比例',
        SUM(project_commission)                     AS '推拿师成本-项目提成',
        CASE WHEN SUM(main_business_income) = 0 THEN 0 ELSE ROUND(SUM(project_commission) / SUM(main_business_income), 4) END AS '推拿师成本-项目提成比例',
@@ -127,8 +127,9 @@ SELECT a.month                                     AS '统计月份',
        SUM(b.depreciation_charge)                 AS '总折旧',
        round(SUM(if(b.depreciation_charge>0,b.depreciation_charge,0)) / SUM(if(b.depreciation_charge>0,a.net_cash_flow,0)), 2)             AS '投资回收期'
 FROM data_warehouse.dws_profit_store_detail_monthly a
-left join data_warehouse.tmp_store_depreciation_charge b on a.store_code=b.store_code
-WHERE a.month >= '2026-01'
+         left join data_warehouse.tmp_store_depreciation_charge b on a.store_code = b.store_code
+WHERE length(a.store_code) = 6
+  and a.month >= '2026-01'
   AND a.month < DATE_FORMAT(CURDATE(), '%Y-%m')
 GROUP BY a.month
 ORDER BY a.month;
