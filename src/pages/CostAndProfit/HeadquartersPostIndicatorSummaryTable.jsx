@@ -46,8 +46,8 @@ const VISIBLE_DETAIL_COLUMNS = DETAIL_COLUMNS.filter((column) => !HIDDEN_DETAIL_
 const FROZEN_COLUMN_WIDTHS = [120, 120, 120, 140];
 const FROZEN_DIVIDER_SHADOW = '1px 0 0 0 #d1d5db, 2px 0 0 0 #ffffff, 4px 0 8px -4px rgba(0,0,0,0.12)';
 const FROZEN_DIVIDER_SHADOW_SOFT = '1px 0 0 0 #d1d5db, 2px 0 0 0 #ffffff, 4px 0 8px -4px rgba(0,0,0,0.08)';
-const FROZEN_HEADER_DIVIDER_SHADOW = '1px 0 0 0 #d1d5db, 2px 0 0 0 #f9fafb, 4px 0 8px -4px rgba(0,0,0,0.12)';
-const FROZEN_HEADER_DIVIDER_SHADOW_SOFT = '1px 0 0 0 #d1d5db, 2px 0 0 0 #f9fafb, 4px 0 8px -4px rgba(0,0,0,0.08)';
+const FROZEN_HEADER_DIVIDER_SHADOW = 'none';
+const FROZEN_HEADER_DIVIDER_SHADOW_SOFT = 'none';
 
 const getFrozenColumnStyle = (index) => ({
   left: `${FROZEN_COLUMN_WIDTHS.slice(0, index).reduce((sum, width) => sum + width, 0)}px`,
@@ -88,9 +88,20 @@ const formatAmount = (value, allowDash = false) => {
   });
 };
 
+const formatDateTimeValue = (value) => {
+  if (value == null || value === '') return '-';
+  const text = String(value).trim().replace('T', ' ');
+  const match = text.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/);
+  if (match) return `${match[1]} ${match[2]}`;
+  return text.length >= 19 ? text.slice(0, 19) : text;
+};
+
 const formatDetailValue = (value, column) => {
   if (value == null || value === '') return '-';
   if (column.isAmount) return formatAmount(value);
+  if (['created_on', 'send_bank_time', 'bank_return_time'].includes(column.key)) {
+    return formatDateTimeValue(value);
+  }
   return String(value);
 };
 
@@ -217,32 +228,32 @@ const HeadquartersPostIndicatorSummaryTable = () => {
 
         <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
           <table className="w-full text-sm text-center text-black relative">
-            <thead className="bg-gray-50 text-xs text-gray-600 sticky top-0 z-20 shadow-sm">
+            <thead className="relative bg-gray-50 text-xs text-gray-600 sticky top-0 z-30 shadow-none after:pointer-events-none after:absolute after:left-0 after:right-0 after:bottom-[-2px] after:h-[3px] after:border-t after:border-gray-300 after:bg-gray-50 after:box-border after:content-['']">
               <tr>
                 <th
                   rowSpan={3}
-                  className="relative px-6 py-2 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-gray-50 after:box-border after:content-['']"
+                  className="relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] border-b border-gray-300 whitespace-nowrap"
                   style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW }}
                 >
                   事件
                 </th>
                 <th
                   rowSpan={3}
-                  className="relative px-6 py-2 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-gray-50 after:box-border after:content-['']"
+                  className="relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] border-b border-gray-300 whitespace-nowrap"
                   style={{ ...getFrozenColumnStyle(1), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW_SOFT }}
                 >
                   任务
                 </th>
                 <th
                   rowSpan={3}
-                  className="relative px-6 py-2 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-gray-50 after:box-border after:content-['']"
+                  className="relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] border-b border-gray-300 whitespace-nowrap"
                   style={{ ...getFrozenColumnStyle(2), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW_SOFT }}
                 >
                   岗位
                 </th>
                 <th
                   rowSpan={3}
-                  className="relative px-6 py-2 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-gray-50 after:box-border after:content-['']"
+                  className="relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] border-b border-gray-300 whitespace-nowrap"
                   style={{ ...getFrozenColumnStyle(3), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW }}
                 >
                   人员名称

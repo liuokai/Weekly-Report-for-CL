@@ -115,9 +115,15 @@ const getCellAmount = (row, config) => {
 };
 
 const getCellRatio = (row, config, options = {}) => {
-  const { isSummary = false, summaryTotalIncome = null } = options;
+  const { isSummary = false, summaryTotalIncome = null, summaryTotalCost = null, sectionCenter = '' } = options;
 
   if (isSummary) {
+    if (sectionCenter === '人工成本' || sectionCenter === '固定成本' || config.isGrandTotal) {
+      const totalCost = summaryTotalCost == null ? toNumber(row.total_cost) : toNumber(summaryTotalCost);
+      if (!totalCost) return null;
+      return getCellAmount(row, config) / totalCost;
+    }
+
     const totalIncome = summaryTotalIncome == null ? toNumber(row.total_income) : toNumber(summaryTotalIncome);
     if (!totalIncome) return null;
     return getCellAmount(row, config) / totalIncome;
@@ -154,6 +160,11 @@ const HeadquartersCostBudgetTable = () => {
 
   const summaryTotalIncome = useMemo(
     () => profitData.reduce((sum, row) => sum + toNumber(row.total_income), 0),
+    [profitData]
+  );
+
+  const summaryTotalCost = useMemo(
+    () => profitData.reduce((sum, row) => sum + toNumber(row.total_cost), 0),
     [profitData]
   );
 
@@ -283,7 +294,9 @@ const HeadquartersCostBudgetTable = () => {
                       const amount = getCellAmount(column.row, item);
                       const ratio = getCellRatio(column.row, item, {
                         isSummary: column.isSummary,
-                        summaryTotalIncome
+                        summaryTotalIncome,
+                        summaryTotalCost,
+                        sectionCenter: section.center
                       });
                       const zeroAsDash = Boolean(item.zeroAsDash);
                       const amountText = formatAmount(amount, zeroAsDash);

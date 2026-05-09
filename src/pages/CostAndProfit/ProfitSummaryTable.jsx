@@ -11,6 +11,7 @@ const ProfitSummaryTable = () => {
     const totals = profitData.reduce(
       (acc, row) => {
         acc.main_business_income += Number(row.main_business_income) || 0;
+        acc.hq_total_income += Number(row.hq_total_income) || 0;
         acc.store_total_profit += Number(row.store_total_profit) || 0;
         acc.hq_total_profit += Number(row.hq_total_profit) || 0;
         acc.total_profit += Number(row.total_profit) || 0;
@@ -18,20 +19,22 @@ const ProfitSummaryTable = () => {
       },
       {
         main_business_income: 0,
+        hq_total_income: 0,
         store_total_profit: 0,
         hq_total_profit: 0,
         total_profit: 0
       }
     );
 
-    const revenue = totals.main_business_income;
+    const storeRevenue = totals.main_business_income;
+    const totalRevenue = totals.main_business_income + totals.hq_total_income;
 
     return {
       month: '合计',
       ...totals,
-      store_profit_margin: revenue ? totals.store_total_profit / revenue : 0,
-      hq_profit_margin: revenue ? totals.hq_total_profit / revenue : 0,
-      total_profit_margin: revenue ? totals.total_profit / revenue : 0,
+      store_profit_margin: storeRevenue ? totals.store_total_profit / storeRevenue : 0,
+      hq_profit_margin: storeRevenue ? totals.hq_total_profit / storeRevenue : 0,
+      total_profit_margin: totalRevenue ? totals.total_profit / totalRevenue : 0,
       isSummary: true
     };
   }, [profitData]);
@@ -105,7 +108,10 @@ const ProfitSummaryTable = () => {
                 统计月份
               </th>
               <th rowSpan={2} className="px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300">
-                营业额
+                门店营业额
+              </th>
+              <th rowSpan={2} className="px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300">
+                总部收入
               </th>
               <th colSpan={2} className="px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300 bg-gray-100">
                 门店利润
@@ -148,6 +154,9 @@ const ProfitSummaryTable = () => {
                   {formatAmount(row.main_business_income)}
                 </td>
                 <td className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} text-black`}>
+                  {formatAmount(row.hq_total_income)}
+                </td>
+                <td className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} text-black`}>
                   {formatAmount(row.store_total_profit)}
                 </td>
                 <td className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} text-black`}>
@@ -178,6 +187,9 @@ const ProfitSummaryTable = () => {
                 </td>
                 <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(summaryRow.main_business_income)}
+                </td>
+                <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
+                  {formatAmount(summaryRow.hq_total_income)}
                 </td>
                 <td className="px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 text-black">
                   {formatAmount(summaryRow.store_total_profit)}
