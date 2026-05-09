@@ -582,8 +582,27 @@ const CostStructureContainer = () => {
 
   const firstColumnLabel = viewDimension === 'city' ? '城市名称' : '门店名称';
 
+  const getMetricBaseKey = (key) => {
+    if (key.endsWith('_budget')) return key.slice(0, -7);
+    if (key.endsWith('_actual')) return key.slice(0, -7);
+    if (key.endsWith('_variance')) return key.slice(0, -9);
+    return key;
+  };
+
+  const isAmountMetric = (key) => {
+    const baseKey = getMetricBaseKey(key);
+    return !['profit_rate', 'actual_profit_rate', 'payback_period', 'store_operation_status'].includes(baseKey);
+  };
+
   const formatNumber = (value) => {
     return Number(value).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  const formatAmountInWan = (value) => {
+    return (Number(value) / 10000).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
@@ -650,14 +669,14 @@ const CostStructureContainer = () => {
 
     // 根据显示类型返回相应的值
     if (displayType === 'amount') {
-      return formatNumber(num);
+      return isAmountMetric(key) ? formatAmountInWan(num) : formatNumber(num);
     } else if (displayType === 'percentage') {
       const percentage = calculatePercentage();
       return percentage !== null ? `${percentage.toFixed(2)}%` : '-';
     } else {
       // 原来的合并显示逻辑（向后兼容）
       const percentage = calculatePercentage();
-      const amountText = formatNumber(num);
+      const amountText = isAmountMetric(key) ? formatAmountInWan(num) : formatNumber(num);
 
       if (percentage === null) {
         return amountText;
@@ -675,11 +694,14 @@ const CostStructureContainer = () => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 relative">
       <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+        <div className="flex flex-col items-start">
         <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
           {viewDimension === 'city' ? '城市维度门店' : '门店维度'}成本结构分析
         </h3>
+        <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div>
         
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
@@ -767,7 +789,7 @@ const CostStructureContainer = () => {
                 `}
               >
                 <td className={`px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300
-                  ${row.isSummary ? 'bg-red-50 text-[#a40035]' : 'bg-white text-gray-700'}
+                  ${row.isSummary ? 'bg-red-50 text-[#A40035]' : 'bg-white text-gray-700'}
                   shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]
                 `}>
                   {row[firstColumnHeader]}
@@ -781,8 +803,8 @@ const CostStructureContainer = () => {
                       
                       return (
                         <td key={`${gIdx}-${sIdx}`} className={`px-6 py-4 text-right whitespace-nowrap border-r border-gray-300
-                          ${row.isSummary ? 'text-[#a40035]' : ''}
-                          ${isDiff && val < 0 ? 'text-red-600' : ''}
+                          ${row.isSummary ? 'text-[#A40035]' : ''}
+                          ${isDiff && val < 0 ? 'text-[#A40035]' : ''}
                           ${isDiff && val > 0 ? 'text-green-600' : ''}
                           ${isPercentageColumn ? 'bg-gray-50/50' : ''}
                         `}>
@@ -793,8 +815,8 @@ const CostStructureContainer = () => {
                   } else {
                     return (
                       <td key={gIdx} className={`px-6 py-4 text-right whitespace-nowrap border-r border-gray-300
-                        ${row.isSummary ? 'text-[#a40035]' : ''}
-                        ${group.key.includes('_variance') && row[group.key] < 0 ? 'text-red-600' : ''}
+                        ${row.isSummary ? 'text-[#A40035]' : ''}
+                        ${group.key.includes('_variance') && row[group.key] < 0 ? 'text-[#A40035]' : ''}
                         ${group.key.includes('_variance') && row[group.key] > 0 ? 'text-green-600' : ''}
                       `}>
                         {formatCellValue(group.key, row)}

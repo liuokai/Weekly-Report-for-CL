@@ -32,6 +32,17 @@ const DETAIL_COLUMNS = [
   { key: 'fukuan', label: '付款状态', width: '120px' }
 ];
 
+const FROZEN_COLUMN_WIDTHS = [120, 120, 120, 140];
+const FROZEN_DIVIDER_SHADOW = 'inset -1px 0 0 #d1d5db, 2px 0 5px -2px rgba(0,0,0,0.1)';
+const FROZEN_DIVIDER_SHADOW_SOFT = 'inset -1px 0 0 #d1d5db, 2px 0 5px -2px rgba(0,0,0,0.08)';
+
+const getFrozenColumnStyle = (index) => ({
+  left: `${FROZEN_COLUMN_WIDTHS.slice(0, index).reduce((sum, width) => sum + width, 0)}px`,
+  minWidth: `${FROZEN_COLUMN_WIDTHS[index]}px`,
+  width: `${FROZEN_COLUMN_WIDTHS[index]}px`,
+  maxWidth: `${FROZEN_COLUMN_WIDTHS[index]}px`
+});
+
 const toNumber = (value) => {
   if (value == null || value === '') return 0;
   const num = Number(value);
@@ -195,22 +206,35 @@ const HeadquartersPostIndicatorSummaryTable = () => {
           <table className="w-full text-sm text-center text-gray-700 relative">
             <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
               <tr>
-                <th rowSpan={3} className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-b border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                <th
+                  rowSpan={3}
+                  className="px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap"
+                  style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
+                >
                   事件
                 </th>
-                <th rowSpan={3} className="px-6 py-4 font-bold bg-gray-50 z-20 border-r border-b border-gray-300 min-w-[100px]">
+                <th
+                  rowSpan={3}
+                  className="px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap"
+                  style={{ ...getFrozenColumnStyle(1), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
+                >
                   任务
                 </th>
-                <th rowSpan={3} className="px-6 py-4 font-bold bg-gray-50 z-20 border-r border-b border-gray-300 min-w-[100px]">
+                <th
+                  rowSpan={3}
+                  className="px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap"
+                  style={{ ...getFrozenColumnStyle(2), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
+                >
                   岗位
                 </th>
-                <th rowSpan={3} className="px-6 py-4 font-bold bg-gray-50 z-20 border-r border-b border-gray-300 min-w-[140px]">
-                  人员工号
-                </th>
-                <th rowSpan={3} className="px-6 py-4 font-bold bg-gray-50 z-20 border-r border-b border-gray-300 min-w-[120px]">
+                <th
+                  rowSpan={3}
+                  className="px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap"
+                  style={{ ...getFrozenColumnStyle(3), boxShadow: FROZEN_DIVIDER_SHADOW }}
+                >
                   人员名称
                 </th>
-                <th rowSpan={3} className="px-6 py-4 font-bold bg-gray-50 z-20 border-r border-b border-gray-300 min-w-[260px]">
+                <th rowSpan={3} className="px-6 py-4 font-bold bg-gray-50 z-20 border-r border-b border-gray-300 min-w-[260px] whitespace-nowrap">
                   预算科目详情
                 </th>
                 <th colSpan={7} className="px-6 py-2 font-bold whitespace-nowrap text-center border-r border-b border-gray-300 bg-gray-100">
@@ -249,19 +273,28 @@ const HeadquartersPostIndicatorSummaryTable = () => {
             <tbody className="divide-y divide-gray-100">
               {tableRows.map((row, index) => (
                 <tr key={`${row.job_number}-${row.name}-${row.budget_subject}-${index}`} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-white text-gray-700">
+                  <td
+                    className="px-6 py-4 font-medium sticky z-10 whitespace-nowrap bg-white text-gray-700"
+                    style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
+                  >
                     {row.event || '-'}
                   </td>
-                  <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300">
+                  <td
+                    className="px-6 py-4 text-center whitespace-nowrap sticky z-10 bg-white"
+                    style={{ ...getFrozenColumnStyle(1), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
+                  >
                     {row.task || '-'}
                   </td>
-                  <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300">
+                  <td
+                    className="px-6 py-4 text-center whitespace-nowrap sticky z-10 bg-white"
+                    style={{ ...getFrozenColumnStyle(2), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
+                  >
                     {row.post_name || '-'}
                   </td>
-                  <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
-                    {row.job_number || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300">
+                  <td
+                    className="px-6 py-4 text-center whitespace-nowrap sticky z-10 bg-white"
+                    style={{ ...getFrozenColumnStyle(3), boxShadow: FROZEN_DIVIDER_SHADOW }}
+                  >
                     {row.job_number ? (
                       <button
                         type="button"

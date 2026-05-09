@@ -1,7 +1,11 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import useFetchData from '../../hooks/useFetchData';
 
 const TABLE_TITLE = '总部成本预算';
+
+
+const FROZEN_DIVIDER_SHADOW = 'inset -1px 0 0 #d1d5db, 2px 0 5px -2px rgba(0,0,0,0.1)';
+const FROZEN_DIVIDER_SHADOW_SOFT = 'inset -1px 0 0 #d1d5db, 2px 0 5px -2px rgba(0,0,0,0.08)';
 
 const FIXED_COST_KNOWN_KEYS = [
   'total_rent_fee',
@@ -30,7 +34,7 @@ const SECTION_CONFIG = [
       { subject: '推拿之家', amountKey: 'total_massage_home_budget', ratioKey: 'total_massage_home_budget_ratio' },
       { subject: '用户中心', amountKey: 'total_user_center_budget', ratioKey: 'total_user_center_budget_ratio' },
       { subject: '投融资管理', amountKey: 'total_investment_financing_budget', ratioKey: 'total_investment_financing_budget_ratio' },
-      { subject: '数字化中心', amountKey: 'total_digital_platform_budget', ratioKey: 'total_digital_platform_budget_ratio' },
+      { subject: '数字化中台', amountKey: 'total_digital_platform_budget', ratioKey: 'total_digital_platform_budget_ratio' },
       { subject: '小计', amountKey: 'total_labor_cost', ratioKey: 'total_labor_cost_ratio', isSubtotal: true }
     ]
   },
@@ -67,7 +71,7 @@ const toNumber = (value) => {
 const formatAmount = (value, zeroAsDash = false) => {
   const num = toNumber(value);
   if (zeroAsDash && Math.abs(num) < 0.000001) return '-';
-  return num.toLocaleString('zh-CN', {
+  return (num / 10000).toLocaleString('zh-CN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
@@ -191,6 +195,7 @@ const HeadquartersCostBudgetTable = () => {
           <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
           {TABLE_TITLE}
         </h3>
+        <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div>
       </div>
 
       <div className="overflow-x-auto overflow-y-auto max-h-[900px]">
@@ -199,13 +204,13 @@ const HeadquartersCostBudgetTable = () => {
             <tr>
               <th
                 rowSpan={2}
-                className="px-6 py-4 font-bold text-center align-middle sticky left-0 bg-gray-50 z-30 border-r border-b border-gray-300 min-w-[120px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
+                className="px-6 py-4 font-bold text-center align-middle sticky left-0 bg-gray-50 z-30 border-b border-gray-300 min-w-[120px]" style={{ boxShadow: FROZEN_DIVIDER_SHADOW }}
               >
                 中心
               </th>
               <th
                 rowSpan={2}
-                className="px-6 py-4 font-bold text-center align-middle sticky left-[120px] bg-gray-50 z-30 border-r border-b border-gray-300 min-w-[160px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]"
+                className="px-6 py-4 font-bold text-center align-middle sticky left-[120px] bg-gray-50 z-30 border-b border-gray-300 min-w-[160px]" style={{ boxShadow: FROZEN_DIVIDER_SHADOW }}
               >
                 科目
               </th>
@@ -248,15 +253,13 @@ const HeadquartersCostBudgetTable = () => {
                     {rowIndex === 0 && (
                       <td
                         rowSpan={section.rows.length}
-                        className={`px-6 py-4 font-medium text-center align-middle sticky left-0 z-10 border-r border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${stickyBgClass}`}
+                        className={`px-6 py-4 font-medium text-center align-middle sticky left-0 z-10 ${stickyBgClass}`} style={{ boxShadow: FROZEN_DIVIDER_SHADOW }}
                       >
                         {section.center}
                       </td>
                     )}
                     <td
-                      className={`px-6 py-4 font-medium text-center align-middle sticky left-[120px] z-10 border-r border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] ${
-                        isSubtotal ? 'bg-gray-100' : 'bg-white'
-                      }`}
+                      className={`px-6 py-4 font-medium text-center align-middle sticky left-[120px] z-10 ${isSubtotal ? 'bg-gray-100' : 'bg-white'}`} style={{ boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
                     >
                       {item.subject}
                     </td>
@@ -300,3 +303,7 @@ const HeadquartersCostBudgetTable = () => {
 };
 
 export default HeadquartersCostBudgetTable;
+
+
+
+

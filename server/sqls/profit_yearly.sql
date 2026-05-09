@@ -1,3 +1,4 @@
+      
 -- 年度利润统计
 WITH annual_aggregate AS (
 SELECT
@@ -86,7 +87,7 @@ SELECT
 FROM dws_profit_store_detail_monthly
 WHERE
     month >= '2025-01'
-  AND month <= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
+  AND month < DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y-%m')
   AND LENGTH(store_code) = 6
 GROUP BY SUBSTR(month, 1, 4)
 )
@@ -141,3 +142,5 @@ SELECT
     2) AS yoy_growth
 FROM annual_aggregate
 ORDER BY stat_year DESC;
+
+    

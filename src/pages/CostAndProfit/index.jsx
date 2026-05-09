@@ -9,6 +9,7 @@ import CostStructureContainer from './CostStructureContainer';
 import AnnualCostAnalysis from './AnnualCostAnalysis';
 import HeadquartersCostBudget from './HeadquartersCostBudget';
 import HeadquartersCostBudgetTable from './HeadquartersCostBudgetTable';
+import HeadquartersPostIndicatorSummaryTable from './HeadquartersPostIndicatorSummaryTable';
 import BudgetCostRatioTable from './BudgetCostRatioTable';
 import CostRatioComparison2026Table from './CostRatioComparison2026Table';
 import StoreActualCostRatio2026Table from './StoreActualCostRatio2026Table';
@@ -685,7 +686,8 @@ const CostAndProfitTab = () => {
 
 
 
-
+      {/* 总部岗位及指标汇总 */}
+      <HeadquartersPostIndicatorSummaryTable />
 
 
 

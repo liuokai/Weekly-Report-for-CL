@@ -1,6 +1,6 @@
       
 -- 总部月度利润统计
-SELECT month AS month,
+SELECT month,
        SUM(nvl(management_income, 0))                                                                 AS total_management_income,           -- 管理费收入
        CASE WHEN SUM(nvl(total_income, 0)) = 0 THEN 0 ELSE ROUND(SUM(nvl(management_income, 0)) / SUM(nvl(total_income, 0)), 6) END AS total_management_income_ratio,    -- 管理费收入占比
        SUM(nvl(rental_income, 0))                                                                     AS total_rental_income,               -- 租金收入
@@ -39,7 +39,8 @@ SELECT month AS month,
        SUM(nvl(labor_cost, 0)) + SUM(nvl(fixed_cost, 0))                                              AS total_cost,                         -- 总支出 (总计)
        SUM(nvl(total_income, 0)) - SUM(nvl(labor_cost, 0)) - SUM(nvl(fixed_cost, 0))                  AS total_profit                         -- 总部利润
 FROM data_warehouse.dws_headquarters_cost_budget_monthly a
-WHERE month BETWEEN '2026-01' AND date_format(now(), '%Y-%m')
+WHERE month >= '2026-01'
+  AND month < DATE_FORMAT(CURDATE(), '%Y-%m')
 GROUP BY month
 ORDER BY month;
 

@@ -40,6 +40,8 @@ const isLatestMonthValueColumn = (column) =>
 
 const isAverageColumn = (column) => column?.fullLabel?.includes('投资回收期');
 
+const isOperatingStoreCountColumn = (column) => column?.fullLabel?.includes('在营门店数');
+
 const getNumericTotal = (rows, key) =>
   rows.reduce((sum, row) => {
     const value = row?.[key];
@@ -159,7 +161,7 @@ const formatValue = (value, column) => {
 const StoreDataStatistics2026Table = () => {
   const { data: rowsRaw, loading, error } = useFetchData('getTurnoverOverviewMonthly', [], []);
   const rows = Array.isArray(rowsRaw) ? rowsRaw : [];
-  const statsPeriodLabel = `统计周期：2026-01~${getLastMonthLabel()}`;
+  const statsPeriodLabel = `统计周期：2026-01~${getLastMonthLabel()} （动态给出上月年月）。最近新开门店的总折旧需要人工维护，更新可能不及时。投资回收期=总折旧/当月经营现金流`;
 
   const { firstColumn, secondColumn, dataColumns, headerGroups } = useMemo(() => {
     if (!rows.length) {
@@ -198,6 +200,10 @@ const StoreDataStatistics2026Table = () => {
     };
 
     dataColumns.forEach((column) => {
+      if (isOperatingStoreCountColumn(column)) {
+        summary[column.key] = '';
+        return;
+      }
       if (isRatioColumn(column)) {
         const amountLabel = column.fullLabel.replace(/比例$/, '');
         const amountColumn = dataColumns.find((item) => item.fullLabel === amountLabel);
@@ -344,7 +350,7 @@ const StoreDataStatistics2026Table = () => {
                           key={`${rowIndex}-${column.key}`}
                           className={`px-6 py-4 whitespace-nowrap text-center align-middle ${
                             isNumeric ? 'font-mono' : ''
-                          } ${isNegative ? 'text-red-500' : 'text-gray-700'} ${
+                          } text-black ${
                             isSecondFrozenColumn ? `sticky z-10 ${rowBgClass} border-r-0` : 'border-r border-gray-300'
                           }`}
                           style={
@@ -381,7 +387,7 @@ const StoreDataStatistics2026Table = () => {
                         key={`summary-${column.key}`}
                         className={`px-6 py-4 whitespace-nowrap text-center align-middle ${
                           isNumeric ? 'font-mono' : ''
-                        } ${isNegative ? 'text-red-500' : 'text-gray-800'} ${
+                        } text-black ${
                           isSecondFrozenColumn ? 'sticky z-10 bg-amber-50 border-r-0' : 'border-r border-gray-300'
                         }`}
                         style={
