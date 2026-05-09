@@ -23,8 +23,6 @@ const ACTUAL_TO_BUDGET_KEY_MAP = {
   利润率: 'profit_rate'
 };
 
-const EMPTY_CELL_KEYS = new Set(['other_cost']);
-
 const normalizeCityName = (value) => {
   if (!value) return '';
   const text = String(value).trim();
@@ -47,6 +45,8 @@ const formatDiff = (value) => {
   if (value == null || Number.isNaN(value)) return '';
   return `${value >= 0 ? '' : '-'}${Math.abs(value * 100).toFixed(2)}%`;
 };
+
+const isNegativeValue = (value) => typeof value === 'number' && value < 0;
 
 const deriveMaterialCost = (row) => {
   const subtotal = parsePercent(row.variable_subtotal);
@@ -92,11 +92,6 @@ const buildActualLookup = (rows) => {
 
     HEADER_GROUPS.forEach((group) => {
       group.subHeaders.forEach((sub) => {
-        if (EMPTY_CELL_KEYS.has(sub.key)) {
-          summary[sub.key] = '';
-          return;
-        }
-
         const numericRows = normalizedRows
           .map((row) => {
             if (sub.key === 'material_cost' && (row[sub.key] == null || row[sub.key] === '')) {
@@ -136,11 +131,6 @@ const CostRatioComparison2026Table = () => {
 
       HEADER_GROUPS.forEach((group) => {
         group.subHeaders.forEach((sub) => {
-          if (EMPTY_CELL_KEYS.has(sub.key)) {
-            diffRow[sub.key] = '';
-            return;
-          }
-
           const actualValue = actualRow
             ? sub.key === 'material_cost'
               ? (parsePercent(actualRow[sub.key]) ?? deriveMaterialCost(actualRow))
@@ -246,13 +236,14 @@ const CostRatioComparison2026Table = () => {
                   group.subHeaders.map((sub) => {
                     const value = row[sub.key];
                     const isEmpty = value === '';
+                    const isNegative = isNegativeValue(value);
 
                     return (
                       <td
                         key={`${row.city}-${sub.key}`}
                         className={`px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono ${
                           row.isSummary ? 'font-bold' : ''
-                        } text-gray-700 ${
+                        } ${isNegative ? 'text-[#a40035]' : 'text-gray-700'} ${
                           sub.key === 'profit_rate' ? 'font-semibold' : ''
                         }`}
                       >

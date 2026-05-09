@@ -14,7 +14,6 @@ import CostRatioComparison2026Table from './CostRatioComparison2026Table';
 import StoreActualCostRatio2026Table from './StoreActualCostRatio2026Table';
 import StoreDataStatistics2026Table from './StoreDataStatistics2026Table';
 import ProfitSummaryTable from './ProfitSummaryTable';
-import HeadquartersPostIndicatorSummaryTable from './HeadquartersPostIndicatorSummaryTable';
 import useFetchData from '../../hooks/useFetchData';
 import dataLoader from '../../utils/dataLoader';
 
@@ -361,8 +360,8 @@ const CostAndProfitTab = () => {
                         key={metric}
                         onClick={() => setModalActiveMetric(metric)}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${modalActiveMetric === metric
-                            ? 'bg-[#a40035] text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-[#a40035] text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                           }`}
                       >
                         {metric === 'monthly_profit' && '月度利润'}
@@ -498,6 +497,11 @@ const CostAndProfitTab = () => {
           </div>
         </div>
       </div>
+
+
+      {/* 利润汇总 */}
+      <ProfitSummaryTable />
+
 
       {/* Annual Cost Analysis */}
       <AnnualCostAnalysis data={latestRow} />
@@ -654,17 +658,6 @@ const CostAndProfitTab = () => {
       </div>
 
 
-      {/* 城市维度门店成本结构分析 */}
-
-    @  {/* Cost Structure Analysis */}
-      <CostStructureContainer />
-
-
-      {/* 总部成本预算 */}
-      {/* Headquarters Cost Budget */}
-      <HeadquartersCostBudgetTable />
-      
-
       {/* 2026年门店数据统计 */}
       <StoreDataStatistics2026Table />
 
@@ -679,11 +672,23 @@ const CostAndProfitTab = () => {
       {/* 成本占比对比 */}
       <CostRatioComparison2026Table />
 
-      {/* 利润汇总 */}
-      <ProfitSummaryTable />
 
-      {/* 总部岗位及指标汇总 */}
-      <HeadquartersPostIndicatorSummaryTable />
+      {/* 城市维度门店成本结构分析 */}
+
+      {/* Cost Structure Analysis */}
+      <CostStructureContainer />
+
+
+      {/* 总部成本预算 */}
+      {/* Headquarters Cost Budget */}
+      <HeadquartersCostBudgetTable />
+
+
+
+
+
+
+
 
 
 

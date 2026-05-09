@@ -83,14 +83,8 @@ const buildHeaderGroups = (columns) => {
     });
 };
 
-const isHighlightValue = (column, value) => {
-  if (!isNumericValue(value)) return false;
-  const numberValue = Number(value);
-  if (column.group === '变动成本' && column.title !== '小计' && column.title !== '资产维护') {
-    return numberValue >= 0.05;
-  }
-  return false;
-};
+const isNegativeProfitRateValue = (column, value) =>
+  column.title === '利润率' && isNumericValue(value) && Number(value) < 0;
 
 const StoreActualCostRatio2026Table = () => {
   const { data: rowsRaw, loading, error } = useFetchData('getCashFlowOverviewCityMonthly', [], []);
@@ -178,7 +172,7 @@ const StoreActualCostRatio2026Table = () => {
             <tr>
               <th
                 rowSpan={2}
-                className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-b border-gray-300 min-w-[90px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
+                className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-b border-gray-300 min-w-[120px] whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
               >
                 {firstColumn.title}
               </th>
@@ -214,26 +208,26 @@ const StoreActualCostRatio2026Table = () => {
             {tableRows.map((row, rowIndex) => {
               const isSummary = row.isSummary;
               const rowBgClass = isSummary ? 'bg-red-50 font-bold' : 'hover:bg-gray-50 transition-colors';
-              const stickyBgClass = isSummary ? 'bg-red-50 text-[#a40035]' : 'bg-white text-gray-700';
+              const stickyBgClass = isSummary ? 'bg-red-50 text-black' : 'bg-white text-black';
 
               return (
                 <tr key={`${row[firstColumn.key]}-${rowIndex}`} className={rowBgClass}>
                   <td
-                    className={`px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300 ${stickyBgClass} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]`}
+                    className={`px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300 min-w-[120px] whitespace-nowrap ${stickyBgClass} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]`}
                   >
                     {row[firstColumn.key]}
                   </td>
                   {headerGroups.map((group) =>
                     group.columns.map((column) => {
                       const value = row[column.key];
-                      const highlight = isHighlightValue(column, value) && !isSummary;
+                      const isNegativeProfitRate = isNegativeProfitRateValue(column, value);
 
                       return (
                         <td
                           key={`${rowIndex}-${column.key}`}
                           className={`px-6 py-4 border-r border-gray-300 font-mono whitespace-nowrap ${
-                            isSummary ? 'text-[#a40035]' : 'text-gray-700'
-                          } ${highlight ? 'text-red-500' : ''}`}
+                            isNegativeProfitRate ? 'text-red-500' : 'text-black'
+                          }`}
                         >
                           {isNumericValue(value) ? formatPercent(value) : '-'}
                         </td>

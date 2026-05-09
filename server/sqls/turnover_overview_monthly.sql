@@ -1,5 +1,7 @@
+      
 -- 2026年门店数据统计
 SELECT a.month                                     AS '统计月份',
+       sum(if(a.main_business_income > 0, 1, 0)) as '在营门店数',
        SUM(main_business_income)                   AS '主营业务收入',
        SUM(service_fee)                            AS '服务费',
        CASE WHEN SUM(main_business_income) = 0 THEN 0 ELSE ROUND(SUM(service_fee) / SUM(main_business_income), 4) END AS '服务费比例',
@@ -119,13 +121,16 @@ SELECT a.month                                     AS '统计月份',
        CASE WHEN SUM(main_business_income) = 0 THEN 0 ELSE ROUND(SUM(income_tax) / SUM(main_business_income), 4) END AS '所得税金额比例',
        SUM(net_profit)                             AS '净利润',
        CASE WHEN SUM(main_business_income) = 0 THEN 0 ELSE ROUND(SUM(net_profit) / SUM(main_business_income), 4) END AS '净利润比例',
-       SUM(net_cash_flow)                          AS '经营净现金流-经营净现金流',
-       CASE WHEN SUM(main_business_income) = 0 THEN 0 ELSE ROUND(SUM(net_cash_flow) / SUM(main_business_income), 4) END AS '经营净现金流-经营净现金流比例',
-       SUM(cum_net_cash_flow_mgmt)                 AS '累计经营净现金流-累计经营净现金流',
-       SUM(round(payback_period, 2))               AS '投资回收期-投资回收期'
+       SUM(net_cash_flow)                          AS '经营净现金流',
+       CASE WHEN SUM(main_business_income) = 0 THEN 0 ELSE ROUND(SUM(net_cash_flow) / SUM(main_business_income), 4) END AS '经营净现金流比例',
+       SUM(cum_net_cash_flow_mgmt)                 AS '累计经营净现金流',
+       SUM(b.depreciation_charge)                 AS '总折旧',
+       round(SUM(if(b.depreciation_charge>0,b.depreciation_charge,0)) / SUM(if(b.depreciation_charge>0,a.net_cash_flow,0)), 2)             AS '投资回收期'
 FROM data_warehouse.dws_profit_store_detail_monthly a
+left join data_warehouse.tmp_store_depreciation_charge b on a.store_code=b.store_code
 WHERE a.month >= '2026-01'
   AND a.month < DATE_FORMAT(CURDATE(), '%Y-%m')
 GROUP BY a.month
 ORDER BY a.month;
 
+    

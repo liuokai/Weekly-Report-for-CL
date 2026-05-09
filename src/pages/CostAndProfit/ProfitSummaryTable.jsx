@@ -1,10 +1,6 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import useFetchData from '../../hooks/useFetchData';
 
-/**
- * 利润汇总表格组件
- * 显示2026年门店和总部的月度利润汇总数据
- */
 const ProfitSummaryTable = () => {
   const { data: profitDataRaw, loading, error } = useFetchData('getTurnoverProfitTotalMonthly', [], []);
   const profitData = Array.isArray(profitDataRaw) ? profitDataRaw : [];
@@ -40,29 +36,31 @@ const ProfitSummaryTable = () => {
     };
   }, [profitData]);
 
-  // 格式化金额显示（原始金额）
   const formatAmount = (value) => {
     if (value == null || value === '') return '-';
     const numValue = Number(value);
-    if (isNaN(numValue)) return '-';
-    return numValue.toLocaleString('zh-CN', {
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
+    if (Number.isNaN(numValue)) return '-';
+    return (numValue / 10000).toLocaleString('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     });
   };
 
-  // 格式化百分比显示
   const formatPercent = (value) => {
     if (value == null || value === '') return '-';
     const numValue = Number(value);
-    if (isNaN(numValue)) return '-';
-    return (numValue * 100).toFixed(2) + '%';
+    if (Number.isNaN(numValue)) return '-';
+    return `${(numValue * 100).toFixed(2)}%`;
   };
 
-  // 格式化月份显示
+  const isLowTotalProfitMargin = (value) => {
+    const numValue = Number(value);
+    return !Number.isNaN(numValue) && numValue < 0.06;
+  };
+
   const formatMonth = (month) => {
     if (!month) return '';
-    return month.replace('-', '年') + '月';
+    return String(month);
   };
 
   if (loading) {
@@ -91,21 +89,20 @@ const ProfitSummaryTable = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-      {/* 表格标题 */}
       <div className="p-6 border-b border-gray-100 bg-gray-50/50">
         <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
           利润汇总
         </h3>
+        <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div>
       </div>
 
-      {/* 表格内容 */}
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
         <table className="w-full text-sm text-center text-gray-700 relative">
           <thead className="bg-gray-50 text-sm text-gray-600 sticky top-0 z-20 shadow-sm">
             <tr>
               <th rowSpan={2} className="px-6 py-4 font-bold sticky left-0 bg-gray-50 z-30 border-r border-gray-300 min-w-[100px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                时间
+                统计月份
               </th>
               <th rowSpan={2} className="px-6 py-4 font-bold whitespace-nowrap min-w-[120px] text-center border-b border-r border-gray-300">
                 营业额
@@ -144,56 +141,64 @@ const ProfitSummaryTable = () => {
           <tbody className="divide-y divide-gray-100">
             {profitData.map((row, index) => (
               <tr key={row.month || index} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-white text-gray-700">
+                <td className="px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-white text-black">
                   {formatMonth(row.month)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatAmount(row.main_business_income)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatAmount(row.store_total_profit)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatPercent(row.store_profit_margin)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatAmount(row.hq_total_profit)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatPercent(row.hq_profit_margin)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono font-semibold text-[#a40035]">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono font-semibold text-black">
                   {formatAmount(row.total_profit)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono font-semibold text-[#a40035]">
+                <td
+                  className={`px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono font-semibold ${
+                    isLowTotalProfitMargin(row.total_profit_margin) ? 'text-[#a40035]' : 'text-black'
+                  }`}
+                >
                   {formatPercent(row.total_profit_margin)}
                 </td>
               </tr>
             ))}
             {summaryRow && (
               <tr className="bg-red-50 font-bold">
-                <td className="px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-red-50 text-[#a40035]">
+                <td className="px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-red-50 text-black">
                   {summaryRow.month}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-[#a40035]">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatAmount(summaryRow.main_business_income)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-[#a40035]">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatAmount(summaryRow.store_total_profit)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-[#a40035]">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatPercent(summaryRow.store_profit_margin)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-[#a40035]">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatAmount(summaryRow.hq_total_profit)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-[#a40035]">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono text-black">
                   {formatPercent(summaryRow.hq_profit_margin)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono font-semibold text-[#a40035]">
+                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono font-semibold text-black">
                   {formatAmount(summaryRow.total_profit)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono font-semibold text-[#a40035]">
+                <td
+                  className={`px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono font-semibold ${
+                    isLowTotalProfitMargin(summaryRow.total_profit_margin) ? 'text-[#a40035]' : 'text-black'
+                  }`}
+                >
                   {formatPercent(summaryRow.total_profit_margin)}
                 </td>
               </tr>
