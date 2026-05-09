@@ -110,14 +110,22 @@ const StoreActualCostRatio2026Table = () => {
     };
   }, [rows]);
 
-  const tableRows = useMemo(
-    () =>
-      rows.map((row) => ({
-        ...row,
-        isSummary: String(row[firstColumn?.key] || '').trim() === '合计'
-      })),
-    [rows, firstColumn]
-  );
+  const tableRows = useMemo(() => {
+    const mappedRows = rows.map((row, index) => ({
+      ...row,
+      isSummary: String(row[firstColumn?.key] || '').trim() === '合计',
+      __originalIndex: index
+    }));
+
+    mappedRows.sort((a, b) => {
+      if (a.isSummary === b.isSummary) {
+        return a.__originalIndex - b.__originalIndex;
+      }
+      return a.isSummary ? 1 : -1;
+    });
+
+    return mappedRows.map(({ __originalIndex, ...row }) => row);
+  }, [rows, firstColumn]);
 
   if (loading) {
     return (
@@ -190,7 +198,7 @@ const StoreActualCostRatio2026Table = () => {
                 )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {tableRows.map((row, rowIndex) => {
               const isSummary = row.isSummary;
               const rowBgClass = isSummary ? 'bg-red-50 font-bold' : 'hover:bg-gray-50 transition-colors';
@@ -199,7 +207,7 @@ const StoreActualCostRatio2026Table = () => {
               return (
                 <tr key={`${row[firstColumn.key]}-${rowIndex}`} className={rowBgClass}>
                   <td
-                    className={`px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300 min-w-[120px] whitespace-nowrap ${stickyBgClass} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]`}
+                    className={`px-6 py-2 font-medium sticky left-0 z-10 border-r border-b border-gray-300 min-w-[120px] whitespace-nowrap ${stickyBgClass} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]`}
                   >
                     {row[firstColumn.key]}
                   </td>
@@ -211,7 +219,7 @@ const StoreActualCostRatio2026Table = () => {
                       return (
                         <td
                           key={`${rowIndex}-${column.key}`}
-                          className={`px-6 py-4 border-r border-gray-300 font-mono whitespace-nowrap ${
+                          className={`px-6 py-2 border-r border-b border-gray-300 font-mono whitespace-nowrap ${
                             isNegativeProfitRate ? 'text-[#A40035]' : 'text-black'
                           }`}
                         >

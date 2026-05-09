@@ -247,7 +247,7 @@ const HeadquartersCostBudgetTable = () => {
               ]))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {SECTION_CONFIG.map((section) =>
               section.rows.map((item, rowIndex) => {
                 const isSubtotal = Boolean(item.isSubtotal || item.isGrandTotal || item.isProfit);
@@ -259,13 +259,13 @@ const HeadquartersCostBudgetTable = () => {
                     {rowIndex === 0 && (
                       <td
                         rowSpan={section.rows.length}
-                        className={`px-6 py-4 font-medium text-center align-middle sticky left-0 z-10 ${stickyBgClass}`} style={{ boxShadow: FROZEN_DIVIDER_SHADOW }}
+                        className={`px-6 py-2 font-medium text-center align-middle sticky left-0 z-10 border-r border-b border-gray-300 ${stickyBgClass}`} style={{ boxShadow: FROZEN_DIVIDER_SHADOW }}
                       >
                         {section.center}
                       </td>
                     )}
                     <td
-                      className={`px-6 py-4 font-medium text-center align-middle sticky left-[120px] z-10 ${isSubtotal ? 'bg-gray-100' : 'bg-white'}`} style={{ boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
+                      className={`px-6 py-2 font-medium text-center align-middle sticky left-[120px] z-10 border-r border-b border-gray-300 ${isSubtotal ? 'bg-gray-100' : 'bg-white'}`} style={{ boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
                     >
                       {item.subject}
                     </td>
@@ -281,17 +281,17 @@ const HeadquartersCostBudgetTable = () => {
                       return [
                         <td
                           key={`${section.center}-${item.subject}-${column.key}-amount`}
-                          className={`px-6 py-4 text-center align-middle whitespace-nowrap border-r border-gray-300 font-mono ${
-                            profitNegative ? 'text-red-600' : ''
-                          }`}
+                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 font-mono ${
+                             profitNegative ? 'text-[#A40035]' : ''
+                           }`}
                         >
                           {profitNegative ? `-${formatAmount(Math.abs(amount))}` : amountText}
                         </td>,
                         <td
                           key={`${section.center}-${item.subject}-${column.key}-ratio`}
-                          className={`px-6 py-4 text-center align-middle whitespace-nowrap border-r border-gray-300 font-mono ${
-                            ratioNegative ? 'text-red-600' : ''
-                          }`}
+                           className={`px-6 py-2 text-center align-middle whitespace-nowrap border-r border-b border-gray-300 font-mono ${
+                             ratioNegative ? 'text-[#A40035]' : ''
+                           }`}
                         >
                           {ratioText}
                         </td>
@@ -309,6 +309,4 @@ const HeadquartersCostBudgetTable = () => {
 };
 
 export default HeadquartersCostBudgetTable;
-
-
 

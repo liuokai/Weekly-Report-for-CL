@@ -33,8 +33,10 @@ const DETAIL_COLUMNS = [
 ];
 
 const FROZEN_COLUMN_WIDTHS = [120, 120, 120, 140];
-const FROZEN_DIVIDER_SHADOW = 'inset -1px 0 0 #d1d5db, 2px 0 5px -2px rgba(0,0,0,0.1)';
-const FROZEN_DIVIDER_SHADOW_SOFT = 'inset -1px 0 0 #d1d5db, 2px 0 5px -2px rgba(0,0,0,0.08)';
+const FROZEN_DIVIDER_SHADOW = '1px 0 0 0 #d1d5db, 2px 0 0 0 #ffffff, 4px 0 8px -4px rgba(0,0,0,0.12)';
+const FROZEN_DIVIDER_SHADOW_SOFT = '1px 0 0 0 #d1d5db, 2px 0 0 0 #ffffff, 4px 0 8px -4px rgba(0,0,0,0.08)';
+const FROZEN_HEADER_DIVIDER_SHADOW = '1px 0 0 0 #d1d5db, 2px 0 0 0 #f9fafb, 4px 0 8px -4px rgba(0,0,0,0.12)';
+const FROZEN_HEADER_DIVIDER_SHADOW_SOFT = '1px 0 0 0 #d1d5db, 2px 0 0 0 #f9fafb, 4px 0 8px -4px rgba(0,0,0,0.08)';
 
 const getFrozenColumnStyle = (index) => ({
   left: `${FROZEN_COLUMN_WIDTHS.slice(0, index).reduce((sum, width) => sum + width, 0)}px`,
@@ -208,33 +210,33 @@ const HeadquartersPostIndicatorSummaryTable = () => {
               <tr>
                 <th
                   rowSpan={3}
-                  className="px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap"
-                  style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
+                  className="relative px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-gray-50 after:box-border after:content-['']"
+                  style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW }}
                 >
                   事件
                 </th>
                 <th
                   rowSpan={3}
-                  className="px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap"
-                  style={{ ...getFrozenColumnStyle(1), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
+                  className="relative px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-gray-50 after:box-border after:content-['']"
+                  style={{ ...getFrozenColumnStyle(1), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW_SOFT }}
                 >
                   任务
                 </th>
                 <th
                   rowSpan={3}
-                  className="px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap"
-                  style={{ ...getFrozenColumnStyle(2), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
+                  className="relative px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-gray-50 after:box-border after:content-['']"
+                  style={{ ...getFrozenColumnStyle(2), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW_SOFT }}
                 >
                   岗位
                 </th>
                 <th
                   rowSpan={3}
-                  className="px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap"
-                  style={{ ...getFrozenColumnStyle(3), boxShadow: FROZEN_DIVIDER_SHADOW }}
+                  className="relative px-6 py-4 font-bold sticky bg-gray-50 z-30 border-b border-gray-300 whitespace-nowrap after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-gray-50 after:box-border after:content-['']"
+                  style={{ ...getFrozenColumnStyle(3), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW }}
                 >
                   人员名称
                 </th>
-                <th rowSpan={3} className="px-6 py-4 font-bold bg-gray-50 z-20 border-r border-b border-gray-300 min-w-[260px] whitespace-nowrap">
+                <th rowSpan={3} className="px-6 py-4 font-bold bg-gray-50 z-20 border-r border-b border-gray-300 min-w-[520px] whitespace-nowrap">
                   预算科目详情
                 </th>
                 <th colSpan={7} className="px-6 py-2 font-bold whitespace-nowrap text-center border-r border-b border-gray-300 bg-gray-100">
@@ -270,29 +272,29 @@ const HeadquartersPostIndicatorSummaryTable = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {tableRows.map((row, index) => (
                 <tr key={`${row.job_number}-${row.name}-${row.budget_subject}-${index}`} className="hover:bg-gray-50 transition-colors">
                   <td
-                    className="px-6 py-4 font-medium sticky z-10 whitespace-nowrap bg-white text-gray-700"
+                    className="relative px-6 py-2 font-medium sticky z-10 whitespace-nowrap bg-white text-gray-700 border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-white after:box-border after:content-['']"
                     style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_DIVIDER_SHADOW }}
                   >
                     {row.event || '-'}
                   </td>
                   <td
-                    className="px-6 py-4 text-center whitespace-nowrap sticky z-10 bg-white"
+                    className="relative px-6 py-2 text-center whitespace-nowrap sticky z-10 bg-white border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-white after:box-border after:content-['']"
                     style={{ ...getFrozenColumnStyle(1), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
                   >
                     {row.task || '-'}
                   </td>
                   <td
-                    className="px-6 py-4 text-center whitespace-nowrap sticky z-10 bg-white"
+                    className="relative px-6 py-2 text-center whitespace-nowrap sticky z-10 bg-white border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-white after:box-border after:content-['']"
                     style={{ ...getFrozenColumnStyle(2), boxShadow: FROZEN_DIVIDER_SHADOW_SOFT }}
                   >
                     {row.post_name || '-'}
                   </td>
                   <td
-                    className="px-6 py-4 text-center whitespace-nowrap sticky z-10 bg-white"
+                    className="relative px-6 py-2 text-center whitespace-nowrap sticky z-10 bg-white border-r border-b border-gray-300 after:pointer-events-none after:absolute after:top-0 after:-right-[2px] after:h-full after:w-[3px] after:border-l after:border-gray-300 after:bg-white after:box-border after:content-['']"
                     style={{ ...getFrozenColumnStyle(3), boxShadow: FROZEN_DIVIDER_SHADOW }}
                   >
                     {row.job_number ? (
@@ -308,22 +310,22 @@ const HeadquartersPostIndicatorSummaryTable = () => {
                       row.name || '-'
                     )}
                   </td>
-                  <td className="px-6 py-4 text-left border-r border-gray-300 min-w-[260px]">
+                  <td className="px-6 py-2 text-left border-r border-b border-gray-300 min-w-[520px]">
                     {row.budget_subject || '-'}
                   </td>
-                  <td className="px-6 py-4 text-right whitespace-nowrap border-r border-gray-300 font-mono">
+                  <td className="px-6 py-2 text-right whitespace-nowrap border-r border-b border-gray-300 font-mono">
                     {formatAmount(row.budget_amount)}
                   </td>
                   {QUARTER_KEYS.map((quarter) => (
-                    <td key={`${row.job_number}-${quarter}`} className="px-6 py-4 text-right whitespace-nowrap border-r border-gray-300 font-mono">
+                    <td key={`${row.job_number}-${quarter}`} className="px-6 py-2 text-right whitespace-nowrap border-r border-b border-gray-300 font-mono">
                       {formatAmount(row[quarter], true)}
                     </td>
                   ))}
-                  <td className="px-6 py-4 text-right whitespace-nowrap border-r border-gray-300 font-mono">
+                  <td className="px-6 py-2 text-right whitespace-nowrap border-r border-b border-gray-300 font-mono">
                     {formatAmount(row.subtotal, true)}
                   </td>
                   <td
-                    className={`px-6 py-4 text-right whitespace-nowrap border-r border-gray-300 font-mono ${
+                    className={`px-6 py-2 text-right whitespace-nowrap border-r border-b border-gray-300 font-mono ${
                       row.balance_amount < 0 ? 'text-[#A40035]' : ''
                     }`}
                   >
@@ -383,7 +385,7 @@ const HeadquartersPostIndicatorSummaryTable = () => {
                         {DETAIL_COLUMNS.map((column) => (
                           <th
                             key={column.key}
-                            className="border-r border-b border-gray-300 bg-gray-50 px-3 py-3 font-semibold text-center last:border-r-0"
+                            className="border-r border-b border-gray-300 bg-gray-50 px-3 py-2 font-semibold text-center last:border-r-0"
                           >
                             {column.label}
                           </th>
@@ -396,7 +398,7 @@ const HeadquartersPostIndicatorSummaryTable = () => {
                           {DETAIL_COLUMNS.map((column) => (
                             <td
                               key={`${column.key}-${index}`}
-                              className={`border-r border-b border-gray-200 bg-white px-3 py-2 last:border-r-0 ${column.isAmount ? 'font-mono text-right' : 'text-center'}`}
+                              className={`border-r border-b border-gray-300 bg-white px-3 py-2 last:border-r-0 ${column.isAmount ? 'font-mono text-right' : 'text-center'}`}
                             >
                               {formatDetailValue(detailRow[column.key], column)}
                             </td>

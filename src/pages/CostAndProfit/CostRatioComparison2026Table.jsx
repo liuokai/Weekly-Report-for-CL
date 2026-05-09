@@ -219,14 +219,14 @@ const CostRatioComparison2026Table = () => {
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {comparisonRows.map((row) => (
               <tr
                 key={row.city}
                 className={row.isSummary ? 'bg-red-50 font-bold' : 'hover:bg-gray-50 transition-colors'}
               >
                 <td
-                  className={`px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${
+                  className={`px-6 py-2 font-medium sticky left-0 z-10 border-r border-b border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${
                     row.isSummary ? 'bg-red-50 text-[#a40035]' : 'bg-white text-gray-700'
                   }`}
                 >
@@ -241,7 +241,7 @@ const CostRatioComparison2026Table = () => {
                     return (
                       <td
                         key={`${row.city}-${sub.key}`}
-                        className={`px-6 py-4 text-center whitespace-nowrap border-r border-gray-300 font-mono ${
+                        className={`px-6 py-2 text-center whitespace-nowrap border-r border-b border-gray-300 font-mono ${
                           row.isSummary ? 'font-bold' : ''
                         } ${isNegative ? 'text-[#a40035]' : 'text-gray-700'} ${
                           sub.key === 'profit_rate' ? 'font-semibold' : ''

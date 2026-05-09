@@ -780,7 +780,7 @@ const CostStructureContainer = () => {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {data.map((row, idx) => (
               <tr 
                 key={idx} 
@@ -788,7 +788,7 @@ const CostStructureContainer = () => {
                   ${row.isSummary ? 'bg-red-50 font-bold sticky bottom-0 z-20 shadow-inner' : 'hover:bg-gray-50 transition-colors'}
                 `}
               >
-                <td className={`px-6 py-4 font-medium sticky left-0 z-10 border-r border-gray-300
+                <td className={`px-6 py-2 font-medium sticky left-0 z-10 border-r border-b border-gray-300
                   ${row.isSummary ? 'bg-red-50 text-[#A40035]' : 'bg-white text-gray-700'}
                   shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]
                 `}>
@@ -802,7 +802,7 @@ const CostStructureContainer = () => {
                       const isPercentageColumn = sub.type === 'percentage';
                       
                       return (
-                        <td key={`${gIdx}-${sIdx}`} className={`px-6 py-4 text-right whitespace-nowrap border-r border-gray-300
+                        <td key={`${gIdx}-${sIdx}`} className={`px-6 py-2 text-right whitespace-nowrap border-r border-b border-gray-300
                           ${row.isSummary ? 'text-[#A40035]' : ''}
                           ${isDiff && val < 0 ? 'text-[#A40035]' : ''}
                           ${isDiff && val > 0 ? 'text-green-600' : ''}
@@ -814,7 +814,7 @@ const CostStructureContainer = () => {
                     });
                   } else {
                     return (
-                      <td key={gIdx} className={`px-6 py-4 text-right whitespace-nowrap border-r border-gray-300
+                      <td key={gIdx} className={`px-6 py-2 text-right whitespace-nowrap border-r border-b border-gray-300
                         ${row.isSummary ? 'text-[#A40035]' : ''}
                         ${group.key.includes('_variance') && row[group.key] < 0 ? 'text-[#A40035]' : ''}
                         ${group.key.includes('_variance') && row[group.key] > 0 ? 'text-green-600' : ''}
