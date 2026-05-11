@@ -4,6 +4,71 @@ import useFetchData from '../../hooks/useFetchData';
 const TABLE_TITLE = '总部岗位及指标汇总';
 const DETAIL_MODAL_TITLE = '总部岗位及指标明细';
 const QUARTER_KEYS = ['2026Q1', '2026Q2', '2026Q3', '2026Q4'];
+const DEFAULT_NAME_ORDER = [
+  '常小莉',
+  '刘国林',
+  '唐成',
+  '孙凯',
+  '黄英',
+  '谭小华',
+  '梁薇',
+  '聂玉梅',
+  '刘传明',
+  '邓忠超',
+  '李华成',
+  '贺宇',
+  '杨树林',
+  '刘小冬',
+  '廖泽国',
+  '罗骏',
+  '黄永森',
+  '熊生兵',
+  '陈阳',
+  '李峰',
+  '张冬萍',
+  '陈雪晴',
+  '王海飞',
+  '黄旭',
+  '胡丹',
+  '龚建梅',
+  '潘小娅',
+  '唐燕',
+  '周晓青',
+  '党家民',
+  '陈国玲',
+  '王金凤',
+  '王翠芝',
+  '王锦荣',
+  '姜丹',
+  '张云馨',
+  '李雪玉',
+  '严剑飞',
+  '陈国凤',
+  '龙春燕',
+  '代霞',
+  '伍冬非',
+  '邓黎英',
+  '朱艳秋',
+  '袁梦珧',
+  '冯海霞',
+  '杨春燕',
+  '卫雪梅',
+  '杨欢',
+  '石梦',
+  '李中芳',
+  '苏苗',
+  '陶婷',
+  '何彦',
+  '谭淋方',
+  '赵培颖',
+  '房美',
+  '刘庆',
+  '杨佳龙',
+  '何崟雪',
+  '胡亚兰',
+  '唐禹',
+  '邢斌'
+];
 const DETAIL_COLUMNS = [
   { key: 'quarter', label: '归属季度', width: '120px' },
   { key: 'code', label: '单据编号', width: '160px' },
@@ -48,6 +113,9 @@ const FROZEN_DIVIDER_SHADOW = '1px 0 0 0 #d1d5db, 2px 0 0 0 #ffffff, 4px 0 8px -
 const FROZEN_DIVIDER_SHADOW_SOFT = '1px 0 0 0 #d1d5db, 2px 0 0 0 #ffffff, 4px 0 8px -4px rgba(0,0,0,0.08)';
 const FROZEN_HEADER_DIVIDER_SHADOW = 'none';
 const FROZEN_HEADER_DIVIDER_SHADOW_SOFT = 'none';
+const HEADER_BOTTOM_DIVIDER_CLASS =
+  "after:pointer-events-none after:absolute after:left-0 after:right-0 after:bottom-0 after:h-px after:bg-gray-300 after:content-['']";
+const NAME_ORDER_MAP = new Map(DEFAULT_NAME_ORDER.map((name, index) => [name, index]));
 
 const getFrozenColumnStyle = (index) => ({
   left: `${FROZEN_COLUMN_WIDTHS.slice(0, index).reduce((sum, width) => sum + width, 0)}px`,
@@ -105,6 +173,26 @@ const formatDetailValue = (value, column) => {
   return String(value);
 };
 
+const compareTableRows = (a, b) => {
+  const aNameOrder = NAME_ORDER_MAP.get(a.name);
+  const bNameOrder = NAME_ORDER_MAP.get(b.name);
+  const aRank = aNameOrder ?? Number.MAX_SAFE_INTEGER;
+  const bRank = bNameOrder ?? Number.MAX_SAFE_INTEGER;
+
+  if (aRank !== bRank) {
+    return aRank - bRank;
+  }
+
+  return (
+    (a.name || '').localeCompare(b.name || '', 'zh-CN') ||
+    (a.event || '').localeCompare(b.event || '', 'zh-CN') ||
+    (a.task || '').localeCompare(b.task || '', 'zh-CN') ||
+    (a.post_name || '').localeCompare(b.post_name || '', 'zh-CN') ||
+    (a.job_number || '').localeCompare(b.job_number || '', 'zh-CN') ||
+    (a.budget_subject || '').localeCompare(b.budget_subject || '', 'zh-CN')
+  );
+};
+
 const buildTableRows = (rows) => {
   const grouped = new Map();
 
@@ -136,14 +224,16 @@ const buildTableRows = (rows) => {
     grouped.set(key, current);
   });
 
-  return Array.from(grouped.values()).map((row) => {
-    const subtotal = QUARTER_KEYS.reduce((sum, quarter) => sum + toNumber(row[quarter]), 0);
-    return {
-      ...row,
-      subtotal,
-      balance_amount: toNumber(row.budget_amount) - subtotal
-    };
-  });
+  return Array.from(grouped.values())
+    .map((row) => {
+      const subtotal = QUARTER_KEYS.reduce((sum, quarter) => sum + toNumber(row[quarter]), 0);
+      return {
+        ...row,
+        subtotal,
+        balance_amount: toNumber(row.budget_amount) - subtotal
+      };
+    })
+    .sort(compareTableRows);
 };
 
 const HeadquartersPostIndicatorSummaryTable = () => {
@@ -232,64 +322,64 @@ const HeadquartersPostIndicatorSummaryTable = () => {
               <tr>
                 <th
                   rowSpan={3}
-                  className="relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] border-b border-gray-300 whitespace-nowrap"
+                  className={`relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] whitespace-nowrap ${HEADER_BOTTOM_DIVIDER_CLASS}`}
                   style={{ ...getFrozenColumnStyle(0), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW }}
                 >
                   事件
                 </th>
                 <th
                   rowSpan={3}
-                  className="relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] border-b border-gray-300 whitespace-nowrap"
+                  className={`relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] whitespace-nowrap ${HEADER_BOTTOM_DIVIDER_CLASS}`}
                   style={{ ...getFrozenColumnStyle(1), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW_SOFT }}
                 >
                   任务
                 </th>
                 <th
                   rowSpan={3}
-                  className="relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] border-b border-gray-300 whitespace-nowrap"
+                  className={`relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] whitespace-nowrap ${HEADER_BOTTOM_DIVIDER_CLASS}`}
                   style={{ ...getFrozenColumnStyle(2), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW_SOFT }}
                 >
                   岗位
                 </th>
                 <th
                   rowSpan={3}
-                  className="relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] border-b border-gray-300 whitespace-nowrap"
+                  className={`relative isolate overflow-visible px-6 py-2 font-bold sticky bg-gray-50 z-[70] whitespace-nowrap ${HEADER_BOTTOM_DIVIDER_CLASS}`}
                   style={{ ...getFrozenColumnStyle(3), boxShadow: FROZEN_HEADER_DIVIDER_SHADOW }}
                 >
                   人员名称
                 </th>
-                <th rowSpan={3} className="px-6 py-2 font-bold bg-gray-50 z-20 border-r border-b border-gray-300 min-w-[520px] whitespace-nowrap">
+                <th rowSpan={3} className={`relative px-6 py-2 font-bold bg-gray-50 z-20 border-r border-gray-300 min-w-[520px] whitespace-nowrap ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   预算科目详情
                 </th>
-                <th colSpan={7} className="px-6 py-2 font-bold whitespace-nowrap text-center border-r border-b border-gray-300 bg-gray-100">
+                <th colSpan={7} className={`relative px-6 py-2 font-bold whitespace-nowrap text-center border-r border-gray-300 bg-gray-100 ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   成本指标
                 </th>
               </tr>
               <tr>
-                <th rowSpan={2} className="px-6 py-2 font-bold whitespace-nowrap min-w-[130px] text-center border-r border-b border-gray-300 bg-gray-50">
+                <th rowSpan={2} className={`relative px-6 py-2 font-bold whitespace-nowrap min-w-[130px] text-center border-r border-gray-300 bg-gray-50 ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   预算金额
                 </th>
-                <th colSpan={5} className="px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-r border-b border-gray-300 bg-gray-100">
+                <th colSpan={5} className={`relative px-6 py-2 font-bold whitespace-nowrap min-w-[120px] text-center border-r border-gray-300 bg-gray-100 ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   费用预算
                 </th>
-                <th rowSpan={2} className="px-6 py-2 font-bold whitespace-nowrap min-w-[130px] text-center border-r border-b border-gray-300 bg-gray-50">
+                <th rowSpan={2} className={`relative px-6 py-2 font-bold whitespace-nowrap min-w-[130px] text-center border-r border-gray-300 bg-gray-50 ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   结余金额
                 </th>
               </tr>
               <tr>
-                <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+                <th className={`relative px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-r border-gray-300 text-gray-600 ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   2026Q1
                 </th>
-                <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+                <th className={`relative px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-r border-gray-300 text-gray-600 ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   2026Q2
                 </th>
-                <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+                <th className={`relative px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-r border-gray-300 text-gray-600 ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   2026Q3
                 </th>
-                <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+                <th className={`relative px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-r border-gray-300 text-gray-600 ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   2026Q4
                 </th>
-                <th className="px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-b border-r border-gray-300 text-gray-600">
+                <th className={`relative px-6 py-2 font-bold whitespace-nowrap min-w-[90px] text-center bg-gray-50 border-r border-gray-300 text-gray-600 ${HEADER_BOTTOM_DIVIDER_CLASS}`}>
                   小计
                 </th>
               </tr>

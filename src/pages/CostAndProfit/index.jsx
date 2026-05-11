@@ -510,8 +510,7 @@ const CostAndProfitTab = () => {
       <ProfitSummaryTable />
 
 
-      {/* Annual Cost Analysis */}
-      <AnnualCostAnalysis data={latestRow} />
+
 
       {/* Unified Profit Dashboard Container */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -618,6 +617,9 @@ const CostAndProfitTab = () => {
       </div>
 
 
+      {/* 2026年门店数据统计 */}
+      <StoreDataStatistics2026Table />
+
       {/* NEW SECTION: Trend Analysis Chart */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h3 className="text-lg font-bold text-gray-800 mb-6 border-l-4 border-[#a40035] pl-3">门店成本与利润趋势分析</h3>
@@ -665,8 +667,11 @@ const CostAndProfitTab = () => {
       </div>
 
 
-      {/* 2026年门店数据统计 */}
-      <StoreDataStatistics2026Table />
+
+      {/* Annual Cost Analysis */}
+      <AnnualCostAnalysis data={latestRow} />
+
+
 
 
       {/* 2026年门店实际成本占比情况 */}

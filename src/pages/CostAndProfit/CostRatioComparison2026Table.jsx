@@ -163,7 +163,7 @@ const CostRatioComparison2026Table = () => {
       return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
     });
 
-    return rows;
+    return rows.filter((row) => !row.isSummary);
   }, [actualRows]);
 
   if (loading) {

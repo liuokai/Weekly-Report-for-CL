@@ -219,7 +219,7 @@ const HeadquartersCostBudgetTable = () => {
           <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
           {TABLE_TITLE}
         </h3>
-        <div className="mt-2 text-sm text-gray-500 text-left">利润率=利润/门店营业额</div>
+       
         <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div>
       </div>
       
