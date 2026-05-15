@@ -165,7 +165,7 @@ const ProfitSummaryTable = () => {
           <div>
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
-              利润汇总
+              总部+门店月度利润概览
             </h3>
             <div className="mt-2 text-sm text-gray-500 text-left">利润率=利润/门店营业额</div>
             <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div>

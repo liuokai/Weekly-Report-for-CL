@@ -76,6 +76,7 @@ const normalizeActualRow = (row) => {
 const buildActualLookup = (rows) => {
   const lookup = new Map();
   const normalizedRows = [];
+  let summaryRow = null;
 
   rows.forEach((row) => {
     const normalized = normalizeActualRow(row);
@@ -83,11 +84,16 @@ const buildActualLookup = (rows) => {
     if (normalized.city) {
       const cityKey = normalizeCityName(normalized.city);
       lookup.set(cityKey, { ...normalized, city: cityKey });
-      normalizedRows.push({ ...normalized, city: cityKey });
+
+      if (cityKey === '合计') {
+        summaryRow = { ...normalized, city: cityKey };
+      } else {
+        normalizedRows.push({ ...normalized, city: cityKey });
+      }
     }
   });
 
-  if (normalizedRows.length) {
+  if (!summaryRow && normalizedRows.length) {
     const summary = { city: '合计' };
 
     HEADER_GROUPS.forEach((group) => {
@@ -154,7 +160,7 @@ const CostRatioComparison2026Table = ({ queryParams }) => {
             return;
           }
 
-          diffRow[sub.key] = actualValue - budgetValue;
+          diffRow[sub.key] = budgetValue - actualValue;
         });
       });
 
@@ -167,7 +173,10 @@ const CostRatioComparison2026Table = ({ queryParams }) => {
       return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
     });
 
-    return rows.filter((row) => !row.isSummary);
+    const detailRows = rows.filter((row) => !row.isSummary);
+    const summaryRow = rows.find((row) => row.isSummary);
+
+    return summaryRow ? [...detailRows, summaryRow] : detailRows;
   }, [actualRows]);
 
   if (loading) {

@@ -1,4 +1,4 @@
-﻿import React, { useMemo } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import useFetchData from '../../hooks/useFetchData';
 
 const TABLE_TITLE = '总部利润汇总';
@@ -84,6 +84,9 @@ const formatRatio = (value, zeroAsDash = false) => {
 };
 
 const formatMonthLabel = (month, index) => {
+  const quarterMatch = String(month || '').trim().match(/^(\d{4})\s*Q([1-4])$/i);
+  if (quarterMatch) return `${quarterMatch[1]}Q${quarterMatch[2]}`;
+
   const match = String(month || '').match(/^(\d{4})-(\d{2})$/);
   if (match) return `${Number(match[2])}月`;
   return `${index + 1}月`;
@@ -155,7 +158,9 @@ const getCellRatio = (row, config, options = {}) => {
 };
 
 const HeadquartersCostBudgetTable = () => {
-  const { data: profitDataRaw, loading, error } = useFetchData('getHeadquartersProfitMonthly', [], []);
+  const [viewMode, setViewMode] = useState('month');
+  const queryKey = viewMode === 'quarter' ? 'getHeadquartersProfitQuarterly' : 'getHeadquartersProfitMonthly';
+  const { data: profitDataRaw, loading, error } = useFetchData(queryKey, [], []);
   const profitData = Array.isArray(profitDataRaw) ? profitDataRaw : [];
 
   const summaryTotalIncome = useMemo(
@@ -215,12 +220,40 @@ const HeadquartersCostBudgetTable = () => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
       <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-          <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
-          {TABLE_TITLE}
-        </h3>
-       
-        <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
+              {TABLE_TITLE}
+            </h3>
+            <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div>
+          </div>
+
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setViewMode('month')}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${
+                viewMode === 'month'
+                  ? 'bg-white text-[#a40035] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              月份
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('quarter')}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${
+                viewMode === 'quarter'
+                  ? 'bg-white text-[#a40035] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              季度
+            </button>
+          </div>
+        </div>
       </div>
       
 

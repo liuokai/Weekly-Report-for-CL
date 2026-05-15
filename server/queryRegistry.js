@@ -315,6 +315,10 @@ const queryRegistry = {
     sql: loadSql('profit_monthly.sql'),
     description: '总部月度利润统计（含收入、人工成本、固定成本及利润）'
   },
+  getHeadquartersProfitQuarterly: {
+    sql: loadSql('profit_quarter.sql'),
+    description: '总部季度利润统计（含收入、人工成本、固定成本及利润）'
+  },
   // 新店数量统计（年度维度，按城市分列）
   getNewStoreStatisticsYear: {
     sql: loadSql('cash_flow_dws_new_store_statistics_year.sql'),

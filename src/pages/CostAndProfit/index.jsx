@@ -23,6 +23,31 @@ const COST_RATIO_MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => {
   return `2026-${month}`;
 });
 
+const getDefaultCostRatioEndMonth = () => {
+  const now = new Date();
+  const previousMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const previousMonth = `${previousMonthDate.getFullYear()}-${String(previousMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+  if (COST_RATIO_MONTH_OPTIONS.includes(previousMonth)) {
+    return previousMonth;
+  }
+
+  return COST_RATIO_MONTH_OPTIONS[0];
+};
+
+const getQuarterByMonth = (monthValue) => {
+  const matched = String(monthValue || '').match(/(\d{4})-(\d{2})/);
+  if (!matched) return '2026Q1';
+
+  const year = matched[1];
+  const month = Number(matched[2]);
+  const quarter = Math.ceil(month / 3);
+
+  return `${year}Q${quarter}`;
+};
+
+const getDefaultCostRatioQuarter = () => getQuarterByMonth(getDefaultCostRatioEndMonth());
+
 const COST_RATIO_QUARTER_TO_MONTH_RANGE = {
   '2026Q1': ['2026-01', '2026-03'],
   '2026Q2': ['2026-04', '2026-06'],
@@ -32,14 +57,12 @@ const COST_RATIO_QUARTER_TO_MONTH_RANGE = {
 
 const CostAndProfitTab = () => {
   const targetProfitRate = BusinessTargets.profit.annualTargetRate;
-  const storeTargetProfitRate = 12;
+  const storeTargetProfitRate = 0.12;
+  const totalProfitTargetRate = 0.06;
   const [costRatioViewMode, setCostRatioViewMode] = useState('month');
   const [costRatioStartMonth, setCostRatioStartMonth] = useState('2026-01');
-  const [costRatioEndMonth, setCostRatioEndMonth] = useState(COST_RATIO_MONTH_OPTIONS[COST_RATIO_MONTH_OPTIONS.length - 1]);
-  const [costRatioQuarter, setCostRatioQuarter] = useState('2026Q1');
-
-  // 计算年度利润目标：营业额目标 × 6%
-  const annualProfitTarget = BusinessTargets.turnover.annualTarget * 0.06;
+  const [costRatioEndMonth, setCostRatioEndMonth] = useState(getDefaultCostRatioEndMonth);
+  const [costRatioQuarter, setCostRatioQuarter] = useState(getDefaultCostRatioQuarter);
 
   const { data: yearlyRowsRaw, loading: loadingYearly } = useFetchData('getProfitYearly', [], []);
   const yearlyRows = Array.isArray(yearlyRowsRaw) ? yearlyRowsRaw : [];
@@ -91,14 +114,19 @@ const CostAndProfitTab = () => {
     fetchTurnoverTarget();
   }, []);
 
+  // 门店年度利润目标：今年目标值 × 12%
+  const annualProfitTarget = turnoverTarget * storeTargetProfitRate;
+  // 总年度利润目标：今年目标值 × 6%
+  const totalAnnualProfitTarget = turnoverTarget * totalProfitTargetRate;
+
   // 计算总部预算收入（营业额目标 * 0.025）
   const headquartersBudgetIncome = turnoverTarget * 10000 * 0.025; // 单位：元
 
   // 计算总部预算利润目标（预算收入 * 0.06）
   const headquartersProfitTarget = headquartersBudgetIncome * 0.06; // 单位：元
 
-  // 计算总部+门店的年度利润目标（门店目标 + 总部目标）
-  const combinedProfitTarget = annualProfitTarget * 10000 + headquartersProfitTarget; // 统一为元
+  // 计算总部+门店的年度利润目标（总目标口径按营业额目标 × 6%）
+  const combinedProfitTarget = totalAnnualProfitTarget * 10000; // 统一为元
 
   // 计算总部+门店的总利润和利润率
   const totalProfit = currentProfit + headquartersProfit;
@@ -114,7 +142,7 @@ const CostAndProfitTab = () => {
   const combinedProfitValueCompletion = combinedProfitTarget > 0 ? (totalProfit / combinedProfitTarget) * 100 : 0;
 
   // 年度利润率达成率（实际利润率 / 目标利润率）
-  const profitRateCompletion = storeTargetProfitRate > 0 ? (currentProfitRate / storeTargetProfitRate) * 100 : 0;
+  const profitRateCompletion = storeTargetProfitRate > 0 ? ((currentProfitRate / 100) / storeTargetProfitRate) * 100 : 0;
 
   // 总部+门店年度利润率达成率
   const combinedProfitRateCompletion = targetProfitRate > 0 ? (combinedProfitRate / targetProfitRate) * 100 : 0;
@@ -150,7 +178,7 @@ const CostAndProfitTab = () => {
       value: loadingYearly ? '...' : (headquartersProfit / 10000).toFixed(2),
       unit: '万元',
       targetLabel: '年度利润目标',
-      targetValue: `${(headquartersProfitTarget / 10000).toFixed(2)}万元`
+      targetValue: `-`
     }
   ];
 
@@ -161,7 +189,7 @@ const CostAndProfitTab = () => {
       title: '门店年度利润率',
       value: loadingYearly ? '...' : `${currentProfitRate.toFixed(2)}%`,
       targetLabel: '年度利润率目标',
-      targetValue: `${storeTargetProfitRate.toFixed(2)}%`
+      targetValue: `${(storeTargetProfitRate * 100).toFixed(2)}%`
     },
     {
       key: 'headquarters-rate',
@@ -169,7 +197,7 @@ const CostAndProfitTab = () => {
       title: '总部年度利润率',
       value: loadingYearly ? '...' : `${headquartersProfitRate.toFixed(2)}%`,
       targetLabel: '年度利润率目标',
-      targetValue: `0`
+      targetValue: `-`
     }
   ];
 
@@ -500,7 +528,7 @@ const CostAndProfitTab = () => {
           <div className="mt-2 pl-4 text-sm text-gray-500 space-y-1">
             <p>利润值=门店利润+总部利润，</p>
             <p>利润率=（门店利润+总部利润）/（门店营业额+总部收入）</p>
-            <p>注：房租（每月约800多万）、人员社保工资（每月约400多万）等费用为一次性缴纳，因此月初利润会有较大波动</p>
+            <p>注：房租折旧（每月约800多万）、人员社保工资（每月约400多万）等费用为一次性缴纳，因此月初利润会有较大波动</p>
           </div>
         </div>
 
@@ -610,7 +638,7 @@ const CostAndProfitTab = () => {
       </div>
 
 
-      {/* ???????*/}
+      {/* 利润汇总???????*/}
       <ProfitSummaryTable />
 
 
@@ -621,6 +649,10 @@ const CostAndProfitTab = () => {
         {/* Header */}
         <div className="px-8 pt-6 pb-4 bg-white">
           <h3 className="text-lg font-bold text-gray-800 border-l-4 border-[#a40035] pl-3">门店年度利润概览</h3>
+           <div className="mt-2 pl-4 text-sm text-gray-500 space-y-1">
+            <p>投资回收期=总折旧/当月经营现金流</p>
+            <p>统计周期：2026-01~2026-04 最近新开门店的总折旧需要人工维护，更新可能不及时</p>
+          </div>
         </div>
 
         {/* NEW LAYOUT: Split Top (Left/Right) */}
@@ -655,20 +687,6 @@ const CostAndProfitTab = () => {
                 </span>
               </div>
 
-              {/* 年度利润值达成率进度条 */}
-              <div className="mt-4">
-                <UnifiedProgressBar
-                  label="年度利润值达成率"
-                  value={profitValueCompletion}
-                  timeProgress={timeProgress}
-                  height="h-3"
-                />
-                <div className="mt-2 flex items-center justify-end">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${profitValueCompletion >= timeProgress ? 'bg-green-50 text-green-600' : 'bg-red-50 text-[#a40035]'}`}>
-                    {profitValueCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* RIGHT SIDE: Rates */}
@@ -676,7 +694,7 @@ const CostAndProfitTab = () => {
               <div className="mb-4">
                 <p className="text-sm text-gray-500 font-medium mb-1">年度利润率</p>
                 <div className="flex items-baseline gap-2">
-                  <span className={`text-4xl font-bold tracking-tight ${currentProfitRate < 0 ? 'text-[#a40035]' : currentProfitRate >= storeTargetProfitRate ? 'text-[#a40035]' : 'text-gray-900'}`}>
+                  <span className={`text-4xl font-bold tracking-tight ${currentProfitRate < 0 ? 'text-[#a40035]' : currentProfitRate >= storeTargetProfitRate * 100 ? 'text-[#a40035]' : 'text-gray-900'}`}>
                     {loadingYearly ? '...' : currentProfitRate.toFixed(2)}
                     <span className="text-xl ml-1">%</span>
                   </span>
@@ -697,32 +715,34 @@ const CostAndProfitTab = () => {
               <div className="flex items-center gap-2 text-sm mt-2">
                 <span className="text-gray-400">年度利润率目标:</span>
                 <span className="font-semibold text-gray-700 font-mono">
-                  {storeTargetProfitRate.toFixed(2)}%
+                  {(storeTargetProfitRate * 100).toFixed(2)}%
                 </span>
               </div>
 
-              {/* 年度利润率达成率进度条 */}
-              <div className="mt-4">
-                <UnifiedProgressBar
-                  label="年度利润率达成率"
-                  value={profitRateCompletion}
-                  timeProgress={timeProgress}
-                  height="h-3"
-                />
-                <div className="mt-2 flex items-center justify-end">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${profitRateCompletion >= timeProgress ? 'bg-green-50 text-green-600' : 'bg-red-50 text-[#a40035]'}`}>
-                    {profitRateCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
-                  </span>
-                </div>
-              </div>
+              
+            </div>
+          </div>
+
+          <div className="p-8 border-t border-gray-100 bg-white">
+            <UnifiedProgressBar
+              label="年度利润值达成率"
+              value={profitValueCompletion}
+              timeProgress={timeProgress}
+              height="h-3"
+            />
+            <div className="mt-2 flex items-center justify-end">
+              <span className={`text-xs font-medium px-2 py-0.5 rounded ${profitValueCompletion >= timeProgress ? 'bg-green-50 text-green-600' : 'bg-red-50 text-[#a40035]'}`}>
+                {profitValueCompletion >= timeProgress ? '当前进度领先' : '当前进度滞后'}
+              </span>
             </div>
           </div>
         </div>
+        {/* 2026年门店数据统计 */}
+      <StoreDataStatistics2026Table />
       </div>
 
 
-      {/* 2026年门店数据统计 */}
-      <StoreDataStatistics2026Table />
+      
 
       {/* NEW SECTION: Trend Analysis Chart */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -806,7 +826,7 @@ const CostAndProfitTab = () => {
 
 
       {/* 总部利润汇总 */}
-      {/* Headquarters Cost Budget */}.0
+      {/* Headquarters Cost Budget */}
       
       <HeadquartersCostBudgetTable />
 

@@ -311,12 +311,12 @@ const StoreDataStatistics2026Table = () => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
       <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        {/* <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <span className="w-1 h-5 bg-[#a40035] rounded-full"></span>
           {TABLE_TITLE}
         </h3>
         <div className="mt-2 text-sm text-gray-500 text-left">{statsPeriodLabel}</div>
-        <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div>
+        <div className="mt-2 text-sm text-gray-500 text-left">单位：万元</div> */}
       </div>
 
       <div className="overflow-x-auto max-h-[800px] overflow-y-auto">

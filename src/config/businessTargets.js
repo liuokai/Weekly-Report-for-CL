@@ -111,7 +111,7 @@ export const BusinessTargets = {
   // 成本与利润 (Cost & Profit)
   // =================================================================
   profit: {
-    // 年度利润率目标值 (单位：%)
+    // 年度利润率目标值 (单位：%) 
     annualTargetRate: 6.3,
     budgetCostRatioTable: {
       title: '预算成本占比情况',
