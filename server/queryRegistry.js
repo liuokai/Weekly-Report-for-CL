@@ -25,6 +25,10 @@ const queryRegistry = {
     sql: loadSql('avg_order_value_weekly_yoy.sql'),
     description: '获取周度平均客单价及同比'
   },
+  getAvgOrderValueMassageHomeBudget: {
+    sql: loadSql('avg_order_value_massage_home_budget.sql'),
+    description: '获取推拿之家客单价拆解预算执行表'
+  },
   getTurnoverOverview: {
     sql: loadSql('turnover_overview.sql'),
     description: '营业额概览中的年度累计营业额'
@@ -70,6 +74,10 @@ const queryRegistry = {
   getCityTurnover: {
     sql: loadSql('turnover_city_actual_target.sql'),
     description: '获取城市年度营业额数据'
+  },
+  getTurnoverBudgetCity: {
+    sql: loadSql('turnover_budget_city.sql'),
+    description: '获取城市营业额预算与实际对比数据'
   },
   getCityAnnualAvgPrice: {
     sql: loadSql('avg_order_value_city_annual_yoy.sql'),

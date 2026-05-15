@@ -1,0 +1,93 @@
+  const columns = [
+    { 
+      key: 'city', 
+      title: '城市', 
+      dataIndex: 'city',
+      render: (value, row) => (
+        <button
+          className="text-[#a40035] hover:underline font-medium"
+          onClick={() => {
+            setIsPriceDecompositionModal(true);
+            openCityModal(row.city);
+          }}
+        >
+          {value}
+        </button>
+      )
+    },
+    { 
+      key: 'lastYearPrice', 
+      title: '去年客单价', 
+      dataIndex: 'lastYearPrice',
+      render: (val) => `¥${val.toFixed(2)}`
+    },
+    { 
+      key: 'currentPrice', 
+      title: '今年客单价', 
+      dataIndex: 'currentPrice',
+      render: (val) => `¥${val.toFixed(2)}`
+    },
+    { 
+      key: 'yoyRate', 
+      title: '客单价增长率', 
+      dataIndex: 'yoyRate',
+      render: (val) => {
+        const num = parseFloat(String(val).replace('%','')) || 0;
+        const targetRate = BusinessTargets.turnover.priceDecomposition.targetGrowthRate || 3;
+        const isHigh = num >= targetRate;
+        return (
+          <span className={isHigh ? 'text-gray-500' : 'text-red-600'}>
+            {val}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'laborCost',
+      title: '人工支出（工资+社保）（万元）',
+      dataIndex: 'laborCost',
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
+    },
+    {
+      key: 'recruitTrainCost',
+      title: '招聘渠道费及培训费（万元）',
+      dataIndex: 'recruitTrainCost',
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
+    },
+    {
+      key: 'totalCost',
+      title: '费用合计金额（万元）',
+      dataIndex: 'totalCost',
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
+    },
+    {
+      key: 'budget',
+      title: '预算金额（万元）',
+      dataIndex: 'budget',
+      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
+    },
+    {
+      key: 'budgetUsageRate',
+      title: '预算使用率',
+      dataIndex: 'budgetUsageRate'
+    },
+    {
+      key: 'timeProgress',
+      title: '时间进度',
+      dataIndex: 'timeProgress'
+    },
+    {
+      key: 'usageProgressDiff',
+      title: '预算使用进度差',
+      dataIndex: 'usageProgressDiff',
+      render: (val) => {
+        if (val == null) return null;
+        const isNegative = `${val}`.includes('-');
+        return (
+          <span className={isNegative ? 'text-gray-500' : 'text-red-600'}>
+            {val}
+          </span>
+        );
+      }
+    }
+  ];

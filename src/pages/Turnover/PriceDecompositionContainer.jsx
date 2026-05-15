@@ -45,6 +45,8 @@ const PriceDecompositionContainer = () => {
   const { data: cityAnnualPriceData } = useFetchData('getCityAnnualAvgPrice');
   // Fetch annual average price data
   const { data: annualPriceData } = useFetchData('getAnnualAvgPrice');
+  const { data: turnoverOverviewData } = useFetchData('getTurnoverOverview');
+  const { data: massageHomeBudgetData } = useFetchData('getAvgOrderValueMassageHomeBudget');
   // Fetch city weekly average price data
   const { data: cityWeeklyData } = useFetchData('getCityWeeklyAvgPriceYTD', { city: selectedCity }, null, { manual: !(isModalOpen && isPriceDecompositionModal && selectedCity) });
   // Fetch store weekly average price data
@@ -305,6 +307,59 @@ const PriceDecompositionContainer = () => {
     }
   }, [annualPriceData]);
 
+  const massageHomeBudgetSummary = useMemo(() => {
+    const source = Array.isArray(massageHomeBudgetData) ? massageHomeBudgetData : [];
+    const turnoverRows = Array.isArray(turnoverOverviewData) ? turnoverOverviewData : [];
+
+    const latestTurnoverRow = [...turnoverRows]
+      .filter((row) => row && row.year != null)
+      .sort((a, b) => Number(b.year) - Number(a.year))[0];
+
+    const annualTargetWan = latestTurnoverRow?.annual_target ? Number(latestTurnoverRow.annual_target) / 10000 : 0;
+    const samePeriodTurnoverWan = latestTurnoverRow?.same_period_turnover
+      ? Number(latestTurnoverRow.same_period_turnover) / 10000
+      : 0;
+
+    const formatRow = (row) => {
+      const expenseBudget = Number(row?.expense_budget || 0);
+      const laborCost = Number(row?.labor_cost || 0);
+      return {
+        type: row?.row_type || '',
+        expenseBudget,
+        laborCost,
+        subtotal: expenseBudget + laborCost
+      };
+    };
+
+    const budgetRowRaw = source.find((row) => Number(row?.row_order) === 1);
+    const actualRowRaw = source.find((row) => Number(row?.row_order) === 2);
+
+    const budgetRow = {
+      ...formatRow(budgetRowRaw),
+      type: '预算金额（万元）'
+    };
+    const actualRow = {
+      ...formatRow(actualRowRaw),
+      type: '实际金额（万元）'
+    };
+
+    const budgetRatio = annualTargetWan > 0 ? budgetRow.subtotal / annualTargetWan : 0;
+    const actualRatio = samePeriodTurnoverWan > 0 ? actualRow.subtotal / samePeriodTurnoverWan : 0;
+    const balanceRatio = Math.max(budgetRatio - actualRatio, 0);
+
+    return [
+      { ...budgetRow, turnoverRatio: budgetRatio },
+      { ...actualRow, turnoverRatio: actualRatio },
+      {
+        type: '结余',
+        expenseBudget: budgetRow.expenseBudget - actualRow.expenseBudget,
+        laborCost: budgetRow.laborCost - actualRow.laborCost,
+        subtotal: budgetRow.subtotal - actualRow.subtotal,
+        turnoverRatio: balanceRatio
+      }
+    ];
+  }, [massageHomeBudgetData, turnoverOverviewData]);
+
   useEffect(() => {
     if (isModalOpen) {
       document.body.style.overflow = 'hidden';
@@ -316,41 +371,38 @@ const PriceDecompositionContainer = () => {
     };
   }, [isModalOpen]);
 
+  const latestCityPriceYear = useMemo(() => {
+    const years = (Array.isArray(cityAnnualPriceData) ? cityAnnualPriceData : [])
+      .map((row) => Number(row?.sales_year))
+      .filter((year) => Number.isFinite(year));
+
+    return years.length ? Math.max(...years) : null;
+  }, [cityAnnualPriceData]);
+
+  const previousCityPriceYear = latestCityPriceYear ? latestCityPriceYear - 1 : null;
+
   const tableData = useMemo(() => {
-    let source = [];
-    if (cityAnnualPriceData && cityAnnualPriceData.length > 0) {
-      // Find the latest year
-      const years = cityAnnualPriceData.map(d => d.sales_year).filter(y => y);
-      const maxYear = Math.max(...years);
-      
-      // Filter data for the latest year
-      source = cityAnnualPriceData.filter(d => d.sales_year === maxYear);
+    if (!latestCityPriceYear || !Array.isArray(cityAnnualPriceData) || cityAnnualPriceData.length === 0) {
+      return [];
     }
 
-    const timeProgressVal = getTimeProgress();
-
-    return source.map((row, index) => ({
-      key: index,
-      city: row.city_name,
-      lastYearPrice: parseFloat(row.last_year_aov || 0),
-      currentPrice: parseFloat(row.current_year_aov || 0),
-      yoyRate: row.aov_yoy_pct ? `${row.aov_yoy_pct}%` : '0%',
-      laborCost: null,
-      recruitTrainCost: null,
-      totalCost: null,
-      budget: null,
-      budgetUsageRate: null,
-      timeProgress: `${timeProgressVal}%`,
-      usageProgressDiff: null
-    }));
-  }, [cityAnnualPriceData]);
+    return cityAnnualPriceData
+      .filter((row) => Number(row?.sales_year) === latestCityPriceYear)
+      .map((row, index) => ({
+        key: `${row.city_name || 'city'}-${latestCityPriceYear}-${index}`,
+        city: row.city_name,
+        lastYearPrice: parseFloat(row.last_year_aov || 0),
+        currentPrice: parseFloat(row.current_year_aov || 0),
+        yoyRate: row.aov_yoy_pct ? `${row.aov_yoy_pct}%` : '0%'
+      }));
+  }, [cityAnnualPriceData, latestCityPriceYear]);
 
   const [modalColumns, setModalColumns] = useState([]);
 
   const columns = [
-    { 
-      key: 'city', 
-      title: '城市', 
+    {
+      key: 'city',
+      title: '城市',
       dataIndex: 'city',
       render: (value, row) => (
         <button
@@ -364,79 +416,30 @@ const PriceDecompositionContainer = () => {
         </button>
       )
     },
-    { 
-      key: 'lastYearPrice', 
-      title: '去年客单价', 
+    {
+      key: 'lastYearPrice',
+      title: previousCityPriceYear ? `${previousCityPriceYear}年` : '去年',
+      groupTitle: '客单价',
       dataIndex: 'lastYearPrice',
       render: (val) => `¥${val.toFixed(2)}`
     },
-    { 
-      key: 'currentPrice', 
-      title: '今年客单价', 
+    {
+      key: 'currentPrice',
+      title: latestCityPriceYear ? `${latestCityPriceYear}年` : '今年',
+      groupTitle: '客单价',
       dataIndex: 'currentPrice',
       render: (val) => `¥${val.toFixed(2)}`
     },
-    { 
-      key: 'yoyRate', 
-      title: '客单价增长率', 
+    {
+      key: 'yoyRate',
+      title: '增长率',
+      groupTitle: '客单价',
       dataIndex: 'yoyRate',
       render: (val) => {
-        const num = parseFloat(String(val).replace('%','')) || 0;
+        const num = parseFloat(String(val).replace('%', '')) || 0;
         const targetRate = BusinessTargets.turnover.priceDecomposition.targetGrowthRate || 3;
         const isHigh = num >= targetRate;
-        return (
-          <span className={isHigh ? 'text-gray-500' : 'text-red-600'}>
-            {val}
-          </span>
-        );
-      }
-    },
-    {
-      key: 'laborCost',
-      title: '人工支出（工资+社保）（万元）',
-      dataIndex: 'laborCost',
-      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
-    },
-    {
-      key: 'recruitTrainCost',
-      title: '招聘渠道费及培训费（万元）',
-      dataIndex: 'recruitTrainCost',
-      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
-    },
-    {
-      key: 'totalCost',
-      title: '费用合计金额（万元）',
-      dataIndex: 'totalCost',
-      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
-    },
-    {
-      key: 'budget',
-      title: '预算金额（万元）',
-      dataIndex: 'budget',
-      render: (val) => val != null ? `${Number(val).toFixed(2)}` : ''
-    },
-    {
-      key: 'budgetUsageRate',
-      title: '预算使用率',
-      dataIndex: 'budgetUsageRate'
-    },
-    {
-      key: 'timeProgress',
-      title: '时间进度',
-      dataIndex: 'timeProgress'
-    },
-    {
-      key: 'usageProgressDiff',
-      title: '预算使用进度差',
-      dataIndex: 'usageProgressDiff',
-      render: (val) => {
-        if (val == null) return null;
-        const isNegative = `${val}`.includes('-');
-        return (
-          <span className={isNegative ? 'text-gray-500' : 'text-red-600'}>
-            {val}
-          </span>
-        );
+        return <span className={isHigh ? 'text-gray-500' : 'text-red-600'}>{val}</span>;
       }
     }
   ];
@@ -1529,10 +1532,63 @@ const PriceDecompositionContainer = () => {
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+    const formatBudgetAmount = (value) => Number(value || 0).toLocaleString('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    const formatBudgetRatio = (value) => `${(Number(value || 0) * 100).toFixed(2)}%`;
 
     return (
       <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 mb-6 relative overflow-hidden">
         <div className="absolute right-0 top-0 w-32 h-32 bg-[#a40035]/5 rounded-bl-full pointer-events-none"></div>
+
+        <div className="relative z-10 mb-6 w-full overflow-x-auto">
+          <table className="w-full table-fixed border-collapse text-center text-sm text-black">
+            <thead>
+              <tr>
+                <th
+                  rowSpan={2}
+                  className="border border-gray-200 bg-white px-6 py-3 text-lg font-bold whitespace-nowrap"
+                >
+                  推拿之家
+                </th>
+                <th
+                  colSpan={4}
+                  className="border border-gray-200 bg-white px-6 py-3 text-lg font-bold whitespace-nowrap"
+                >
+                  预算科目
+                </th>
+              </tr>
+              <tr>
+                <th className="border border-gray-200 bg-white px-6 py-2 font-bold whitespace-nowrap">费用预算</th>
+                <th className="border border-gray-200 bg-white px-6 py-2 font-bold whitespace-nowrap">人工成本</th>
+                <th className="border border-gray-200 bg-white px-6 py-2 font-bold whitespace-nowrap">小计</th>
+                <th className="border border-gray-200 bg-white px-6 py-2 font-bold whitespace-nowrap">营业额占比</th>
+              </tr>
+            </thead>
+            <tbody>
+              {massageHomeBudgetSummary.map((row) => (
+                <tr key={row.type}>
+                  <th className="border border-gray-200 bg-white px-6 py-3 text-lg font-bold whitespace-nowrap">
+                    {row.type}
+                  </th>
+                  <td className="border border-gray-200 bg-white px-6 py-3 text-right text-lg font-semibold whitespace-nowrap">
+                    {formatBudgetAmount(row.expenseBudget)}
+                  </td>
+                  <td className="border border-gray-200 bg-white px-6 py-3 text-right text-lg font-semibold whitespace-nowrap">
+                    {formatBudgetAmount(row.laborCost)}
+                  </td>
+                  <td className="border border-gray-200 bg-white px-6 py-3 text-right text-lg font-semibold whitespace-nowrap">
+                    {formatBudgetAmount(row.subtotal)}
+                  </td>
+                  <td className="border border-gray-200 bg-white px-6 py-3 text-right text-lg font-semibold whitespace-nowrap">
+                    {formatBudgetRatio(row.turnoverRatio)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
           {/* Left: Price Compliance */}
@@ -1694,7 +1750,7 @@ const PriceDecompositionContainer = () => {
       <HQMetricsTrendChart />
       <div>
         <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">城市维度客单价对比</h4>
-        <DataTable data={sortedTableData} columns={columns} onSort={handleTableSort} sortConfig={tableSortConfig} />
+        <DataTable data={sortedTableData} columns={columns} onSort={handleTableSort} sortConfig={tableSortConfig} bordered />
       </div>
       <div>
         <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">客单价·影响指标分析</h4>

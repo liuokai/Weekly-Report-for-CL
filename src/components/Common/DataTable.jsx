@@ -34,6 +34,7 @@ const DataTable = ({
     : 'px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center';
 
   const containerStyle = maxHeight ? { maxHeight, overflowY: 'auto' } : {};
+  const groupedHeader = columns.some((column) => column.groupTitle);
 
   return (
     <div className="overflow-x-auto" style={containerStyle}>
@@ -44,32 +45,95 @@ const DataTable = ({
           ))}
         </colgroup>
         <thead className={theadClass}>
-          <tr>
-            {columns.map((column) => {
-              const thInteractive = onSort ? 'cursor-pointer hover:bg-gray-100 select-none' : '';
-              return (
-                <th
-                  key={column.key}
-                  className={`${headerCellClassName} ${thInteractive}`}
-                  onClick={() => onSort && onSort(column.key)}
-                >
-                  <div className="flex w-full items-center justify-center">
-                    <span className="block text-center">{column.title}</span>
-                  </div>
-                  {sortConfig && sortConfig.key === column.key && (
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a40035]">
-                      {sortConfig.direction === 'asc' ? '\u2191' : '\u2193'}
-                    </span>
-                  )}
-                  {onSort && (!sortConfig || sortConfig.key !== column.key) && (
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 opacity-0 group-hover:opacity-100">
-                      {'\u2195'}
-                    </span>
-                  )}
-                </th>
-              );
-            })}
-          </tr>
+          {groupedHeader ? (
+            <>
+              <tr>
+                {(() => {
+                  const groups = [];
+                  columns.forEach((column) => {
+                    const title = column.groupTitle || column.title;
+                    const lastGroup = groups[groups.length - 1];
+                    if (lastGroup && lastGroup.title === title) {
+                      lastGroup.columns.push(column);
+                    } else {
+                      groups.push({ title, columns: [column] });
+                    }
+                  });
+
+                  return groups.map((group) => {
+                    const isSingle = group.columns.length === 1 && !group.columns[0].groupTitle;
+                    return (
+                      <th
+                        key={`group-${group.title}`}
+                        colSpan={isSingle ? 1 : group.columns.length}
+                        rowSpan={isSingle ? 2 : 1}
+                        className={headerCellClassName}
+                      >
+                        <div className="flex w-full items-center justify-center">
+                          <span className="block text-center">{group.title}</span>
+                        </div>
+                      </th>
+                    );
+                  });
+                })()}
+              </tr>
+              <tr>
+                {columns
+                  .filter((column) => column.groupTitle)
+                  .map((column) => {
+                    const thInteractive = onSort ? 'cursor-pointer hover:bg-gray-100 select-none' : '';
+                    return (
+                      <th
+                        key={column.key}
+                        className={`${headerCellClassName} ${thInteractive}`}
+                        onClick={() => onSort && onSort(column.key)}
+                      >
+                        <div className="flex w-full items-center justify-center">
+                          <span className="block text-center">{column.title}</span>
+                        </div>
+                        {sortConfig && sortConfig.key === column.key && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a40035]">
+                            {sortConfig.direction === 'asc' ? '\u2191' : '\u2193'}
+                          </span>
+                        )}
+                        {onSort && (!sortConfig || sortConfig.key !== column.key) && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 opacity-0 group-hover:opacity-100">
+                            {'\u2195'}
+                          </span>
+                        )}
+                      </th>
+                    );
+                  })}
+              </tr>
+            </>
+          ) : (
+            <tr>
+              {columns.map((column) => {
+                const thInteractive = onSort ? 'cursor-pointer hover:bg-gray-100 select-none' : '';
+                return (
+                  <th
+                    key={column.key}
+                    className={`${headerCellClassName} ${thInteractive}`}
+                    onClick={() => onSort && onSort(column.key)}
+                  >
+                    <div className="flex w-full items-center justify-center">
+                      <span className="block text-center">{column.title}</span>
+                    </div>
+                    {sortConfig && sortConfig.key === column.key && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a40035]">
+                        {sortConfig.direction === 'asc' ? '\u2191' : '\u2193'}
+                      </span>
+                    )}
+                    {onSort && (!sortConfig || sortConfig.key !== column.key) && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 opacity-0 group-hover:opacity-100">
+                        {'\u2195'}
+                      </span>
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          )}
           {summaryRow && summaryPosition === 'top' && (
             <tr className={`border-b border-gray-200 ${summaryClassName}`}>
               {columns.map((column) => (

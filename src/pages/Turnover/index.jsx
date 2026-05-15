@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import WeeklyTurnoverChart from "./WeeklyTurnoverChart";
 import RevenueDecompositionContainer from "./RevenueDecompositionContainer";
+import TurnoverBudgetCityComparisonTable from "./TurnoverBudgetCityComparisonTable";
 import PriceDecompositionContainer from "./PriceDecompositionContainer";
 import VolumeDecompositionContainer from "./VolumeDecompositionContainer";
 import AiAnalysisBox from "../../components/Common/AiAnalysisBox";
@@ -343,7 +344,8 @@ const TurnoverReport = () => {
         </div>
         <div className="p-6 space-y-8">
           <WeeklyTurnoverChart annualTarget={revenueMetrics.target} totalStores={totalStores} />
-          <RevenueDecompositionContainer />
+          {/* <RevenueDecompositionContainer /> */}
+          <TurnoverBudgetCityComparisonTable />
         </div>
       </div>
 
