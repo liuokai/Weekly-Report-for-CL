@@ -1,0 +1,21 @@
+
+> chang-le-weekly-report@1.0.0 start
+> webpack serve --mode development
+
+asset [1m[32mbundle.js[39m[22m 5.47 MiB [1m[32m[emitted][39m[22m (name: main)
+asset [1m[32mindex.html[39m[22m 352 bytes [1m[32m[emitted][39m[22m
+orphan modules 387 KiB [1m[33m[orphan][39m[22m 149 modules
+runtime modules 27.1 KiB 13 modules
+modules by path [1m./node_modules/[39m[22m 3.18 MiB 647 modules
+modules by path [1m./src/[39m[22m 995 KiB
+  modules by path [1m./src/pages/[39m[22m 794 KiB 33 modules
+  modules by path [1m./src/components/Common/[39m[22m 110 KiB 11 modules
+  modules by path [1m./src/services/*.js[39m[22m 30.9 KiB 3 modules
+  modules by path [1m./src/config/*.js[39m[22m 23.4 KiB 3 modules
+  modules by path [1m./src/utils/*.js[39m[22m 28.3 KiB
+    [1m./src/utils/dataLoader.js[39m[22m 20.1 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./src/utils/cacheManager.js[39m[22m 8.2 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./src/index.js[39m[22m 215 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./src/App.jsx[39m[22m 188 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./src/hooks/useFetchData.js[39m[22m 8.43 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.103.0 compiled [1m[32msuccessfully[39m[22m in 4668 ms

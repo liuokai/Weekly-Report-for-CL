@@ -1,6 +1,4 @@
-      
-
-    SELECT
+SELECT
         -- 判断是否为合计行，是则显示'合计'，否则显示城市名
         IF(GROUPING(statistics_city_name) = 1, '合计', statistics_city_name) AS '城市',
 
@@ -67,8 +65,5 @@
     FROM data_warehouse.dws_profit_store_detail_monthly a
     LEFT JOIN data_warehouse.dm_city b ON a.city_code = b.city_code
     WHERE length(store_code) = 6
-      AND month >= '2026-01'
-      AND month < DATE_FORMAT(CURDATE(), '%Y-%m')
-    GROUP BY statistics_city_name WITH ROLLUP 
-
-    
+      AND month BETWEEN ? AND ?
+    GROUP BY  statistics_city_name WITH ROLLUP

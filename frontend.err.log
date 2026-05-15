@@ -1,0 +1,10 @@
+<i> [webpack-dev-server] [HPM] Proxy created: /api  -> http://localhost:3002
+<i> [webpack-dev-server] Project is running at:
+<i> [webpack-dev-server] Loopback: [36mhttp://localhost:8000/[39m
+<i> [webpack-dev-server] Content not from webpack is served from '[36mC:\Users\Administrator.DESKTOP-297TOUP\Desktop\pcyusuan\Weekly-Report-for-CL/public, C:\Users\Administrator.DESKTOP-297TOUP\Desktop\pcyusuan\Weekly-Report-for-CL/src/data[39m' directory
+(node:16500) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+<e> [webpack-dev-server] [HPM] Error occurred while proxying request 192.168.110.92:8000/api/fetch-data to http://localhost:3002/ [ECONNREFUSED] (https://nodejs.org/api/errors.html#errors_common_system_errors)
+<e> [webpack-dev-server] [HPM] Error occurred while proxying request 192.168.110.92:8000/api/analysis/variables to http://localhost:3002/ [ECONNREFUSED] (https://nodejs.org/api/errors.html#errors_common_system_errors)
+<e> [webpack-dev-server] [HPM] Error occurred while proxying request 192.168.110.92:8000/api/analysis/workflows to http://localhost:3002/ [ECONNREFUSED] (https://nodejs.org/api/errors.html#errors_common_system_errors)
+<e> [webpack-dev-server] [HPM] Error occurred while proxying request 192.168.110.92:8000/api/fetch-data to http://localhost:3002/ [ECONNREFUSED] (https://nodejs.org/api/errors.html#errors_common_system_errors)

@@ -113,7 +113,7 @@ const buildActualLookup = (rows) => {
   return lookup;
 };
 
-const CostRatioComparison2026Table = () => {
+const CostRatioComparison2026Table = ({ queryParams }) => {
   const citySortOrder = ['四川', '重庆', '深圳', '杭州', '南京', '宁波', '广州', '上海', '北京', '合计'];
   const normalizeCityForSort = (value) => {
     const text = String(value || '').trim();
@@ -121,7 +121,11 @@ const CostRatioComparison2026Table = () => {
     return text.replace(/(省|市|鐪亅甯?)$/, '');
   };
 
-  const { data: actualRowsRaw, loading, error } = useFetchData('getCashFlowOverviewCityMonthly', [], []);
+  const { data: actualRowsRaw, loading, error } = useFetchData(
+    'getCashFlowOverviewCityMonthly',
+    Array.isArray(queryParams) && queryParams.length === 2 ? queryParams : ['2026-01', '2026-12'],
+    []
+  );
   const actualRows = Array.isArray(actualRowsRaw) ? actualRowsRaw : [];
 
   const comparisonRows = useMemo(() => {
