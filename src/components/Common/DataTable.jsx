@@ -32,6 +32,8 @@ const DataTable = ({
   const summaryCellClassName = bordered
     ? 'px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center border border-gray-300'
     : 'px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center';
+  const resolveClassName = (className, value, row, index) =>
+    typeof className === 'function' ? className(value, row, index) : (className || '');
 
   const containerStyle = maxHeight ? { maxHeight, overflowY: 'auto' } : {};
   const groupedHeader = columns.some((column) => column.groupTitle);
@@ -62,12 +64,15 @@ const DataTable = ({
 
                   return groups.map((group) => {
                     const isSingle = group.columns.length === 1 && !group.columns[0].groupTitle;
+                    const groupClassName = isSingle
+                      ? resolveClassName(group.columns[0].headerClassName)
+                      : resolveClassName(group.columns[0].groupHeaderClassName || group.columns[0].headerClassName);
                     return (
                       <th
                         key={`group-${group.title}`}
                         colSpan={isSingle ? 1 : group.columns.length}
                         rowSpan={isSingle ? 2 : 1}
-                        className={headerCellClassName}
+                        className={`${headerCellClassName} ${groupClassName}`}
                       >
                         <div className="flex w-full items-center justify-center">
                           <span className="block text-center">{group.title}</span>
@@ -85,7 +90,7 @@ const DataTable = ({
                     return (
                       <th
                         key={column.key}
-                        className={`${headerCellClassName} ${thInteractive}`}
+                        className={`${headerCellClassName} ${thInteractive} ${resolveClassName(column.headerClassName)}`}
                         onClick={() => onSort && onSort(column.key)}
                       >
                         <div className="flex w-full items-center justify-center">
@@ -113,7 +118,7 @@ const DataTable = ({
                 return (
                   <th
                     key={column.key}
-                    className={`${headerCellClassName} ${thInteractive}`}
+                    className={`${headerCellClassName} ${thInteractive} ${resolveClassName(column.headerClassName)}`}
                     onClick={() => onSort && onSort(column.key)}
                   >
                     <div className="flex w-full items-center justify-center">
@@ -137,7 +142,10 @@ const DataTable = ({
           {summaryRow && summaryPosition === 'top' && (
             <tr className={`border-b border-gray-200 ${summaryClassName}`}>
               {columns.map((column) => (
-                <td key={column.key} className={summaryCellClassName}>
+                <td
+                  key={column.key}
+                  className={`${summaryCellClassName} ${resolveClassName(column.summaryCellClassName, summaryRow[column.dataIndex], summaryRow, -1)}`}
+                >
                   {column.render ? column.render(summaryRow[column.dataIndex], summaryRow, -1) : (summaryRow[column.dataIndex] || '-')}
                 </td>
               ))}
@@ -147,11 +155,26 @@ const DataTable = ({
         <tbody className={bordered ? '' : 'bg-white divide-y divide-gray-200'}>
           {data.map((row, index) => (
             <tr key={getKey(row, index)} className={bordered ? (index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50') : ''}>
-              {columns.map((column) => (
-                <td key={column.key} className={bodyCellClassName}>
-                  {column.render ? column.render(row[column.dataIndex], row, index) : (row[column.dataIndex] || '-')}
-                </td>
-              ))}
+              {columns.map((column) => {
+                const cellProps = column.onCell ? (column.onCell(row, index) || {}) : {};
+                const { rowSpan, colSpan, className: cellClassName, ...restCellProps } = cellProps;
+
+                if (rowSpan === 0 || colSpan === 0) {
+                  return null;
+                }
+
+                return (
+                  <td
+                    key={column.key}
+                    rowSpan={rowSpan}
+                    colSpan={colSpan}
+                    className={`${bodyCellClassName} ${resolveClassName(column.cellClassName, row[column.dataIndex], row, index)} ${cellClassName || ''}`}
+                    {...restCellProps}
+                  >
+                    {column.render ? column.render(row[column.dataIndex], row, index) : (row[column.dataIndex] || '-')}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
@@ -159,7 +182,10 @@ const DataTable = ({
           <tfoot className="sticky bottom-0 z-10">
             <tr className={`border-t border-gray-200 ${summaryClassName}`}>
               {columns.map((column) => (
-                <td key={column.key} className={summaryCellClassName}>
+                <td
+                  key={column.key}
+                  className={`${summaryCellClassName} ${resolveClassName(column.summaryCellClassName, summaryRow[column.dataIndex], summaryRow, -1)}`}
+                >
                   {column.render ? column.render(summaryRow[column.dataIndex], summaryRow, -1) : (summaryRow[column.dataIndex] || '-')}
                 </td>
               ))}

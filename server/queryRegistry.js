@@ -29,6 +29,14 @@ const queryRegistry = {
     sql: loadSql('avg_order_value_massage_home_budget.sql'),
     description: '获取推拿之家客单价拆解预算执行表'
   },
+  getAvgOrderValueTechniqueProject: {
+    sql: loadSql('avg_order_value_technique_project.sql'),
+    description: '获取客单价的影响因素明细'
+  },
+  getAvgOrderValueTechniqueLabel: {
+    sql: loadSql('avg_order_value_technique_lable.sql'),
+    description: '鑾峰彇瀹㈠崟浠风殑褰卞搷鍥犵礌鎶€娉曠淮搴︽槑缁?'
+  },
   getTurnoverOverview: {
     sql: loadSql('turnover_overview.sql'),
     description: '营业额概览中的年度累计营业额'

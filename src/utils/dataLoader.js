@@ -13,6 +13,7 @@ export const PRELOAD_QUERIES = [
   'getAnnualAvgPrice',
   'getCityAnnualAvgPrice',
   'getWeeklyAvgPriceYTD',
+  'getAvgOrderValueTechniqueProject',
   // 回头率 (默认 Process Metric)
   'getRepurchaseRateAnnual',
   'getRepurchaseRateWeekly',

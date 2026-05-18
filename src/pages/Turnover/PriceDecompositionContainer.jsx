@@ -40,6 +40,7 @@ const PriceDecompositionContainer = () => {
   const [procShowExtremes, setProcShowExtremes] = useState(true);
   const [procCityRows, setProcCityRows] = useState([]);
   const [procColumnsDyn, setProcColumnsDyn] = useState([]);
+  const [impactTableView, setImpactTableView] = useState('project');
 
   // Fetch city price growth data
   const { data: cityAnnualPriceData } = useFetchData('getCityAnnualAvgPrice');
@@ -47,6 +48,8 @@ const PriceDecompositionContainer = () => {
   const { data: annualPriceData } = useFetchData('getAnnualAvgPrice');
   const { data: turnoverOverviewData } = useFetchData('getTurnoverOverview');
   const { data: massageHomeBudgetData } = useFetchData('getAvgOrderValueMassageHomeBudget');
+  const { data: techniqueProjectData } = useFetchData('getAvgOrderValueTechniqueProject');
+  const { data: techniqueLabelData } = useFetchData('getAvgOrderValueTechniqueLabel');
   // Fetch city weekly average price data
   const { data: cityWeeklyData } = useFetchData('getCityWeeklyAvgPriceYTD', { city: selectedCity }, null, { manual: !(isModalOpen && isPriceDecompositionModal && selectedCity) });
   // Fetch store weekly average price data
@@ -397,6 +400,228 @@ const PriceDecompositionContainer = () => {
       }));
   }, [cityAnnualPriceData, latestCityPriceYear]);
 
+  const cityPriceSummaryRow = useMemo(() => {
+    if (!Array.isArray(tableData) || tableData.length === 0) return null;
+
+    const totals = tableData.reduce(
+      (acc, row) => ({
+        lastYearPrice: acc.lastYearPrice + Number(row.lastYearPrice || 0),
+        currentPrice: acc.currentPrice + Number(row.currentPrice || 0)
+      }),
+      { lastYearPrice: 0, currentPrice: 0 }
+    );
+
+    const count = tableData.length;
+    const avgLastYearPrice = count > 0 ? totals.lastYearPrice / count : 0;
+    const avgCurrentPrice = count > 0 ? totals.currentPrice / count : 0;
+    const yoyRate =
+      avgLastYearPrice > 0 ? ((avgCurrentPrice - avgLastYearPrice) / avgLastYearPrice) * 100 : 0;
+
+    return {
+      city: '公司平均值',
+      lastYearPrice: avgLastYearPrice,
+      currentPrice: avgCurrentPrice,
+      yoyRate: `${yoyRate.toFixed(1)}%`
+    };
+  }, [tableData]);
+
+  const techniqueImpactTableData = useMemo(() => {
+    if (!Array.isArray(techniqueProjectData) || techniqueProjectData.length === 0) {
+      return [];
+    }
+
+    const getFieldValue = (row, keys, fallback = undefined) => {
+      for (const key of keys) {
+        if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== '') {
+          return row[key];
+        }
+      }
+      return fallback;
+    };
+
+    const rows = techniqueProjectData.map((row, index) => ({
+      key: `${getFieldValue(row, ['责任人', 'name'], 'owner')}-${getFieldValue(row, ['项目名称', 'main_project_name'], 'project')}-${index}`,
+      owner: getFieldValue(row, ['责任人', 'name'], '-'),
+      techniqueName: getFieldValue(row, ['技法名称', 'technique_name'], '-'),
+      projectName: getFieldValue(row, ['项目名称', 'main_project_name'], '-'),
+      projectType: getFieldValue(row, ['项目类型', 'label_name'], '-'),
+      taggedStaffCount: Number(getFieldValue(row, ['挂标签人数', '挂标标签人数', '挂标人数'], 0)),
+      turnoverAmount: Number(getFieldValue(row, ['营业额', 'order_actual_payment'], 0)),
+      turnoverRatio: Number(getFieldValue(row, ['营业额占比'], 0)),
+      orderCount: Number(getFieldValue(row, ['订单数'], 0)),
+      repurchaseCount: Number(getFieldValue(row, ['推拿师项目回头', '项目回头数'], 0)),
+      repurchaseRate: Number(getFieldValue(row, ['推拿师项目回头率', '项目回头率'], 0)),
+      avgOrderValue: Number(getFieldValue(row, ['客单价'], 0))
+    }));
+
+    rows.sort((a, b) => {
+      const ownerCompare = String(a.owner || '').localeCompare(String(b.owner || ''), 'zh-CN');
+      if (ownerCompare !== 0) return ownerCompare;
+
+      const techniqueCompare = String(a.techniqueName || '').localeCompare(String(b.techniqueName || ''), 'zh-CN');
+      if (techniqueCompare !== 0) return techniqueCompare;
+
+      return String(a.projectName || '').localeCompare(String(b.projectName || ''), 'zh-CN');
+    });
+
+    let currentGroupKey = null;
+    let currentGroupStart = 0;
+    let currentGroupSize = 0;
+
+    const flushGroup = (endIndex) => {
+      if (currentGroupSize <= 0) return;
+      rows[currentGroupStart].ownerRowSpan = currentGroupSize;
+      rows[currentGroupStart].techniqueRowSpan = currentGroupSize;
+      for (let i = currentGroupStart + 1; i < endIndex; i += 1) {
+        rows[i].ownerRowSpan = 0;
+        rows[i].techniqueRowSpan = 0;
+      }
+    };
+
+    rows.forEach((row, index) => {
+      const groupKey = `${row.owner}__${row.techniqueName}`;
+      if (groupKey !== currentGroupKey) {
+        flushGroup(index);
+        currentGroupKey = groupKey;
+        currentGroupStart = index;
+        currentGroupSize = 1;
+      } else {
+        currentGroupSize += 1;
+      }
+    });
+
+    flushGroup(rows.length);
+
+    return rows;
+  }, [techniqueProjectData]);
+
+  const techniqueImpactSummaryRow = useMemo(() => {
+    if (!Array.isArray(techniqueImpactTableData) || techniqueImpactTableData.length === 0) return null;
+
+    const totals = techniqueImpactTableData.reduce(
+      (acc, row) => ({
+        taggedStaffCount: acc.taggedStaffCount + Number(row.taggedStaffCount || 0),
+        turnoverAmount: acc.turnoverAmount + Number(row.turnoverAmount || 0),
+        turnoverRatio: acc.turnoverRatio + Number(row.turnoverRatio || 0),
+        orderCount: acc.orderCount + Number(row.orderCount || 0),
+        repurchaseCount: acc.repurchaseCount + Number(row.repurchaseCount || 0)
+      }),
+      {
+        taggedStaffCount: 0,
+        turnoverAmount: 0,
+        turnoverRatio: 0,
+        orderCount: 0,
+        repurchaseCount: 0
+      }
+    );
+
+    return {
+      owner: '合计',
+      techniqueName: '-',
+      projectName: '-',
+      projectType: '-',
+      taggedStaffCount: totals.taggedStaffCount,
+      turnoverAmount: totals.turnoverAmount,
+      turnoverRatio: totals.turnoverRatio,
+      orderCount: totals.orderCount,
+      repurchaseCount: totals.repurchaseCount,
+      repurchaseRate: totals.orderCount > 0 ? totals.repurchaseCount / totals.orderCount : 0,
+      avgOrderValue: totals.orderCount > 0 ? totals.turnoverAmount / totals.orderCount : 0
+    };
+  }, [techniqueImpactTableData]);
+
+  const techniqueLabelTableData = useMemo(() => {
+    if (!Array.isArray(techniqueLabelData) || techniqueLabelData.length === 0) {
+      return [];
+    }
+
+    const getFieldValue = (row, keys, fallback = undefined) => {
+      for (const key of keys) {
+        if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== '') {
+          return row[key];
+        }
+      }
+      return fallback;
+    };
+
+    const rows = techniqueLabelData.map((row, index) => ({
+      key: `${getFieldValue(row, ['技法名称', 'technique_name'], 'technique')}-${getFieldValue(row, ['项目类型', 'label_name'], 'label')}-${index}`,
+      techniqueName: getFieldValue(row, ['技法名称', 'technique_name'], '-'),
+      projectType: getFieldValue(row, ['项目类型', 'label_name'], '-'),
+      taggedStaffCount: Number(getFieldValue(row, ['挂标签人次', '挂标签人数'], 0)),
+      orderCount: Number(getFieldValue(row, ['订单数'], 0)),
+      repurchaseCount: Number(getFieldValue(row, ['推拿师项目回头', '项目回头数'], 0)),
+      repurchaseRate: Number(getFieldValue(row, ['推拿师项目回头占比', '推拿师项目回头率', '项目回头率'], 0)),
+      turnoverAmount: Number(getFieldValue(row, ['营业额'], 0)),
+      techniqueTurnoverRatio: Number(getFieldValue(row, ['技法营业额占比'], 0)),
+      totalTurnoverRatio: Number(getFieldValue(row, ['总营业额占比'], 0))
+    }));
+
+    rows.sort((a, b) => {
+      const techniqueCompare = String(a.techniqueName || '').localeCompare(String(b.techniqueName || ''), 'zh-CN');
+      if (techniqueCompare !== 0) return techniqueCompare;
+
+      return String(a.projectType || '').localeCompare(String(b.projectType || ''), 'zh-CN');
+    });
+
+    let currentTechnique = null;
+    let currentGroupStart = 0;
+    let currentGroupSize = 0;
+
+    const flushGroup = (endIndex) => {
+      if (currentGroupSize <= 0) return;
+      rows[currentGroupStart].techniqueRowSpan = currentGroupSize;
+      for (let i = currentGroupStart + 1; i < endIndex; i += 1) {
+        rows[i].techniqueRowSpan = 0;
+      }
+    };
+
+    rows.forEach((row, index) => {
+      if (row.techniqueName !== currentTechnique) {
+        flushGroup(index);
+        currentTechnique = row.techniqueName;
+        currentGroupStart = index;
+        currentGroupSize = 1;
+      } else {
+        currentGroupSize += 1;
+      }
+    });
+
+    flushGroup(rows.length);
+
+    return rows;
+  }, [techniqueLabelData]);
+
+  const techniqueLabelSummaryRow = useMemo(() => {
+    if (!Array.isArray(techniqueLabelTableData) || techniqueLabelTableData.length === 0) return null;
+
+    const totals = techniqueLabelTableData.reduce((acc, row) => ({
+      taggedStaffCount: acc.taggedStaffCount + Number(row.taggedStaffCount || 0),
+      orderCount: acc.orderCount + Number(row.orderCount || 0),
+      repurchaseCount: acc.repurchaseCount + Number(row.repurchaseCount || 0),
+      turnoverAmount: acc.turnoverAmount + Number(row.turnoverAmount || 0),
+      totalTurnoverRatio: acc.totalTurnoverRatio + Number(row.totalTurnoverRatio || 0)
+    }), {
+      taggedStaffCount: 0,
+      orderCount: 0,
+      repurchaseCount: 0,
+      turnoverAmount: 0,
+      totalTurnoverRatio: 0
+    });
+
+    return {
+      techniqueName: '合计',
+      projectType: '-',
+      taggedStaffCount: totals.taggedStaffCount,
+      orderCount: totals.orderCount,
+      repurchaseCount: totals.repurchaseCount,
+      repurchaseRate: totals.orderCount > 0 ? totals.repurchaseCount / totals.orderCount : 0,
+      turnoverAmount: totals.turnoverAmount,
+      techniqueTurnoverRatio: 1,
+      totalTurnoverRatio: totals.totalTurnoverRatio
+    };
+  }, [techniqueLabelTableData]);
+
   const [modalColumns, setModalColumns] = useState([]);
 
   const columns = [
@@ -441,6 +666,195 @@ const PriceDecompositionContainer = () => {
         const isHigh = num >= targetRate;
         return <span className={isHigh ? 'text-gray-500' : 'text-red-600'}>{val}</span>;
       }
+    }
+  ];
+
+  const techniqueImpactColumns = [
+    {
+      key: 'owner',
+      title: '责任人',
+      dataIndex: 'owner',
+      width: '9%',
+      headerClassName: 'bg-white font-bold text-gray-700',
+      cellClassName: 'bg-white font-semibold text-gray-800 align-middle',
+      summaryCellClassName: 'bg-white font-bold text-gray-800',
+      onCell: (row) => ({
+        rowSpan: row.ownerRowSpan ?? 1
+      })
+    },
+    {
+      key: 'techniqueName',
+      title: '技法名称',
+      dataIndex: 'techniqueName',
+      width: '9%',
+      headerClassName: 'bg-white font-bold text-gray-700',
+      cellClassName: 'bg-white font-semibold text-gray-800 align-middle',
+      summaryCellClassName: 'bg-white font-bold text-gray-800',
+      onCell: (row) => ({
+        rowSpan: row.techniqueRowSpan ?? 1
+      })
+    },
+    {
+      key: 'projectName',
+      title: '项目名称',
+      dataIndex: 'projectName',
+      width: '13%',
+      headerClassName: 'bg-white font-bold text-gray-700',
+      cellClassName: 'bg-white font-semibold text-gray-800',
+      summaryCellClassName: 'bg-white font-bold text-gray-800'
+    },
+    {
+      key: 'projectType',
+      title: '项目类型',
+      dataIndex: 'projectType',
+      width: '9%',
+      headerClassName: 'bg-white font-bold text-gray-700',
+      cellClassName: 'bg-white font-semibold text-gray-800',
+      summaryCellClassName: 'bg-white font-bold text-gray-800'
+    },
+    {
+      key: 'taggedStaffCount',
+      title: '挂标签人数',
+      groupTitle: '指标表现',
+      groupHeaderClassName: 'bg-white font-bold text-gray-700',
+      dataIndex: 'taggedStaffCount',
+      width: '8%',
+      render: (val) => `${Number(val || 0)}`
+    },
+    {
+      key: 'turnoverAmount',
+      title: '营业额',
+      groupTitle: '指标表现',
+      dataIndex: 'turnoverAmount',
+      width: '10%',
+      render: (val) => `¥${Number(val || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    },
+    {
+      key: 'turnoverRatio',
+      title: '营业额占比',
+      groupTitle: '指标表现',
+      dataIndex: 'turnoverRatio',
+      width: '8%',
+      render: (val) => `${(Number(val || 0) * 100).toFixed(2)}%`
+    },
+    {
+      key: 'orderCount',
+      title: '订单数',
+      groupTitle: '指标表现',
+      dataIndex: 'orderCount',
+      width: '7%',
+      render: (val) => `${Number(val || 0)}`
+    },
+    {
+      key: 'repurchaseCount',
+      title: '项目回头',
+      groupTitle: '指标表现',
+      dataIndex: 'repurchaseCount',
+      width: '8%',
+      render: (val) => `${Number(val || 0)}`
+    },
+    {
+      key: 'repurchaseRate',
+      title: '项目回头率',
+      groupTitle: '指标表现',
+      dataIndex: 'repurchaseRate',
+      width: '9%',
+      render: (val) => `${(Number(val || 0) * 100).toFixed(2)}%`
+    },
+    {
+      key: 'avgOrderValue',
+      title: '客单价',
+      groupTitle: '指标表现',
+      dataIndex: 'avgOrderValue',
+      width: '10%',
+      render: (val) => `¥${Number(val || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    }
+  ];
+
+  const techniqueLabelColumns = [
+    {
+      key: 'techniqueName',
+      title: '技法',
+      dataIndex: 'techniqueName',
+      width: '12%',
+      headerClassName: 'bg-[#d9d9d9] font-bold text-black',
+      cellClassName: 'font-semibold text-black align-middle',
+      summaryCellClassName: 'font-bold text-black',
+      onCell: (row) => ({
+        rowSpan: row.techniqueRowSpan ?? 1
+      })
+    },
+    {
+      key: 'projectType',
+      title: '项目类型',
+      dataIndex: 'projectType',
+      width: '15%',
+      headerClassName: 'bg-[#d9d9d9] font-bold text-black',
+      cellClassName: 'text-black',
+      summaryCellClassName: 'font-bold text-black'
+    },
+    {
+      key: 'taggedStaffCount',
+      title: '挂标签人次',
+      dataIndex: 'taggedStaffCount',
+      width: '11%',
+      headerClassName: 'bg-[#d9d9d9] font-bold text-black',
+      cellClassName: 'text-black',
+      render: (val) => `${Number(val || 0)}`
+    },
+    {
+      key: 'orderCount',
+      title: '订单数',
+      dataIndex: 'orderCount',
+      width: '12%',
+      headerClassName: 'bg-[#d9d9d9] font-bold text-black',
+      cellClassName: 'text-black',
+      render: (val) => Number(val || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    },
+    {
+      key: 'repurchaseCount',
+      title: '推拿师项目回头',
+      dataIndex: 'repurchaseCount',
+      width: '11%',
+      headerClassName: 'bg-[#d9d9d9] font-bold text-black',
+      cellClassName: 'text-black',
+      render: (val) => Number(val || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    },
+    {
+      key: 'repurchaseRate',
+      title: '推拿师项目回头占比',
+      dataIndex: 'repurchaseRate',
+      width: '11%',
+      headerClassName: 'bg-[#d9d9d9] font-bold text-black',
+      cellClassName: 'text-black',
+      render: (val) => `${(Number(val || 0) * 100).toFixed(2)}%`
+    },
+    {
+      key: 'turnoverAmount',
+      title: '营业额',
+      dataIndex: 'turnoverAmount',
+      width: '11%',
+      headerClassName: 'bg-[#d9d9d9] font-bold text-black',
+      cellClassName: 'text-black',
+      render: (val) => Number(val || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    },
+    {
+      key: 'techniqueTurnoverRatio',
+      title: '技法营业额占比',
+      dataIndex: 'techniqueTurnoverRatio',
+      width: '9%',
+      headerClassName: 'bg-[#d9d9d9] font-bold text-black',
+      cellClassName: 'text-black',
+      render: (val) => `${(Number(val || 0) * 100).toFixed(2)}%`
+    },
+    {
+      key: 'totalTurnoverRatio',
+      title: '总营业额占比',
+      dataIndex: 'totalTurnoverRatio',
+      width: '8%',
+      headerClassName: 'bg-[#d9d9d9] font-bold text-black',
+      cellClassName: 'text-black',
+      render: (val) => `${(Number(val || 0) * 100).toFixed(2)}%`
     }
   ];
 
@@ -561,6 +975,278 @@ const PriceDecompositionContainer = () => {
   const modalColumnsComputed = useMemo(() => (modalColumns.length > 0 ? modalColumns : columnsForStore), [modalColumns, columnsForStore]);
   const { sortedData: sortedStoreRows, sortConfig: storeSortConfig, handleSort: handleStoreSort } = useTableSorting(modalColumnsComputed, storeRows, { key: "yoyRate", direction: "asc" });
   const { sortedData: sortedTableData, sortConfig: tableSortConfig, handleSort: handleTableSort } = useTableSorting(columns, tableData, { key: "yoyRate", direction: "asc" });
+  const { sortedData: sortedTechniqueImpactData, sortConfig: techniqueImpactSortConfig, handleSort: handleTechniqueImpactSort } = useTableSorting(
+    techniqueImpactColumns,
+    techniqueImpactTableData,
+    { key: 'owner', direction: 'asc' }
+  );
+  const { sortedData: sortedTechniqueLabelData, sortConfig: techniqueLabelSortConfig, handleSort: handleTechniqueLabelSort } = useTableSorting(
+    techniqueLabelColumns,
+    techniqueLabelTableData,
+    { key: 'techniqueName', direction: 'asc' }
+  );
+
+  const groupedTechniqueImpactData = useMemo(() => {
+    const items = Array.isArray(sortedTechniqueImpactData) ? sortedTechniqueImpactData : [];
+    if (items.length === 0) {
+      return [];
+    }
+
+    const rows = [...items].sort((a, b) => {
+      const ownerCompare = String(a.owner || '').localeCompare(String(b.owner || ''), 'zh-CN');
+      if (ownerCompare !== 0) return ownerCompare;
+
+      const techniqueCompare = String(a.techniqueName || '').localeCompare(String(b.techniqueName || ''), 'zh-CN');
+      if (techniqueCompare !== 0) return techniqueCompare;
+
+      const projectCompare = String(a.projectName || '').localeCompare(String(b.projectName || ''), 'zh-CN');
+      if (projectCompare !== 0) return projectCompare;
+
+      return String(a.key || '').localeCompare(String(b.key || ''), 'zh-CN');
+    });
+
+    if (techniqueImpactSortConfig?.key && !['owner', 'techniqueName'].includes(techniqueImpactSortConfig.key)) {
+      const groupedRows = [];
+      let groupStart = 0;
+
+      const flushGroup = (endIndex) => {
+        const groupRows = rows.slice(groupStart, endIndex);
+        groupRows.sort((a, b) => {
+          const cleanValue = (val) => {
+            if (val == null) return -Infinity;
+            if (typeof val === 'number') return val;
+            if (typeof val === 'string') {
+              if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(val)) {
+                return val;
+              }
+
+              if (/^[^0-9]+$/.test(val) && val !== '-Infinity' && val !== 'Infinity') {
+                return val;
+              }
+
+              const cleanStr = val.replace(/,/g, '').replace('%', '').replace(/[￥¥]/g, '').trim();
+              const num = parseFloat(cleanStr);
+              if (!Number.isNaN(num)) return num;
+              return val;
+            }
+            return val;
+          };
+
+          const sortColumn = techniqueImpactColumns.find((column) => column.key === techniqueImpactSortConfig.key);
+          const dataIndex = sortColumn ? sortColumn.dataIndex : techniqueImpactSortConfig.key;
+          const aClean = cleanValue(a[dataIndex]);
+          const bClean = cleanValue(b[dataIndex]);
+
+          if (typeof aClean === 'string' && typeof bClean === 'string') {
+            return techniqueImpactSortConfig.direction === 'asc'
+              ? aClean.localeCompare(bClean, 'zh-CN')
+              : bClean.localeCompare(aClean, 'zh-CN');
+          }
+          if (aClean < bClean) return techniqueImpactSortConfig.direction === 'asc' ? -1 : 1;
+          if (aClean > bClean) return techniqueImpactSortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+        groupedRows.push(...groupRows);
+      };
+
+      for (let index = 1; index <= rows.length; index += 1) {
+        const prevRow = rows[index - 1];
+        const currentRow = rows[index];
+        const prevGroupKey = prevRow ? `${prevRow.owner}__${prevRow.techniqueName}` : null;
+        const currentGroupKey = currentRow ? `${currentRow.owner}__${currentRow.techniqueName}` : null;
+
+        if (prevGroupKey !== currentGroupKey) {
+          flushGroup(index);
+          groupStart = index;
+        }
+      }
+
+      return groupedRows;
+    }
+
+    if (techniqueImpactSortConfig?.key === 'techniqueName') {
+      rows.sort((a, b) => {
+        const techniqueCompare = techniqueImpactSortConfig.direction === 'asc'
+          ? String(a.techniqueName || '').localeCompare(String(b.techniqueName || ''), 'zh-CN')
+          : String(b.techniqueName || '').localeCompare(String(a.techniqueName || ''), 'zh-CN');
+        if (techniqueCompare !== 0) return techniqueCompare;
+
+        const ownerCompare = String(a.owner || '').localeCompare(String(b.owner || ''), 'zh-CN');
+        if (ownerCompare !== 0) return ownerCompare;
+
+        return String(a.projectName || '').localeCompare(String(b.projectName || ''), 'zh-CN');
+      });
+    } else if (techniqueImpactSortConfig?.key === 'owner' && techniqueImpactSortConfig.direction === 'desc') {
+      rows.sort((a, b) => {
+        const ownerCompare = String(b.owner || '').localeCompare(String(a.owner || ''), 'zh-CN');
+        if (ownerCompare !== 0) return ownerCompare;
+
+        const techniqueCompare = String(a.techniqueName || '').localeCompare(String(b.techniqueName || ''), 'zh-CN');
+        if (techniqueCompare !== 0) return techniqueCompare;
+
+        return String(a.projectName || '').localeCompare(String(b.projectName || ''), 'zh-CN');
+      });
+    }
+
+    let currentGroupKey = null;
+    let currentGroupStart = 0;
+    let currentGroupSize = 0;
+
+    const flushGroup = (endIndex) => {
+      if (currentGroupSize <= 0) return;
+      rows[currentGroupStart].ownerRowSpan = currentGroupSize;
+      rows[currentGroupStart].techniqueRowSpan = currentGroupSize;
+      for (let i = currentGroupStart + 1; i < endIndex; i += 1) {
+        rows[i].ownerRowSpan = 0;
+        rows[i].techniqueRowSpan = 0;
+      }
+    };
+
+    rows.forEach((row, index) => {
+      const groupKey = `${row.owner}__${row.techniqueName}`;
+      if (groupKey !== currentGroupKey) {
+        flushGroup(index);
+        currentGroupKey = groupKey;
+        currentGroupStart = index;
+        currentGroupSize = 1;
+      } else {
+        currentGroupSize += 1;
+      }
+    });
+
+    flushGroup(rows.length);
+
+    return rows;
+  }, [sortedTechniqueImpactData, techniqueImpactSortConfig, techniqueImpactColumns]);
+
+  const groupedTechniqueLabelData = useMemo(() => {
+    const items = Array.isArray(sortedTechniqueLabelData) ? sortedTechniqueLabelData : [];
+    if (items.length === 0) {
+      return [];
+    }
+
+    const rows = [...items].sort((a, b) => {
+      const techniqueCompare = String(a.techniqueName || '').localeCompare(String(b.techniqueName || ''), 'zh-CN');
+      if (techniqueCompare !== 0) return techniqueCompare;
+
+      return String(a.projectType || '').localeCompare(String(b.projectType || ''), 'zh-CN');
+    });
+
+    if (techniqueLabelSortConfig?.key && techniqueLabelSortConfig.key !== 'techniqueName') {
+      const cleanValue = (val) => {
+        if (val == null) return -Infinity;
+        if (typeof val === 'number') return val;
+        if (typeof val === 'string') {
+          if (/^[^0-9]+$/.test(val) && val !== '-Infinity' && val !== 'Infinity') {
+            return val;
+          }
+          const cleanStr = val.replace(/,/g, '').replace('%', '').trim();
+          const num = parseFloat(cleanStr);
+          if (!Number.isNaN(num)) return num;
+          return val;
+        }
+        return val;
+      };
+
+      const groupedRows = [];
+      let groupStart = 0;
+
+      const flushGroup = (endIndex) => {
+        const groupRows = rows.slice(groupStart, endIndex);
+        const sortColumn = techniqueLabelColumns.find((column) => column.key === techniqueLabelSortConfig.key);
+        const dataIndex = sortColumn ? sortColumn.dataIndex : techniqueLabelSortConfig.key;
+
+        groupRows.sort((a, b) => {
+          const aClean = cleanValue(a[dataIndex]);
+          const bClean = cleanValue(b[dataIndex]);
+
+          if (typeof aClean === 'string' && typeof bClean === 'string') {
+            return techniqueLabelSortConfig.direction === 'asc'
+              ? aClean.localeCompare(bClean, 'zh-CN')
+              : bClean.localeCompare(aClean, 'zh-CN');
+          }
+          if (aClean < bClean) return techniqueLabelSortConfig.direction === 'asc' ? -1 : 1;
+          if (aClean > bClean) return techniqueLabelSortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+
+        groupedRows.push(...groupRows);
+      };
+
+      for (let index = 1; index <= rows.length; index += 1) {
+        const prevRow = rows[index - 1];
+        const currentRow = rows[index];
+        if (!currentRow || prevRow.techniqueName !== currentRow.techniqueName) {
+          flushGroup(index);
+          groupStart = index;
+        }
+      }
+
+      for (let index = 0; index < groupedRows.length; index += 1) {
+        const currentRow = groupedRows[index];
+        const prevRow = groupedRows[index - 1];
+        const nextRow = groupedRows[index + 1];
+        if (!prevRow || prevRow.techniqueName !== currentRow.techniqueName) {
+          let span = 1;
+          let cursor = index + 1;
+          while (cursor < groupedRows.length && groupedRows[cursor].techniqueName === currentRow.techniqueName) {
+            span += 1;
+            cursor += 1;
+          }
+          currentRow.techniqueRowSpan = span;
+        } else {
+          currentRow.techniqueRowSpan = 0;
+        }
+        if (nextRow && nextRow.techniqueName !== currentRow.techniqueName && currentRow.techniqueRowSpan == null) {
+          currentRow.techniqueRowSpan = 1;
+        }
+      }
+
+      return groupedRows;
+    }
+
+    let currentTechnique = null;
+    let currentGroupStart = 0;
+    let currentGroupSize = 0;
+
+    const flushGroup = (endIndex) => {
+      if (currentGroupSize <= 0) return;
+      rows[currentGroupStart].techniqueRowSpan = currentGroupSize;
+      for (let i = currentGroupStart + 1; i < endIndex; i += 1) {
+        rows[i].techniqueRowSpan = 0;
+      }
+    };
+
+    rows.forEach((row, index) => {
+      if (row.techniqueName !== currentTechnique) {
+        flushGroup(index);
+        currentTechnique = row.techniqueName;
+        currentGroupStart = index;
+        currentGroupSize = 1;
+      } else {
+        currentGroupSize += 1;
+      }
+    });
+
+    flushGroup(rows.length);
+    return rows;
+  }, [sortedTechniqueLabelData, techniqueLabelSortConfig, techniqueLabelColumns]);
+
+  const impactTableConfig = impactTableView === 'project'
+    ? {
+        data: groupedTechniqueImpactData,
+        columns: techniqueImpactColumns,
+        onSort: handleTechniqueImpactSort,
+        sortConfig: techniqueImpactSortConfig,
+        summaryRow: techniqueImpactSummaryRow
+      }
+    : {
+        data: groupedTechniqueLabelData,
+        columns: techniqueLabelColumns,
+        onSort: handleTechniqueLabelSort,
+        sortConfig: techniqueLabelSortConfig,
+        summaryRow: null
+      };
 
   const getISOWeek = (date) => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -1749,8 +2435,44 @@ const PriceDecompositionContainer = () => {
       {renderHQOverview()}
       <HQMetricsTrendChart />
       <div>
-        <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">城市维度客单价对比</h4>
-        <DataTable data={sortedTableData} columns={columns} onSort={handleTableSort} sortConfig={tableSortConfig} bordered />
+        <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">城市维度客单价涨价情况</h4>
+        <DataTable
+          data={sortedTableData}
+          columns={columns}
+          onSort={handleTableSort}
+          sortConfig={tableSortConfig}
+          summaryRow={cityPriceSummaryRow}
+          summaryPosition="bottom"
+          summaryClassName="bg-white font-bold"
+          bordered
+        />
+      </div>
+      <div>
+        <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">客单价的影响因素</h4>
+        <div className="flex flex-wrap gap-2 mb-3">
+          <button
+            onClick={() => setImpactTableView('project')}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${impactTableView === 'project' ? 'bg-[#a40035]/10 text-[#a40035]' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
+            项目
+          </button>
+          <button
+            onClick={() => setImpactTableView('technique')}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${impactTableView === 'technique' ? 'bg-[#a40035]/10 text-[#a40035]' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
+            技法
+          </button>
+        </div>
+        <DataTable
+          data={impactTableConfig.data}
+          columns={impactTableConfig.columns}
+          onSort={impactTableConfig.onSort}
+          sortConfig={impactTableConfig.sortConfig}
+          summaryRow={impactTableConfig.summaryRow}
+          summaryPosition="bottom"
+          summaryClassName="bg-white font-bold"
+          bordered
+        />
       </div>
       <div>
         <h4 className="text-base font-semibold text-gray-700 mb-3 pl-2 border-l-4 border-[#a40035]">客单价·影响指标分析</h4>
